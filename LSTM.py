@@ -4,7 +4,19 @@ import matplotlib.pyplot as plt
 from keras.models import Sequential 
 from keras.layers import LSTM, Dense
 import data_handler
-from chapter3 import series_to_supervised
+
+def series_to_supervised(data, before, after):
+    new_cols = []
+	
+    for col in range(before, 0, -1):
+        new_cols.append(data.shift(periods=col).rename(columns={0: -col}))
+
+    new_cols.append(data)
+
+    for col in range(1, after+1):
+        new_cols.append(data.shift(periods=-col).rename(columns={0: col}))
+
+    return pd.concat(new_cols, axis=1)
 
 # prediction at time t = first original data + sum of all differenced predictions up to t.
 def reverse_difference(original, diff_predictions):
