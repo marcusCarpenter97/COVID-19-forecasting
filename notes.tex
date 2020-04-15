@@ -1,0 +1,20 @@
+Data: confirmed, dead and recovered. Time series with time step size of one day.
+Objective: predict the number of infected people over the next few days.
+Infected people = confirmed - (dead + recovered) {the time series for each country/region must be summed for a total}
+time_series_19-covid-Confirmed.csv  time_series_19-covid-Deaths.csv  time_series_19-covid-Recovered.csv 
+COVID-19/csse_covid_19_data/csse_covid_19_time_series/
+
+Train RMSE : 0.07775666232991184
+Test RMSE : 0.026243950431177384
+Total RMSE : 9104.616950540656
+
+
+Hyperparameter search for LSTM:
+Forecast horizon: 1 - ? (divisible by data size)
+Nodes: 5 - 50
+Layers: 1 - 5 (NO!)
+Loss function: MSE (good for forecasting), ...
+Optimizer: adam, ...
+Epochs: 50 - 1000 (increment by 10)
+Bach size: 1 - ? (divisible by data size)
+Activation functions: ? (linear)
