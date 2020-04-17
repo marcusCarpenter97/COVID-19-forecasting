@@ -1,4 +1,7 @@
 import os
+import platform
+from datetime import datetime
+import time
 import subprocess
 import numpy as np
 import pandas as pd
@@ -32,14 +35,22 @@ def get_github_updates():
     with cd("COVID-19"):
         subprocess.call(["git", "pull", "origin", "master"])
 
-
 def load_data():
     """
     Read data from all csv files.
     """
 
     # Create a list of paths from the file names.
-    paths = [os.path.join(DIRECTORY, f) for f in FILES]
+    paths = [os.path.join(DIRECTORY, f) for f in FILES]  # TODO what if the files don't exist?
+
+    if platform.system() == 'Linux':  # TODO make cross-platform.
+        stats = [os.stat(path) for path in paths]
+        # Get today's date.
+        today = datetime.utcfromtimestamp(int(time.time())).strftime('%Y-%m-%d')
+        # Check whether all data files have been modified today. If not get updates.
+        dates = [datetime.utcfromtimestamp(int(stat.st_mtime)).strftime('%Y-%m-%d') for stat in stats]
+        if not all(today == creation_time for creation_time in dates):
+            get_github_updates()
 
     data_frames = []
     # load all csv files into a list of data frames.
@@ -114,15 +125,25 @@ def invert_difference(orig_data, diff_data, interval=1):
 def rescale_data(data, diff_sample, log_sample, horizon_offset):
     undiff_data = invert_difference(diff_sample[horizon_offset:], data)
     log_data = invert_difference(log_sample[horizon_offset+1:], undiff_data)
-    return pd.DataFrame(np.exp(log_data))
+    return np.exp(log_data)
 
-def split_data(data, input_num):
-    x = data.iloc[:, :input_num].to_numpy()
-    y = data.iloc[:, input_num:].to_numpy()
+def split_horizon(data, horizon):
+    x = data.iloc[:, :horizon].to_numpy()
+    y = data.iloc[:, horizon:].to_numpy()
     return x, y
 
-def plot(fig, data_to_plot):
+def split_train_test(data, ratio):
+    train_size = int(data.shape[0] * ratio)
+    return data[:train_size], data[train_size:]
 
-    fig = plt.figure(fig) 
+def adjust_data(data):
+    log_cases = pd.DataFrame(np.log(data))
+    first_diff = log_cases.diff().dropna()
+    stationary_data = first_diff.diff().dropna()
+    return log_cases, first_diff, stationary_data 
+
+def plot(data_to_plot):
+    fig = plt.figure() 
     plt.plot(data_to_plot)
+    plt.xticks(rotation=90)
     return fig
