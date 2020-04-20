@@ -15,8 +15,11 @@ Hyperparameter search for LSTM:
 Forecast horizon: 1 - ? (divisible by data size)
 Nodes: 5 - 50
 Layers: 1 - 5 (NO!)
-Loss function: MSE (good for forecasting), ...
-Optimizer: adam, ...
-Epochs: 50 - 1000 (increment by 10)
+Loss function: MSE (good for forecasting), all 'mean' functions on Keras.
+Optimizer: adam
+Dropout:  0 - 1
+Epochs: 50 - 1000 (increment by 10) start at 1000 and see where it stops.
 Bach size: 1 - ? (divisible by data size)
-Activation functions: ? (linear)
+Activation functions for LSTM layer: tanh (default), ReLU, Swish
+Activation functions for Dense layer: tanh (default), ReLU, Swish
+EarlyStopping Keras callback.
