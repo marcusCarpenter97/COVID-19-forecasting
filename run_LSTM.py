@@ -1,9 +1,26 @@
+import operator
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
 import LSTM
 import data_handler
+import hyperparameter_search
+
+def plot_train_test(scaled_train_p, scaled_test_p):
+    # The first sample is lost after each differencing, so the + 2 is required. 
+    empty_arr = np.empty((forecast_horizon+2, 1))
+    empty_arr[:] = np.nan
+    # Join train and test predictions to create one curve.
+    predictions = np.concatenate([empty_arr, scaled_train_p, empty_arr, scaled_test_p])
+    # Plot it over the original data.
+
+    fig, ax = plt.subplots()
+    ax.plot(current_infected, label='Original data')
+    ax.plot(predictions, label='Forecasts')
+    legend = ax.legend(loc='best')
+    plt.xticks(rotation=90)
+    plt.show()
 
 forecast_horizon = 4   # Number of observations to be used to predict the next event.
 train_set_ratio = 0.7  # The size of the training set as a percentage of the data set.
@@ -33,38 +50,45 @@ features = 1
 x_train = x_train.reshape(x_train.shape[0], x_train.shape[1], features)
 x_test = x_test.reshape(x_test.shape[0], x_test.shape[1], features)
 
-lstm = LSTM.myLSTM()
-lstm.create_seq_simple_LSTM()
-print("Training...")
-lstm.train(x_train, y_train)
+# Generate a list of hyperparameters through Random Search.
+hyper_sample_num = int(input("Enter number of hyperparameter combinations to use: "))
+hyper_samples = hyperparameter_search.select_random_hyperparameters(hyper_sample_num)
+
+# Create an LSTM model for each combination of hyperparameters.
+lstms = []
+for hyper_sample in hyper_samples:
+    lstm = LSTM.myLSTM()
+    lstm.create_simple_LSTM(nodes=hyper_sample[0],
+                                dropout=hyper_sample[1],
+                                loss=hyper_sample[2],
+                                lstm_activation=hyper_sample[3],
+                                dense_activation=hyper_sample[4])
+    lstms.append(lstm)
+
+# Train all of the created models.
+for idx, lstm in enumerate(lstms):
+    print(f"Training model {idx} out of {len(lstms)}")
+    lstm.train(x_train, y_train)#, e=1000)
 print("Done")
 
-# Create predictions for the train and test data.
-train_prediction = lstm.predict(x_train)
-test_prediction = lstm.predict(x_test)
+for lstm in lstms:
+    # Create predictions for the train and test data.
+    train_prediction = lstm.predict(x_train)
+    test_prediction = lstm.predict(x_test)
 
-# Rescale predictions.
-scaled_train_p = data_handler.rescale_data(train_prediction, train_diff[0], train_log[0], forecast_horizon)
-scaled_test_p = data_handler.rescale_data(test_prediction, test_diff[0], test_log[0], forecast_horizon)
-# Rescale answers.
-scaled_train = data_handler.rescale_data(y_train, train_diff[0], train_log[0], forecast_horizon)
-scaled_test = data_handler.rescale_data(y_test, test_diff[0], test_log[0], forecast_horizon)
+    # Rescale predictions.
+    scaled_train_p = data_handler.rescale_data(train_prediction, train_diff[0], train_log[0], forecast_horizon)
+    scaled_test_p = data_handler.rescale_data(test_prediction, test_diff[0], test_log[0], forecast_horizon)
+    # Rescale answers.
+    scaled_train = data_handler.rescale_data(y_train, train_diff[0], train_log[0], forecast_horizon)
+    scaled_test = data_handler.rescale_data(y_test, test_diff[0], test_log[0], forecast_horizon)
 
-train_rmse = lstm.rmse(scaled_train, scaled_train_p)
-test_rmse = lstm.rmse(scaled_test, scaled_test_p)
-print(f"Train RMSE : {train_rmse}")
-print(f"Test RMSE : {test_rmse}")
+    lstm.train_rmse = lstm.rmse(scaled_train, scaled_train_p)
+    lstm.test_rmse = lstm.rmse(scaled_test, scaled_test_p)
+    #print(f"Train RMSE : {train_rmse}")
+    #print(f"Test RMSE : {test_rmse}")
 
-# The first sample is lost after each differencing, so the + 2 is required. 
-empty_arr = np.empty((forecast_horizon+2, 1))
-empty_arr[:] = np.nan
-# Join train and test predictions to create one curve.
-predictions = np.concatenate([empty_arr, scaled_train_p, empty_arr, scaled_test_p])
-# Plot it over the original data.
-
-fig, ax = plt.subplots()
-ax.plot(current_infected, label='Original data')
-ax.plot(predictions, label='Forecasts')
-legend = ax.legend(loc='best')
-plt.xticks(rotation=90)
-plt.show()
+lstms.sort(key=operator.attrgetter("test_rmse"))
+for lstm in lstms:
+    print(lstm.train_rmse)
+    print(lstm.test_rmse)
