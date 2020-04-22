@@ -69,6 +69,7 @@ class myLSTM:
         shifted_train = np.concatenate([empty_arr, self.train_predictions])
         # The test data mus be shifted by 2 empty arrays plus the training data.
         empty_arr = np.empty(((forecast_horizon+2)*2+len(self.train_predictions), 1))
+        empty_arr[:] = np.nan
         shifted_test = np.concatenate([empty_arr, self.test_predictions])
 
         fig, ax = plt.subplots()
