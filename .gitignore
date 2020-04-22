@@ -1,3 +1,8 @@
+taguchi_results/
+COVID-19/
+__pycache__/
+*.swp
+results/
 LatexFiles/
 Scopus-crawler/
 # Byte-compiled / optimized / DLL files
