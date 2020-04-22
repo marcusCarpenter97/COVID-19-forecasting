@@ -40,9 +40,9 @@ methods = {1 : "random", 2 : "taguchi"}
 method = int(input("Select hyperparameter search method:\n1. Random\n2. Taguchi\n"))
 if method == 1:
     hyper_sample_num = int(input("Enter number of hyperparameter combinations to use: "))
-    hyper_samples = hyperparameter_search.select_hyperparameters(hyper_sample_num, method=methods[method])
-
-hyper_samples = hyperparameter_search.select_hyperparameters(method=methods[method])
+    hyper_samples = hyperparameter_search.select_hyperparameters(num_of_samples=hyper_sample_num, method=methods[method])
+else:
+    hyper_samples = hyperparameter_search.select_hyperparameters(method=methods[method])
 
 # Create an LSTM model for each combination of hyperparameters.
 lstms = []
