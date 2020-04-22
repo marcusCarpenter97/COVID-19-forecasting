@@ -35,13 +35,19 @@ def get_github_updates():
     with cd("COVID-19"):
         subprocess.call(["git", "pull", "origin", "master"])
 
+def clone_git_repo():
+    subprocess.call(["git", "clone", "https://github.com/CSSEGISandData/COVID-19.git"])
+
 def load_data():
     """
     Read data from all csv files.
     """
 
+    if not os.path.isdir(DIRECTORY):
+        clone_git_repo()
+
     # Create a list of paths from the file names.
-    paths = [os.path.join(DIRECTORY, f) for f in FILES]  # TODO what if the files don't exist?
+    paths = [os.path.join(DIRECTORY, f) for f in FILES]
 
     if platform.system() == 'Linux':  # TODO make cross-platform.
         stats = [os.stat(path) for path in paths]
