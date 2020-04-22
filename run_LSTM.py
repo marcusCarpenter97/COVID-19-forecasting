@@ -7,21 +7,6 @@ import LSTM
 import data_handler
 import hyperparameter_search
 
-def plot_train_test(scaled_train_p, scaled_test_p):
-    # The first sample is lost after each differencing, so the + 2 is required. 
-    empty_arr = np.empty((forecast_horizon+2, 1))
-    empty_arr[:] = np.nan
-    # Join train and test predictions to create one curve.
-    predictions = np.concatenate([empty_arr, scaled_train_p, empty_arr, scaled_test_p])
-    # Plot it over the original data.
-
-    fig, ax = plt.subplots()
-    ax.plot(current_infected, label='Original data')
-    ax.plot(predictions, label='Forecasts')
-    legend = ax.legend(loc='best')
-    plt.xticks(rotation=90)
-    plt.show()
-
 forecast_horizon = 4   # Number of observations to be used to predict the next event.
 train_set_ratio = 0.7  # The size of the training set as a percentage of the data set.
 
@@ -50,14 +35,20 @@ features = 1
 x_train = x_train.reshape(x_train.shape[0], x_train.shape[1], features)
 x_test = x_test.reshape(x_test.shape[0], x_test.shape[1], features)
 
-# Generate a list of hyperparameters through Random Search.
-hyper_sample_num = int(input("Enter number of hyperparameter combinations to use: "))
-hyper_samples = hyperparameter_search.select_random_hyperparameters(hyper_sample_num)
+# Generate a list of hyperparameters through Random Search. TODO exception handling.
+methods = {1 : "random", 2 : "taguchi"}
+method = int(input("Select hyperparameter search method:\n1. Random\n2. Taguchi\n"))
+if method == 1:
+    hyper_sample_num = int(input("Enter number of hyperparameter combinations to use: "))
+    hyper_samples = hyperparameter_search.select_hyperparameters(hyper_sample_num, method=methods[method])
+
+hyper_samples = hyperparameter_search.select_hyperparameters(method=methods[method])
 
 # Create an LSTM model for each combination of hyperparameters.
 lstms = []
 for hyper_sample in hyper_samples:
     lstm = LSTM.myLSTM()
+    lstm.hyper_params = hyper_sample
     lstm.create_simple_LSTM(nodes=hyper_sample[0],
                                 dropout=hyper_sample[1],
                                 loss=hyper_sample[2],
@@ -66,29 +57,35 @@ for hyper_sample in hyper_samples:
     lstms.append(lstm)
 
 # Train all of the created models.
+epochs = int(input("Enter number of training epochs (must be > 0): "))
 for idx, lstm in enumerate(lstms):
     print(f"Training model {idx} out of {len(lstms)}")
-    lstm.train(x_train, y_train)#, e=1000)
+    lstm.train(x_train, y_train, epochs)
 print("Done")
 
-for lstm in lstms:
+# Rescale answers to calculate the error.
+scaled_train = data_handler.rescale_data(y_train, train_diff[0], train_log[0], forecast_horizon)
+scaled_test = data_handler.rescale_data(y_test, test_diff[0], test_log[0], forecast_horizon)
+
+# Generate performance reports for all models.
+for idx, lstm in enumerate(lstms):
+    model_name = str(idx)
     # Create predictions for the train and test data.
     train_prediction = lstm.predict(x_train)
     test_prediction = lstm.predict(x_test)
 
     # Rescale predictions.
-    scaled_train_p = data_handler.rescale_data(train_prediction, train_diff[0], train_log[0], forecast_horizon)
-    scaled_test_p = data_handler.rescale_data(test_prediction, test_diff[0], test_log[0], forecast_horizon)
-    # Rescale answers.
-    scaled_train = data_handler.rescale_data(y_train, train_diff[0], train_log[0], forecast_horizon)
-    scaled_test = data_handler.rescale_data(y_test, test_diff[0], test_log[0], forecast_horizon)
+    lstm.train_predictions = data_handler.rescale_data(train_prediction, train_diff[0], train_log[0], forecast_horizon)
+    lstm.test_predictions = data_handler.rescale_data(test_prediction, test_diff[0], test_log[0], forecast_horizon)
 
-    lstm.train_rmse = lstm.rmse(scaled_train, scaled_train_p)
-    lstm.test_rmse = lstm.rmse(scaled_test, scaled_test_p)
-    #print(f"Train RMSE : {train_rmse}")
-    #print(f"Test RMSE : {test_rmse}")
+    lstm.plot_history(model_name)
+    lstm.plot_predictions(model_name, current_infected, forecast_horizon)
 
-lstms.sort(key=operator.attrgetter("test_rmse"))
-for lstm in lstms:
-    print(lstm.train_rmse)
-    print(lstm.test_rmse)
+    print(f"\n\nModel name: {model_name}")
+    print(f"RMSE on train: {lstm.rmse(scaled_train, lstm.train_predictions)}")
+    print(f"RMSE on test: {lstm.rmse(scaled_test, lstm.test_predictions)}")
+
+    print(f"RMSLE on train: {lstm.rmsle(scaled_train, lstm.train_predictions)}")
+    print(f"RMSLE on test: {lstm.rmsle(scaled_test, lstm.test_predictions)}")
+
+    print(f"Hyperparameters used: {lstm.hyper_params}")
