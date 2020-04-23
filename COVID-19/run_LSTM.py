@@ -81,11 +81,12 @@ for idx, lstm in enumerate(lstms):
     lstm.plot_history(model_name)
     lstm.plot_predictions(model_name, current_infected, forecast_horizon)
 
-    print(f"\n\nModel name: {model_name}")
-    print(f"RMSE on train: {lstm.rmse(scaled_train, lstm.train_predictions)}")
-    print(f"RMSE on test: {lstm.rmse(scaled_test, lstm.test_predictions)}")
+    report = f"""\n\nModel name: {model_name}
+                RMSE on train: {lstm.rmse(scaled_train, lstm.train_predictions)}
+                RMSE on test: {lstm.rmse(scaled_test, lstm.test_predictions)}
+                RMSLE on train: {lstm.rmsle(scaled_train, lstm.train_predictions)}
+                RMSLE on test: {lstm.rmsle(scaled_test, lstm.test_predictions)}
+                Hyperparameters used: {lstm.hyper_params}\n"""
 
-    print(f"RMSLE on train: {lstm.rmsle(scaled_train, lstm.train_predictions)}")
-    print(f"RMSLE on test: {lstm.rmsle(scaled_test, lstm.test_predictions)}")
-
-    print(f"Hyperparameters used: {lstm.hyper_params}")
+    with open("LSTM_results.txt", 'a') as res_file:
+        res_file.write(report)
