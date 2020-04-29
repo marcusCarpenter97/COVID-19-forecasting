@@ -5,6 +5,8 @@ from scipy.stats import boxcox
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from statsmodels.tsa.stattools import adfuller, kpss
+%matplotlib inline
+plt.rcParams['figure.figsize'] = [10, 5]
 
 # Load the time series data of total infected people.
 raw_data = data_handler.load_data()
@@ -90,5 +92,61 @@ adf_results = adfuller(third_differenced)
 print("Results for the ADF test:")
 print_results(adf_results, 4, ['Test Statistic','p-value','Lags Used','Number of Observations Used'])
 
-# Preparing for the Neural Network.
+# Preparing the data for the Neural Network.
 
+# The neurral network used is the LSTM which is a type of RNN. This was chose as it ws designed to handle sequences like a time
+# series.
+
+forecast_horizon = 4   # Number of observations to be used to predict the next event.
+train_set_ratio = 0.7  # The size of the training set as a percentage of the data set.
+
+# Split the data into train and test sets. This must be done before any transformations to avoid data leakage. Otherwise there
+# might be information about the test set in the train set becasue of the data transformation applied.
+train, test = data_handler.split_train_test(current_infected, train_set_ratio)
+
+# This helps visulaize the train and test data.
+fig, ax = plt.subplots()
+ax.plot(train)
+ax.plot(test)
+ax.set_ylabel('Number of infected')
+ax.set_xlabel('Time')
+ax.legend(['Train data', 'Test data'], loc='best')
+fig.autofmt_xdate()
+
+# Make the time series data stationary based on what we found before.
+train_log, train_diff, stationary_train = data_handler.adjust_data(train)
+test_log, test_diff, stationary_test = data_handler.adjust_data(test)
+
+# Transform the data into a supervised learning dataset. Essentialy the LSTM will use a number of observations
+# (forecast horizon) to predict the next event in the sequence, e.g. use four days of data to predict the fith.
+supervised_train = data_handler.series_to_supervised(stationary_train, 0, forecast_horizon)
+supervised_test = data_handler.series_to_supervised(stationary_test, 0, forecast_horizon)
+
+# Create sets for input and output based on the forecast horizon.
+x_train, y_train = data_handler.split_horizon(supervised_train, forecast_horizon)
+x_test, y_test = data_handler.split_horizon(supervised_test, forecast_horizon)
+
+# This is how the forecast horizon looks like.TODO remove
+new_x_train = []
+for seq in x_train:
+    new_x_train.extend(list(seq))
+    new_x_train.append(np.nan)
+
+new_y_train = []
+empty_arr = [np.nan] * forecast_horizon
+for point in y_train:
+    new_y_train.extend(empty_arr)
+    new_y_train.extend(list(point))
+
+new_x_train = np.array(new_x_train)
+new_y_train = np.array(new_y_train)
+fig, ax = plt.subplots()
+ax.plot(new_x_train)
+ax.plot(new_y_train, 'ro')
+
+# This part is required by the LSTM as it only takes 3 dimentional input.
+# Reshape x from [samples, time steps] to [samples, time steps, features]
+# Where samples = rows and time steps = columns.
+features = 1
+x_train = x_train.reshape(x_train.shape[0], x_train.shape[1], features)
+x_test = x_test.reshape(x_test.shape[0], x_test.shape[1], features)
