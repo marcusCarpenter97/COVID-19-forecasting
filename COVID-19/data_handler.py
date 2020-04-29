@@ -145,8 +145,9 @@ def split_train_test(data, ratio):
 def adjust_data(data):
     log_cases = pd.DataFrame(np.log(data))
     first_diff = log_cases.diff().dropna()
-    stationary_data = first_diff.diff().dropna()
-    return log_cases, first_diff, stationary_data 
+    second_data = first_diff.diff().dropna()
+    stationary_data = second_diff.diff().dropna()
+    return log_cases, first_diff, second_diff, stationary_data 
 
 def plot(data_to_plot):
     fig = plt.figure() 
