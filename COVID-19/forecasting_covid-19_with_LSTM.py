@@ -10,6 +10,8 @@ from statsmodels.tsa.stattools import adfuller, kpss
 raw_data = data_handler.load_data()
 current_infected = data_handler.calculate_total_infected(raw_data)
 
+# Analysing the time series.
+
 # Plot the time series.
 current_infected.plot()
 
@@ -59,7 +61,34 @@ print_results(kpss_results, 3, ['Test Statistic','p-value','Lags Used'])
 
 #  The results show that the null hypothesis is rejected, this means that the unit root is defiantely present and that there is no deterministic trend.
 
-# Making the time series stationary
+# Making the time series stationary.
+
 # As the tests show there is at least one unit root  in the data.  This can be removed through differencing the time series.
-# Essencialy the difference is taken between each point in the data.
+# Essencialy the difference is taken between each point in the data. As there is no deterministic trend in the data there is  not
+# need to use the KPSS test again.
+first_differenced = current_infected.diff().dropna()
+first_differenced.plot()
+
+# Another ADF test on the differenced data shows that there is still  a unit root in the data. This means that the data must be 
+# differenced again.
+adf_results = adfuller(first_differenced)
+print("Results for the ADF test:")
+print_results(adf_results, 4, ['Test Statistic','p-value','Lags Used','Number of Observations Used'])
+
+# Differencing the data a second time shows us that eventhough the graph looks line a statinary time series there still is a
+# unit root in the data as the p-value is greater than all alpha values.
+second_differenced = first_differenced.diff().dropna()
+second_differenced.plot()
+adf_results = adfuller(second_differenced)
+print("Results for the ADF test:")
+print_results(adf_results, 4, ['Test Statistic','p-value','Lags Used','Number of Observations Used'])
+
+# When differenced a third time the data shows us that there is not more unit roots. The p-value has become so small that there is almost a 100% certainty of it.
+third_differenced = second_differenced.diff().dropna()
+third_differenced.plot()
+adf_results = adfuller(third_differenced)
+print("Results for the ADF test:")
+print_results(adf_results, 4, ['Test Statistic','p-value','Lags Used','Number of Observations Used'])
+
+# Preparing for the Neural Network.
 
