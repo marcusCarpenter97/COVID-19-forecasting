@@ -48,9 +48,20 @@ print_results(adf_results, 4, ['Test Statistic','p-value','Lags Used','Number of
 # through differencing the data.
 
 # KPSS
-# In the KPSS test the Test Statistic is 0.676763. One of the four critcal values is greater than the test values. This makes it stationary?
-print("\nResults for the KPSS test:")
+# The KPSS test complements the ADF test. Its null hypothesis states that the time series is stationary. For example, if the ADF
+# accepts its null hypothesis and the KPSS test does not then there is definately a unit root (trend) in the data. However, if 
+# the test is not rejected, the KPSS shows that the data is trend stationary. This means that it is stationary around a
+# (deterministic) trend.
+# For example, a linear trend is present where all values increase over time. If this trend is removed the data will become
+# stationary.
+
+# As this is essentialy the opposite of the ADF, the results show that if the p-value is smaller than 0.05 (again the default
+# value) then the time series is not stationary.
+
+print("Results for the KPSS test:")
 print_results(kpss_results, 3, ['Test Statistic','p-value','Lags Used'])
 
-# The ADF show that it is not stationary becasue the test statistic it greater than the all the critical values.
-# In the KPSS, One of the four critcal values is greater than the test values. This makes it stationary?
+# When the test was run the Test Statistic was of 1.345703 and the p-value was of 0.010000. As 0.01 is < 0.05 the null hypothesis
+# is rejected proving that the data is not stationary.
+
+# This means that to make this time series stationary is through differencing the data as there is no deterministic trend.
