@@ -30,38 +30,36 @@ def print_results(res, index, row_names):
     print(formatted_res)
 
 # ADF
-# The null hypothesis for the ADF test is that the time series is not stationary. The objective of this test is to reject (or
-# disprove) this hypothesis. Basically, the test assumes that there is a trend (unit root) in the data and the results are used
-# to prove or disprove this assumption. To reject the null hypothesis (prove there is no trend) the p-value produced by the test
-# must be less than 0.05. The value of 0.05 (alpha) represents the 5% Critical Value (the default option) used in the test. Becasue of
-# this the result of the test (Test Statistic) can be compared with the Critical Value at 5% in the same way as the p-value,
-# i.e. Test Statistic < Critical Value at 5% = No trend (reject null hypothesis).
-
-# The results will vary based on teh data but the Critical Values are a simple pre-calculated lookup table. If a different alpha
-# is use in the test, e.g. 0.10, then the Critical Value at 10% would be used to compare the results.
+# The null hypothesis for the ADF test is that the time series is not stationary because it has a unit root.
+# The alternate hypothesis is that there is no unit root in the data making it stationary.
+# The unit root is a  feature in a time  series that causes a trend. This can be removed by differencing the data.
+# The null hypothesis is assumed to be true until it is proven to be false, i.e. it is assumed that the data is not stationary by
+# default.
+# To reject the null hypothesis (prove there is no trend) the p-value produced by the test must be less than the Critical Value.
+# The Critical Value represents how certain the test is of its results, e.g. if the p-value is lest than 0.05 (5%) then we can say that the test is 95% confident that the time seires is stationary.
 
 print("Results for the ADF test:")
 print_results(adf_results, 4, ['Test Statistic','p-value','Lags Used','Number of Observations Used'])
 
-# When running the test with 86 observations (days) the Test Statistic was of -0.049970 and the p-value was 0.954199.
-# This means that this time series has a unit root as 0.9 is not smaller than 0.05. In other word a trend that can be removed
-# through differencing the data.
+# As the p-value is larger than all levels of alpha (0.01, 0.05 and 0.1) this means that the time series has a unit root. Infact
+# it is possible to multiply the p-value by 100 to see how confident the test is. For example a p-value of 0.973938 means that the
+# test is 97% confident that the is a unit root (trend) in the data.
 
 # KPSS
-# The KPSS test complements the ADF test. Its null hypothesis states that the time series is stationary. For example, if the ADF
-# accepts its null hypothesis and the KPSS test does not then there is definately a unit root (trend) in the data. However, if 
-# the test is not rejected, the KPSS shows that the data is trend stationary. This means that it is stationary around a
-# (deterministic) trend.
+# The KPSS test complements the ADF test.
+# Its null hypothesis states that the time series is stationary.
+# While thr alternate hypothesis states that the data has a unit root.
+# The p-value and the Critical Values work the same ass the ADF test.
+# However, if the null hypothesis is not rejected, the KPSS shows that the data is 'trend' stationary. This means that it is stationary around a deterministic trend.
 # For example, a linear trend is present where all values increase over time. If this trend is removed the data will become
 # stationary.
-
-# As this is essentialy the opposite of the ADF, the results show that if the p-value is smaller than 0.05 (again the default
-# value) then the time series is not stationary.
 
 print("Results for the KPSS test:")
 print_results(kpss_results, 3, ['Test Statistic','p-value','Lags Used'])
 
-# When the test was run the Test Statistic was of 1.345703 and the p-value was of 0.010000. As 0.01 is < 0.05 the null hypothesis
-# is rejected proving that the data is not stationary.
+#  The results show that the null hypothesis is rejected, this means that the unit root is defiantely present and that there is no deterministic trend.
 
-# This means that to make this time series stationary is through differencing the data as there is no deterministic trend.
+# Making the time series stationary
+# As the tests show there is at least one unit root  in the data.  This can be removed through differencing the time series.
+# Essencialy the difference is taken between each point in the data.
+
