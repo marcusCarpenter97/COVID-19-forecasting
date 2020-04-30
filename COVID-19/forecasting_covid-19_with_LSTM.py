@@ -1,11 +1,14 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Reduces tensorflow messages.
 
+import warnings
+warnings.filterwarnings('ignore')  # Reduces warning messages.
+
 from keras.models import Sequential
 from keras.layers import LSTM, Dense, Activation, Dropout
 from keras.callbacks.callbacks import EarlyStopping
 
-import data_handler
+import data_handler  # Custom module used to fetch and prepare data from GitHub.
 
 import pandas as pd
 import numpy as np
@@ -13,45 +16,38 @@ import numpy as np
 from scipy.stats import boxcox
 from statsmodels.tsa.stattools import adfuller, kpss
 
-#%matplotlib inline
 import matplotlib.pyplot as plt
-#import matplotlib.gridspec as gridspec
-plt.rcParams['figure.figsize'] = [10, 5]
+plt.rcParams['figure.figsize'] = [10, 5]  # Adjust plot sizes.
 
 # Load the time series data of total infected people.
 raw_data = data_handler.load_data()
 current_infected = data_handler.calculate_total_infected(raw_data)
 
-# #Analysing the time series.
+# # Analysing the time series.
 
-# Plot the time series.
 current_infected.plot()
 
-# To create accurate forecasts the time series must be stationary. In other words the average must be the same throughout the whole time series. From the original plot it is possible to see that the data is not stationary as the trend seems to be increasing.
-# There are two statistical tests that can be applied to a time series to check whether it is stationary or not. This is better than simply 'looking' at the data.
+# To create accurate forecasts the time series must be stationary. In other words, there must be no trends in the data. From the
+# plot above it is possible to see that the data is not stationary as the trend seems to be increasing.
+# There are two statistical tests that can be applied to a time series to check whether it is stationary or not. This is better
+# than simply 'looking' at the data as it can find (and prove the existence of) useful features in the series.
 
-# First, the Augmented Dickey Fuller (ADF) test. This will check if the time series is stationary or if it requires differencing.
-adf_results = adfuller(current_infected)
 
-# Second, the Kwiatkowski-Phillips-Schmidt-Shin (KPSS) test. This checks whether there is a trend in the data, e.g. the values are gradually increasing.
-kpss_results = kpss(current_infected, nlags='auto')
-
-# This function helps print out the data from the results.
+# This function helps print out the results from the following experiments.
 def print_results(res, index, row_names):
     formatted_res = pd.Series(res[0:index], index=row_names)
     for key, value in res[index].items():
         formatted_res[f'Critical Value ({key})'] = value
     print(formatted_res)
 
-# ##ADF
+# ### First, the Augmented Dickey Fuller (ADF) test.
 # The null hypothesis for the ADF test is that the time series is not stationary because it has a unit root.
 # The alternate hypothesis is that there is no unit root in the data making it stationary.
-# The unit root is a  feature in a time  series that causes a trend. This can be removed by differencing the data.
-# The null hypothesis is assumed to be true until it is proven to be false, i.e. it is assumed that the data is not stationary by
-# default.
+# The unit root is a feature in a time  series that causes a trend. This can be removed by differencing the data.
+# The null hypothesis is assumed to be true until it is proven to be false, i.e. it is assumed that the data is not stationary by default.
 # To reject the null hypothesis (prove there is no trend) the p-value produced by the test must be less than the Critical Value.
 # The Critical Value represents how certain the test is of its results, e.g. if the p-value is lest than 0.05 (5%) then we can say that the test is 95% confident that the time series is stationary.
-
+adf_results = adfuller(current_infected)
 print("Results for the ADF test:")
 print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number of Observations Used'])
 
@@ -59,7 +55,7 @@ print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number
 # it is possible to multiply the p-value by 100 to see how confident the test is. For example a p-value of 0.973938 means that the
 # test is 97% confident that the is a unit root (trend) in the data.
 
-# ##KPSS
+# ### Second, the Kwiatkowski-Phillips-Schmidt-Shin (KPSS) test.
 # The KPSS test complements the ADF test.
 # Its null hypothesis states that the time series is stationary.
 # While there alternate hypothesis states that the data has a unit root.
@@ -67,28 +63,27 @@ print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number
 # However, if the null hypothesis is not rejected, the KPSS shows that the data is 'trend' stationary. This means that it is stationary around a deterministic trend.
 # For example, a linear trend is present where all values increase over time. If this trend is removed the data will become
 # stationary.
-
+kpss_results = kpss(current_infected, nlags='auto')
 print("Results for the KPSS test:")
 print_results(kpss_results, 3, ['Test Statistic', 'p-value', 'Lags Used'])
 
-# The results show that the null hypothesis is rejected, this means that the unit root is defiantly present and that there is no deterministic trend.
+# The results show that the null hypothesis is rejected, this means that the unit root is definitely present and that there is no deterministic trend.
 
-# #Making the time series stationary.
+# Note: the results will be different every time more data is added to the series.
 
-# As the tests show there is at least one unit root  in the data.  This can be removed through differencing the time series.
-# Essentially the difference is taken between each point in the data. As there is no deterministic trend in the data there is  not
-# need to use the KPSS test again.
+# # Making the time series stationary.
+
+# As the tests show there is at least one unit root in the data. This can be removed through differencing the time series.
+# Essentially the difference is taken between each point in the data. As there is no deterministic trend in the data there is no need to use the KPSS test again.
 first_differenced = current_infected.diff().dropna()
 first_differenced.plot()
 
-# Another ADF test on the differenced data shows that there is still  a unit root in the data. This means that the data must be
-# differenced again.
+# Another ADF test on the differenced data shows that there is still a unit root in the data. This means that the data must be differenced again.
 adf_results = adfuller(first_differenced)
 print("Results for the ADF test:")
 print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number of Observations Used'])
 
-# Differencing the data a second time shows us that even though the graph looks line a stationary time series there still is a
-# unit root in the data as the p-value is greater than all alpha values.
+# Differencing the data a second time shows us that even though the graph looks line a stationary time series there still is a unit root in the data as the p-value is greater than all alpha values.
 second_differenced = first_differenced.diff().dropna()
 second_differenced.plot()
 adf_results = adfuller(second_differenced)
@@ -102,12 +97,9 @@ adf_results = adfuller(third_differenced)
 print("Results for the ADF test:")
 print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number of Observations Used'])
 
-# #The Gaussian Curve.
+# # The Gaussian Curve.
 
-#  It is  desirable that the data fits a Gaussian curve as it is easier to model it. The shape of this dataset can be seen by
-#  plotting it as a histogram. It is possible to see that the original data has a long right tail. This means that there a many
-#  'rare values' greater than the mean (average). This makes sense when looking back at the original plot where the curve stays
-#  horizontal for a while before the number of infected people start to rise.
+# It is desirable that the data fits a Gaussian curve as it is easier to model it. The shape of this dataset can be seen by plotting it as a histogram. It is possible to see that the original data has a long right tail. This means that there a many 'rare values' greater than the mean (average). This makes sense when looking back at the original plot where the curve stays horizontal for a while before the number of infected people start to rise.
 
 # On the other hand, the data after being differenced three times looks more like a Gaussian distribution (the bell shape). This is because the trends where removed.
 
@@ -118,6 +110,7 @@ third_differenced.plot(kind='hist', ax=ax[1])
 ax[1].set_title("Dataset without unit roots.")
 fig.tight_layout()
 
+# ### Data transform.
 one_d_ci = [i[0] for i in current_infected.values]  # The boxcox methods require 1 dimensional data.
 
 data1 = boxcox(one_d_ci, -1)    # reciprocal transform.
@@ -138,21 +131,20 @@ axes[1,1].hist(data4)
 axes[1,1].set_title('Square root transform')
 fig.tight_layout()
 
-# From the graphs above it is  possible to see that the method that makes the data look like a Gaussian distribution is the log
-# transform. This can be used on the data to 'squash' the values before giving it to the neural network. This is important
+# From the graphs above it is possible to see that the method that makes the data look more like a Gaussian distribution is the
+# log transform. This can be used on the data to 'squash' the values before giving it to the neural network. This is important
 # because it would take longer to process the larger numbers. Taking the log of the data will reduce training time without
-# affecting the structure of the data by too much.
+# drastically affecting the structure of the data.
 
-# #Preparing the data for the Neural Network.
+# # Preparing the data for the Neural Network.
 
-# The neural network used is the LSTM which is a type of RNN. This was chose as it was designed to handle sequences like a time
-# series.
+# The neural network used in this experiment is the LSTM, a type of RNN. This was chosen as it was designed to handle sequences like a time series.
 
 forecast_horizon = 4   # Number of observations to be used to predict the next event.
 train_set_ratio = 0.7  # The size of the training set as a percentage of the data set.
 
-# Split the data into train and test sets. This must be done before any transformations to avoid data leakage. Otherwise there
-# might be information about the test set in the train set because of the data transformation applied.
+# Split the data into train and test sets. This must be done before any transformations to avoid data leakage. Otherwise there might be information about the test set in the train set because of the data transformation applied.
+# Note: the transformations done before where for the analysis of the time series, now they will be used to actually reshape the data.
 train, test = data_handler.split_train_test(current_infected, train_set_ratio)
 
 # This helps visualize the train and test data.
@@ -187,17 +179,17 @@ features = 1
 x_train = x_train.reshape(x_train.shape[0], x_train.shape[1], features)
 x_test = x_test.reshape(x_test.shape[0], x_test.shape[1], features)
 
-# #The LSTM
+# # The LSTM
 
 # A standard sequential model. One layer after the other.
 model = Sequential()
 
-# ##The input layer.
+# ### The input layer.
 # The LSTM receives the input as an array of size equals to the forecast horizon where each item is an array of size one.
 # e.g. [[1], [2], [3], [4]]
 input_layer = (forecast_horizon, 1)
 
-# ##The hidden layer.
+# ### The hidden layer.
 nodes = 5  #  The number of nodes in the hidden layer represents how 'wide' the network will be.
 model.add(LSTM(nodes, input_shape=input_layer))
 
@@ -209,7 +201,7 @@ model.add(Activation(lstm_activation))
 rate = 0.1 # The probability of a node being ignored during training, e.g. 10%.
 model.add(Dropout(rate))
 
-# ##The output layer.
+# ### The output layer.
 out_shape = 1  # The number of outputs the LSTM will produce. Technically the number of nodes in the dense layer.
 # It is possible to output the forecasts for the next few days but in this model only one value will be produced.
 model.add(Dense(out_shape))
@@ -222,7 +214,7 @@ loss = "mean_squared_error"
 opti = "adam"
 model.compile(loss=loss, optimizer=opti)
 
-# ##Training the LSTM.
+# ### Training the LSTM.
 
 # This will stop the training if the loss does not change for 50 consecutive epochs.
 early_stopping = EarlyStopping(patience=50, restore_best_weights=True)
@@ -234,7 +226,7 @@ early_stopping = EarlyStopping(patience=50, restore_best_weights=True)
 history = model.fit(x_train, y_train, epochs=1000, batch_size=1, verbose=0, callbacks=[early_stopping],
                     validation_split=0.2)
 
-# ##The test.
+# ### The test.
 
 # Make the predictions. The predictions on the training data are only used to measure the model's performance as it should have
 # already learnt it.
@@ -278,11 +270,6 @@ test_rmse = rmse(scaled_test, scaled_test_predictions)
 train_rmsle = rmsle(scaled_train, scaled_train_predictions)
 test_rmsle = rmsle(scaled_test, scaled_test_predictions)
 
-print(f"RMSE on train: {train_rmse}")
-print(f"RMSE on test: {test_rmse}")
-print(f"RMSLE on train: {train_rmsle}")
-print(f"RMSLE on test: {test_rmsle}")
-
 # Plot model loss history.
 fig, ax = plt.subplots()
 ax.plot(history.history['loss'])
@@ -312,3 +299,12 @@ ax.set_title('Prediction over original')
 ax.set_ylabel('Number of infected')
 ax.set_xlabel('Time')
 ax.legend(['Original data', 'Train predictions', 'Test predictions'], loc='best')
+# Prevent the x-axis labels from overlapping.
+start, end = ax.get_xlim()
+ax.xaxis.set_ticks(np.arange(start, end, 4))
+fig.autofmt_xdate()
+
+print(f"RMSE on train: {train_rmse}")
+print(f"RMSE on test: {test_rmse}")
+print(f"RMSLE on train: {train_rmsle}")
+print(f"RMSLE on test: {test_rmsle}")
