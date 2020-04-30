@@ -127,10 +127,11 @@ def prepare_data(data):
 def invert_difference(orig_data, diff_data, interval=1):
     return [diff_data[i-interval] + orig_data[i-interval] for i in range(interval, len(orig_data))]
 
-# Stationary to normal
-def rescale_data(data, diff_sample, log_sample, horizon_offset):
-    undiff_data = invert_difference(diff_sample[horizon_offset:], data)
-    log_data = invert_difference(log_sample[horizon_offset+1:], undiff_data)
+# Stationary to normal.
+def rescale_data(data, first_diff, second_diff, log_sample, horizon_offset):
+    undiff_two = invert_difference(second_diff[horizon_offset:], data)
+    undiff_one = invert_difference(first_diff[horizon_offset+1:], undiff_two)
+    log_data = invert_difference(log_sample[horizon_offset+2:], undiff_one)
     return np.exp(log_data)
 
 def split_horizon(data, horizon):
@@ -145,7 +146,7 @@ def split_train_test(data, ratio):
 def adjust_data(data):
     log_cases = pd.DataFrame(np.log(data))
     first_diff = log_cases.diff().dropna()
-    second_data = first_diff.diff().dropna()
+    second_diff = first_diff.diff().dropna()
     stationary_data = second_diff.diff().dropna()
     return log_cases, first_diff, second_diff, stationary_data 
 
