@@ -255,9 +255,9 @@ scaled_test_predictions = data_handler.rescale_data(test_prediction,
 
 # Rescale the answers.
 scaled_train = data_handler.rescale_data(y_train, 
-                                         test_diff_one[0], 
-                                         test_diff_two[0], 
-                                         test_log[0], 
+                                         train_diff_one[0], 
+                                         train_diff_two[0], 
+                                         train_log[0], 
                                          forecast_horizon)
 scaled_test = data_handler.rescale_data(y_test, 
                                         test_diff_one[0], 
