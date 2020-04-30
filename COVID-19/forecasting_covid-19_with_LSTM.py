@@ -278,10 +278,10 @@ test_rmse = rmse(scaled_test, scaled_test_predictions)
 train_rmsle = rmsle(scaled_train, scaled_train_predictions)
 test_rmsle = rmsle(scaled_test, scaled_test_predictions)
 
-print(f"""RMSE on train: {train_rmse}
-          RMSE on test: {test_rmse}
-          RMSLE on train: {train_rmsle}
-          RMSLE on test: {test_rmsle}""")
+print(f"RMSE on train: {train_rmse}")
+print(f"RMSE on test: {test_rmse}")
+print(f"RMSLE on train: {train_rmsle}")
+print(f"RMSLE on test: {test_rmsle}")
 
 # Plot model loss history.
 fig, ax = plt.subplots()
@@ -301,7 +301,7 @@ shifted_train = np.concatenate([empty_arr, scaled_train_predictions])
 # The test data mus be shifted by 2 empty arrays plus the training data.
 empty_arr = np.empty(((forecast_horizon+2)*2+len(scaled_train_predictions), 1))
 empty_arr[:] = np.nan
-shifted_test = np.concatenate([empty_arr, scaled_train_predictions])
+shifted_test = np.concatenate([empty_arr, scaled_test_predictions])
 
 # Plot the predictions over the original dataset.
 fig, ax = plt.subplots()
