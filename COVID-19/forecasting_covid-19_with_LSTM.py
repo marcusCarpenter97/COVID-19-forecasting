@@ -8,9 +8,9 @@
 #     2.1 [Present the data](#time_data)
 #     2.2 [Why stationary?](#time_station)
 #     2.3 [ADF and KPSS tests](#time_tests)
-#     2.4 [Making the time series stationary](#time_tranf)
-#          2.4.1 [Differencing](#time_tranf_diff)
-#          2.4.2 [Gaussian Curve](#time_tranf_gauss)
+#     2.4 [Making the time series stationary](#time_transf)
+#          2.4.1 [Differencing](#time_transf_diff)
+#          2.4.2 [Gaussian Curve](#time_transf_gauss)
 # 3. [Preparing the data for the Neural Network](#prep)
 #     3.1 [Train and test](#prep_traintest)
 #     3.2 [Supervised learning](#prep_super)
@@ -29,6 +29,43 @@
 # 7. [Summary of results](#summary)
 #     7.1 [Plot predictions of all algorithms over the original data](#summary_global)
 #     7.2 [Summarize findings](#summmary_findings)
+
+# # 1. Objectives <a name="obj"></a>
+# ## 1.1 Predict current infected <a name="obj_predcur"></a>
+# ## 1.2 Predict deceased <a name="obj_preddece"></a>
+# ## 1.3 How well can the LSTM model the problem? <a name="obj_gener"></a>
+# ## 1.4 How does the LSTM perform when compared with other models? <a name="obj_comp"></a>
+
+# # 2. Time series analysis <a name="time"></a>
+# ## 2.1 Present the data <a name="time_data"></a>
+# ## 2.2 Why stationary? <a name="time_station"></a>
+# ## 2.3 ADF and KPSS tests <a name="time_tests"></a>
+# ## 2.4 Making the time series stationary <a name="time_transf"></a>
+# ### 2.4.1 Differencing <a name="time_transf_diff"></a>
+# ### 2.4.2 Gaussian Curve <a name="time_transf_gauss"></a>
+
+# # 3. Preparing the data for the Neural Network <a name="prep"></a>
+# ## 3.1 Train and test <a name="prep_traintest"></a>
+# ## 3.2 Supervised learning <a name="prep_super"></a>
+
+# # 4. The LSTM <a name="lstm"></a>
+# ## 4.1 Input, hidden and output layers <a name="lstm_layers"></a>
+# ## 4.2 Training the model <a name="lstm_train"></a>
+# ## 4.3 Does differencing make a difference? <a name="lstm_diff"></a>
+# ## 4.4 Results on global data <a name="lstm_global"></a>
+# ## 4.5 Can it generalize? <a name="lstm_gener"></a>
+
+# # 5. The GRU <a name="gru"></a>
+# ## 5.1 Input, hidden and output layers <a name="gru_layers"></a>
+# ## 5.2 Training the model <a name="gru_train"></a>
+# ## 5.3 Results on global data <a name="gru_global"></a>
+
+# # 6. ARIMA <a name="arima"></a>
+# ## 6.1 How many integrations? <a name="arima_int"></a>
+
+# # 7. Summary of results <a name="summary"></a>
+# ## 7.1 Plot predictions of all algorithms over the original data <a name="summary_global"></a>
+# ## 7.2 Summarize findings <a name="summary_findings"></a>
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Reduces tensorflow messages.
