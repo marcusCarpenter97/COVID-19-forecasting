@@ -23,3 +23,35 @@ Bach size: 1 - ? (divisible by data size)
 Activation functions for LSTM layer: tanh (default), ReLU, Swish
 Activation functions for Dense layer: tanh (default), ReLU, Swish
 EarlyStopping Keras callback.
+
+Notebook structure (table of contents):
+Objectives (introduce time series)
+|- Predict current infected (total - (dead + recovered)).
+|- Predict deceased.
+|- How well can the LSTM model the problem? (train on global, test on countries)
+|- How does the LSTM perform when compared with other models? (GRU, ARIMA)
+Time series analysis
+|- Present the data. (tables and graphs, parallel)
+|- Why stationary?
+|- ADF and KPSS tests.
+|- Making the time series stationary.
+   |- Differencing.
+   |- Gaussian Curve.
+Preparing the data for the Neural Network
+|- Train and test (data leakage).
+|- Supervised learning.
+The LSTM
+|- Input, hidden and output layers.
+|- Training the model. 
+|- Does differencing make a difference?
+|- Results on global data.
+|- Can it generalize? (test on individual countries)
+The GRU
+|- Input, hidden and output layers.
+|- Training the model. 
+|- Results on global data.
+ARIMA
+|- How many integrations?
+Summary of results.
+|- Plot predictions of all algorithms over the original data.
+|- Summarize findings.
