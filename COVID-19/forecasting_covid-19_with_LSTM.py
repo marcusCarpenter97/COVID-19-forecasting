@@ -1,34 +1,35 @@
 # # Table of contents:
-# * 1\. [Objectives](#obj)
-#     * 1.1. [Predict current infected](#obj_predcur)
-#     * 1.2. [Predict deceased](#obj_preddece)
-#     * 1.3. [How well can the LSTM model the problem?](#obj_gener)
-#     * 1.4. [How does the LSTM perform when compared with other models?](#obj_comp)
-# * 2\. [Time series analysis](#time)
-#     * 2.2. [Present the data](#time_data)
-#     * 2.3. [Why stationary?](#time_station)
-#     * 2.4. [ADF and KPSS tests](#time_tests)
-#     * 2.5. [Making the time series stationary](#time_transf)
-#          * 2.4.1. [Differencing](#time_transf_diff)
-#          * 2.4.2. [Gaussian Curve](#time_transf_gauss)
-# * 3\. [Preparing the data for the Neural Network](#prep)
-#     * 3.1. [Train and test](#prep_traintest)
-#     * 3.2. [Supervised learning](#prep_super)
-# * 4\. [The LSTM](#lstm)
-#     * 4.1. [Input, hidden and output layers](#lstm_layers)
-#     * 4.2. [Training the model](#lstm_train)
-#     * 4.3. [Does differencing make a difference?](#lstm_diff)
-#     * 4.4. [Results on global data](#lstm_global)
-#     * 4.5. [Can it generalize?](#lstm_gener)
-# * 5\. [The GRU](#gru)
-#     * 5.1. [Input, hidden and output layers](#gru_layers)
-#     * 5.2. [Training the model](#gru_train)
-#     * 5.3. [Results on global data](#gru_global)
-# * 6\. [ARIMA](#arima)
-#     * 6.1. [How many integrations?](#arima_int)
-# * 7\. [Summary of results](#summary)
-#     * 7.1. [Plot predictions of all algorithms over the original data](#summary_global)
-#     * 7.2. [Summarize findings](#summary_findings)
+# * 1\. [The data](#data) 
+# * 2\. [Objectives](#obj)
+#     * 2.1. [Predict current infected](#obj_predcur)
+#     * 2.2. [Predict deceased](#obj_preddece)
+#     * 2.3. [How well can the LSTM model the problem?](#obj_gener)
+#     * 2.4. [How does the LSTM perform when compared with other models?](#obj_comp)
+# * 3\. [Time series analysis](#time)
+#     * 3.2. [Present the data](#time_data)
+#     * 3.3. [Why stationary?](#time_station)
+#     * 3.4. [ADF and KPSS tests](#time_tests)
+#     * 3.5. [Making the time series stationary](#time_transf)
+#          * 3.4.1. [Differencing](#time_transf_diff)
+#          * 3.4.2. [Gaussian Curve](#time_transf_gauss)
+# * 4\. [Preparing the data for the Neural Network](#prep)
+#     * 4.1. [Train and test](#prep_traintest)
+#     * 4.2. [Supervised learning](#prep_super)
+# * 5\. [The LSTM](#lstm)
+#     * 5.1. [Input, hidden and output layers](#lstm_layers)
+#     * 5.2. [Training the model](#lstm_train)
+#     * 5.3. [Does differencing make a difference?](#lstm_diff)
+#     * 5.4. [Results on global data](#lstm_global)
+#     * 5.5. [Can it generalize?](#lstm_gener)
+# * 6\. [The GRU](#gru)
+#     * 6.1. [Input, hidden and output layers](#gru_layers)
+#     * 6.2. [Training the model](#gru_train)
+#     * 6.3. [Results on global data](#gru_global)
+# * 7\. [ARIMA](#arima)
+#     * 7.1. [How many integrations?](#arima_int)
+# * 8\. [Summary of results](#summary)
+#     * 8.1. [Plot predictions of all algorithms over the original data](#summary_global)
+#     * 8.2. [Summarize findings](#summary_findings)
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Reduces tensorflow messages.
@@ -55,16 +56,21 @@ plt.rcParams['figure.figsize'] = [10, 5]  # Adjust plot sizes.
 raw_data = data_handler.load_data()
 current_infected = data_handler.calculate_total_infected(raw_data)
 
-# # 1. Objectives <a name="obj"></a>
-# The Kaggle competition requires two forecasts to be made, the number of infected people and the number of deceased people. There are two more objectives proposed in this notebook. One, how well do the machine learning models perform when compared with eachother Two, how good is the LSTM at generalizing the problem of forecasting the COVID-19. The time series data used in these experiments comes from the GitHub repository for the Johns Hopkins University. This can be found [here](https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_time_series).
-# ## 1.1 Predict current infected <a name="obj_predcur"></a>
-# ## 1.2 Predict deceased <a name="obj_preddece"></a>
-# ## 1.3 How well can the LSTM model the problem? <a name="obj_gener"></a>
-# ## 1.4 How does the LSTM perform when compared with other models? <a name="obj_comp"></a>
+# # 1. The data <a name="data"></a>
+# # 2. Objectives <a name="obj"></a>
+# The Kaggle competition requires two forecasts to be made, the number of infected people and the number of deceased people. There are two more objectives proposed in this notebook. One, how well do the machine learning models perform when compared with eachother Two, how good is the LSTM at generalizing the problem of forecasting the COVID-19. The time series data used in these experiments comes from the Johns Hopkins University GitHub repository. This can be found [here](https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_time_series).
+# ## 2.1 Predict current infected <a name="obj_predcur"></a>
+# To calculate how many people are currently infected with any disease the following formula can be used:
+# current infected = total infected - (deceased + recovered)
+# This formula was used in this notebook to convert the three time series provided into one usable dataset. Now any time series
+# forecasting method can be used on it.
+# ## 2.2 Predict deceased <a name="obj_preddece"></a>
+# ## 2.3 How well can the LSTM model the problem? <a name="obj_gener"></a>
+# ## 2.4 How does the LSTM perform when compared with other models? <a name="obj_comp"></a>
 
-# # 2. Time series analysis <a name="time"></a>
-# ## 2.1 Present the data <a name="time_data"></a>
-# ## 2.2 Why stationary? <a name="time_station"></a>
+# # 3. Time series analysis <a name="time"></a>
+# ## 3.1 Present the data <a name="time_data"></a>
+# ## 3.2 Why stationary? <a name="time_station"></a>
 
 # To create accurate forecasts the time series must be stationary. In other words, there must be no trends in the data. From the
 # plot above it is possible to see that the data is not stationary as the trend seems to be increasing.
@@ -73,7 +79,7 @@ current_infected = data_handler.calculate_total_infected(raw_data)
 
 current_infected.plot()
 
-# ## 2.3 ADF and KPSS tests <a name="time_tests"></a>
+# ## 3.3 ADF and KPSS tests <a name="time_tests"></a>
 
 # This function helps print out the results from the following tests.
 def print_results(res, index, row_names):
@@ -115,8 +121,8 @@ print_results(kpss_results, 3, ['Test Statistic', 'p-value', 'Lags Used'])
 
 # Note: the results will be different every time more data is added to the series.
 
-# ## 2.4 Making the time series stationary <a name="time_transf"></a>
-# ### 2.4.1 Differencing <a name="time_transf_diff"></a>
+# ## 3.4 Making the time series stationary <a name="time_transf"></a>
+# ### 3.4.1 Differencing <a name="time_transf_diff"></a>
 
 # As the tests show there is at least one unit root in the data. This can be removed through differencing the time series.
 # Essentially the difference is taken between each point in the data. As there is no deterministic trend in the data there is no need to use the KPSS test again.
@@ -142,7 +148,7 @@ adf_results = adfuller(third_differenced)
 print("Results for the ADF test:")
 print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number of Observations Used'])
 
-# ### 2.4.2 Gaussian Curve <a name="time_transf_gauss"></a>
+# ### 3.4.2 Gaussian Curve <a name="time_transf_gauss"></a>
 
 # It is desirable that the data fits a Gaussian curve as it is easier to model it. The shape of this dataset can be seen by plotting it as a histogram. It is possible to see that the original data has a long right tail. This means that there a many 'rare values' greater than the mean (average). This makes sense when looking back at the original plot where the curve stays horizontal for a while before the number of infected people start to rise.
 
@@ -182,9 +188,9 @@ fig.tight_layout()
 # drastically affecting the structure of the data.
 
 
-# # 3. Preparing the data for the Neural Network <a name="prep"></a>
+# # 4. Preparing the data for the Neural Network <a name="prep"></a>
 
-# ## 3.1 Train and test <a name="prep_traintest"></a>
+# ## 4.1 Train and test <a name="prep_traintest"></a>
 
 # The neural network used in this experiment is the LSTM, a type of RNN. This was chosen as it was designed to handle sequences like a time series.
 
@@ -211,7 +217,7 @@ fig.autofmt_xdate()
 train_log, train_diff_one, train_diff_two, stationary_train = data_handler.adjust_data(train)
 test_log, test_diff_one, test_diff_two, stationary_test = data_handler.adjust_data(test)
 
-# ## 3.2 Supervised learning <a name="prep_super"></a>
+# ## 4.2 Supervised learning <a name="prep_super"></a>
 
 # Transform the data into a supervised learning dataset. Essentially the LSTM will use a number of observations
 # (forecast horizon) to predict the next event in the sequence, e.g. use four days of data to predict the fifth.
@@ -230,12 +236,12 @@ x_train = x_train.reshape(x_train.shape[0], x_train.shape[1], features)
 x_test = x_test.reshape(x_test.shape[0], x_test.shape[1], features)
 
 
-# # 4. The LSTM <a name="lstm"></a>
+# # 5. The LSTM <a name="lstm"></a>
 
 # A standard sequential model. One layer after the other.
 model = Sequential()
 
-# ## 4.1 Input, hidden and output layers <a name="lstm_layers"></a>
+# ## 5.1 Input, hidden and output layers <a name="lstm_layers"></a>
 
 # ### The input layer.
 # The LSTM receives the input as an array of size equals to the forecast horizon where each item is an array of size one.
@@ -262,7 +268,7 @@ model.add(Dense(out_shape))
 dense_activation = "sigmoid"  # The activation function for the output node works the same as for the hidden layer.
 model.add(Activation(dense_activation))
 
-# ## 4.2 Training the model <a name="lstm_train"></a>
+# ## 5.2 Training the model <a name="lstm_train"></a>
 
 # Here the model is told how to learn. The objective of the optimizer is to make the output of the loss function smaller.
 loss = "mean_squared_error"
@@ -280,8 +286,8 @@ history = model.fit(x_train, y_train, epochs=1000, batch_size=1, verbose=0, call
                     validation_split=0.2)
 
 
-# ## 4.3 Does differencing make a difference? <a name="lstm_diff"></a>
-# ## 4.4 Results on global data <a name="lstm_global"></a>
+# ## 5.3 Does differencing make a difference? <a name="lstm_diff"></a>
+# ## 5.4 Results on global data <a name="lstm_global"></a>
 
 # Make the predictions. The predictions on the training data are only used to measure the model's performance as it should have
 # already learnt it.
@@ -364,16 +370,16 @@ print(f"RMSE on test: {test_rmse}")
 print(f"RMSLE on train: {train_rmsle}")
 print(f"RMSLE on test: {test_rmsle}")
 
-# ## 4.5 Can it generalize? <a name="lstm_gener"></a>
+# ## 5.5 Can it generalize? <a name="lstm_gener"></a>
 
-# # 5. The GRU <a name="gru"></a>
-# ## 5.1 Input, hidden and output layers <a name="gru_layers"></a>
-# ## 5.2 Training the model <a name="gru_train"></a>
-# ## 5.3 Results on global data <a name="gru_global"></a>
+# # 6. The GRU <a name="gru"></a>
+# ## 6.1 Input, hidden and output layers <a name="gru_layers"></a>
+# ## 6.2 Training the model <a name="gru_train"></a>
+# ## 6.3 Results on global data <a name="gru_global"></a>
 
-# # 6. ARIMA <a name="arima"></a>
-# ## 6.1 How many integrations? <a name="arima_int"></a>
+# # 7. ARIMA <a name="arima"></a>
+# ## 7.1 How many integrations? <a name="arima_int"></a>
 
-# # 7. Summary of results <a name="summary"></a>
-# ## 7.1 Plot predictions of all algorithms over the original data <a name="summary_global"></a>
-# ## 7.2 Summarize findings <a name="summary_findings"></a>
+# # 8. Summary of results <a name="summary"></a>
+# ## 8.1 Plot predictions of all algorithms over the original data <a name="summary_global"></a>
+# ## 8.2 Summarize findings <a name="summary_findings"></a>
