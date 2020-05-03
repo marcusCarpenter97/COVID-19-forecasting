@@ -53,6 +53,7 @@ import matplotlib.pyplot as plt
 plt.rcParams['figure.figsize'] = [10, 5]  # Adjust plot sizes.
 
 # # 1. The data <a name="data"></a>
+
 # Before any analysis can be done it is important to understand the data we will be working with. The data comes from the 
 # [Johns Hopkins University GitHub repository](https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_time_series). This data set provides three time series; the total infected, recovered and deceased.
 
@@ -81,10 +82,10 @@ recovered = raw_data[2].sum()[2:]
 fig, ax = plt.subplots()
 ax.plot(confirmed)
 ax.plot(current_infected)
-ax.plot(deceased)
 ax.plot(recovered)
+ax.plot(deceased)
 ax.set_title('COVID-19 data')
-ax.legend(['Total confirmed', 'Current infected', 'Deceased', 'Recovered'])
+ax.legend(['Total confirmed', 'Current infected', 'Recovered', 'Deceased'])
 ax.set_ylabel('People')
 ax.set_xlabel('Time')
 start, end = ax.get_xlim()
@@ -92,19 +93,84 @@ ax.xaxis.set_ticks(np.arange(start, end, 4))
 fig.autofmt_xdate()
 
 # # 2. Objectives <a name="obj"></a>
-# The Kaggle competition requires two forecasts to be made, the number of infected people and the number of deceased people. There
-# are two more objectives proposed in this notebook. One, how well do the machine learning models perform when compared with
-# eachother Two, how good is the LSTM at generalizing the problem of forecasting the COVID-19. The time series data used in these
-# experiments comes from the  This can be found
-# [here]
-# ## 2.1 Predict current infected <a name="obj_predcur"></a>
-# To calculate how many people are currently infected with any disease the following formula can be used:
-#
-# This formula was used in this notebook to convert the three time series provided into one usable dataset. Now any time series
-# forecasting method can be used on it.
-# ## 2.2 Predict deceased <a name="obj_preddece"></a>
-# ## 2.3 How well can the LSTM model the problem? <a name="obj_gener"></a>
+
+# The Kaggle competition requires two forecasts to be made, the number of infected people and the number of deceased people.
+# There are two more objectives proposed in this notebook. One, how well do the machine learning models perform when compared with
+# eachother? Two, how good is the LSTM at generalizing the problem of forecasting the COVID-19?
+
+# ## 2.1 The Kaggle compettition <a name="obj_kaggle"></a>
+
+# Now that the data has been explained, it is possible to use any time series forecasting method on it. In this notebook the
+# selected methods where the LSTM, GRU and ARIMA. Performance will be compared using the RMSLE as determined by Kaggle.
+
+# ## 2.3 How well can the LSTM model COVID-19? <a name="obj_gener"></a>
+
+# To prove that the LSTM has actualy learnt from the data it is necessary to create forecasts on unseen data. A testing 
+# set is usualy separated from the data before using the rest to train a neural network. But how well can the network model the
+# virus? This can be verified by using the same model trained on the global data and using it to make predictions on individual
+# countries. Technicaly the global data contains all the information present in each individual country. This will allow the
+# model to actualy learn how the number of inferted people change over time.
+
+# The following code prepares the data for a plot demonstrating the above pagraph.
+uk_data = []
+# Total confirmed cases in the UK.
+uk_data.append(raw_data[0][raw_data[0]['Country/Region'].isin(['United Kingdom'])])
+# Total deceased cases in the UK.
+uk_data.append(raw_data[1][raw_data[1]['Country/Region'].isin(['United Kingdom'])])
+# Total recovered cases in the UK.
+uk_data.append(raw_data[2][raw_data[2]['Country/Region'].isin(['United Kingdom'])])
+# Make the deceased table into a time series.
+uk_deceased = uk_data[1].sum()[2:]
+# Calculate time series of infected people in UK.
+uk_infected = data_handler.calculate_current_infected(uk_data)
+# Split UK infected.
+uk_inf_train, uk_inf_test = data_handler.split_train_test(uk_infected, 0.7)
+# Split UK deceased.
+uk_dec_train, uk_dec_test = data_handler.split_train_test(uk_deceased, 0.7)
+# Split global infected.
+global_inf_train, global_inf_test = data_handler.split_train_test(current_infected, 0.7)
+
+fig, ax = plt.subplots()
+ax.plot(global_inf_train)
+ax.plot(global_inf_test)
+ax.plot(uk_inf_test)
+ax.plot(uk_dec_test)
+ax.set_ylabel('People')
+ax.set_xlabel('Time')
+ax.legend(['Global infected (train data)', 'Global infected (test data)', 'UK infected (test data)', 'UK deceased (test data)'], loc='best')
+# Prevent the x-axis labels from overlapping.
+start, end = ax.get_xlim()
+ax.xaxis.set_ticks(np.arange(start, end, 4))
+fig.autofmt_xdate()
+
+# Is a model trined on the global infected (blue  line) capable of creating accurate forecasts for the UK data?
+
 # ## 2.4 How does the LSTM perform when compared with other models? <a name="obj_comp"></a>
+
+# RMSE, allong with the RMSLE, was used to compare the performance for the models. Plots were also used to show how the selected
+# models perform on the data. MASE was used to calculate the accuracy of forecasts. As this uses
+# percentages it is possible to compare different methods quite well.
+# The three loss functions used to compare the models performance are:
+
+# #### Root Mean Squared Error (RMSE):
+# Calculates the average error in the forecasts. Values calculated by this function represent the number of people the forecast
+# got wrong.
+
+# $ RMSE = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(p_i-r_i)^2} $
+# Where *p* is the predicted value, *r* is the real value and *n* is the number of data.
+
+# #### Root Mean Squared Log Error (RMSLE):
+# Other than being chosen by Kaggle, this loss function penalises predictions smaller than the real value. So, according to this
+# function, overestimating the number of infected people is better than underestimating it.
+
+# $ RMSLE = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(\ln(p_i+1)-\ln(r_i+1))^2} $
+# Where *p* is the predicted value, *r* is the real value and *n* is the number of data.
+
+# #### Mean Absolure Squared Error (MASE):
+# This represents the forecast error as a ratio. This is usefull as it allows forecasts on different scales to be compared.
+
+# $ MASE = \frac{\frac{1}{J}\sum_{j}|p_i-r_i|}{\frac{1}{T-1}\sum_{t=2}^{T}|r_t-r_{t-1}|}  $
+# Where *p* is the predicted value, *r* is the real value , *T* is the size of the training set, *J* is the number of forecats.
 
 # # 3. Time series analysis <a name="time"></a>
 # ## 3.1 Present the data <a name="time_data"></a>
