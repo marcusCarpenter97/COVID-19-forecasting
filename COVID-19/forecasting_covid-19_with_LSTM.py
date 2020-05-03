@@ -52,16 +52,54 @@ from statsmodels.tsa.stattools import adfuller, kpss
 import matplotlib.pyplot as plt
 plt.rcParams['figure.figsize'] = [10, 5]  # Adjust plot sizes.
 
-# Load the time series data of total infected people.
-raw_data = data_handler.load_data()
-current_infected = data_handler.calculate_total_infected(raw_data)
-
 # # 1. The data <a name="data"></a>
+# Before any analysis can be done it is important to understand the data we will be working with. The data comes from the 
+# [Johns Hopkins University GitHub repository](https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_time_series). This data set provides three time series; the total infected, recovered and deceased.
+
+# This function fetches the data from the GitHub repository, if necessary, and returns a list of dataframes with each time series.
+raw_data = data_handler.load_data()
+
+# Here is how the data looks like in table format.
+raw_data[0].head()  # Confirmed.
+
+raw_data[1].head()  # Deceased.
+
+raw_data[2].head()  # Recovered.
+
+# It is also possible to view the data for a specific country.
+raw_data[0][raw_data[0]['Country/Region'].isin(['United Kingdom'])]  # Total confirmed cases in the UK.
+
+# The following formula can be used to find the number of current infected as oposed to total infected (confirmed cases):
+# current infected = total infected - (deceased + recovered) 
+current_infected = data_handler.calculate_current_infected(raw_data)
+
+# Plotting the data hepls to visualise it better. But first all rows must be summed up into one time series.
+confirmed = raw_data[0].sum()[2:]  # The first two rows are the sums of Long and Lat which must be removed.
+deceased = raw_data[1].sum()[2:]
+recovered = raw_data[2].sum()[2:]
+
+fig, ax = plt.subplots()
+ax.plot(confirmed)
+ax.plot(current_infected)
+ax.plot(deceased)
+ax.plot(recovered)
+ax.set_title('COVID-19 data')
+ax.legend(['Total confirmed', 'Current infected', 'Deceased', 'Recovered'])
+ax.set_ylabel('People')
+ax.set_xlabel('Time')
+start, end = ax.get_xlim()
+ax.xaxis.set_ticks(np.arange(start, end, 4))
+fig.autofmt_xdate()
+
 # # 2. Objectives <a name="obj"></a>
-# The Kaggle competition requires two forecasts to be made, the number of infected people and the number of deceased people. There are two more objectives proposed in this notebook. One, how well do the machine learning models perform when compared with eachother Two, how good is the LSTM at generalizing the problem of forecasting the COVID-19. The time series data used in these experiments comes from the Johns Hopkins University GitHub repository. This can be found [here](https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_time_series).
+# The Kaggle competition requires two forecasts to be made, the number of infected people and the number of deceased people. There
+# are two more objectives proposed in this notebook. One, how well do the machine learning models perform when compared with
+# eachother Two, how good is the LSTM at generalizing the problem of forecasting the COVID-19. The time series data used in these
+# experiments comes from the  This can be found
+# [here]
 # ## 2.1 Predict current infected <a name="obj_predcur"></a>
 # To calculate how many people are currently infected with any disease the following formula can be used:
-# current infected = total infected - (deceased + recovered)
+#
 # This formula was used in this notebook to convert the three time series provided into one usable dataset. Now any time series
 # forecasting method can be used on it.
 # ## 2.2 Predict deceased <a name="obj_preddece"></a>
