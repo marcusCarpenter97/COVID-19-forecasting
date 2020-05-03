@@ -73,7 +73,7 @@ def load_updated_data():
     get_github_updates()
     return load_data()
 
-def calculate_total_infected(data):
+def calculate_current_infected(data):
     """
     Infected people = confirmed - (dead + recovered) 
     The time series for each country/region must be summed for a total.
