@@ -39,7 +39,7 @@ import warnings
 warnings.filterwarnings('ignore')  # Reduces warning messages.
 
 from keras.models import Sequential
-from keras.layers import LSTM, Dense, Activation, Dropout
+from keras.layers import LSTM, GRU, Dense, Activation, Dropout
 from keras.callbacks.callbacks import EarlyStopping
 
 import data_handler  # Custom module used to fetch and prepare data from GitHub.
@@ -370,7 +370,7 @@ x_test = x_test.reshape(x_test.shape[0], x_test.shape[1], features)
 # # 5. The LSTM <a name="lstm"></a>
 
 # A standard sequential model. One layer after the other.
-model = Sequential()
+lstm_model = Sequential()
 
 # ## 5.1 Input, hidden and output layers <a name="lstm_layers"></a>
 
@@ -383,31 +383,31 @@ input_layer = (forecast_horizon, 1)
 # ### 5.1.2 The hidden layer.
 
 nodes = 5  #  The number of nodes in the hidden layer represents how 'wide' the network will be.
-model.add(LSTM(nodes, input_shape=input_layer))
+lstm_model.add(LSTM(nodes, input_shape=input_layer))
 
 lstm_activation = "relu"  # The activation function decides how much information flows though the nodes.
-model.add(Activation(lstm_activation))
+lstm_model.add(Activation(lstm_activation))
 
 # The dropout function selects nodes at random and uses them during one training epoch (iteration). This is applied for each training epoch.
 #This helps reduce overfitting by making the nodes learn the data instead of relying on other nodes.
 rate = 0.1 # The probability of a node being ignored during training, e.g. 10%.
-model.add(Dropout(rate))
+lstm_model.add(Dropout(rate))
 
 # ### 5.1.3 The output layer.
 
 out_shape = 1  # The number of outputs the LSTM will produce. Technically the number of nodes in the dense layer.
 # It is possible to output the forecasts for the next few days but in this model only one value will be produced.
-model.add(Dense(out_shape))
+lstm_model.add(Dense(out_shape))
 
 dense_activation = "sigmoid"  # The activation function for the output node works the same as for the hidden layer.
-model.add(Activation(dense_activation))
+lstm_model.add(Activation(dense_activation))
 
 # ## 5.2 Training the model <a name="lstm_train"></a>
 
 # Here the model is told how to learn. The objective of the optimizer is to make the output of the loss function smaller.
 loss = "mean_squared_error"
 opti = "adam"
-model.compile(loss=loss, optimizer=opti)
+lstm_model.compile(loss=loss, optimizer=opti)
 
 # This will stop the training if the loss does not change for 50 consecutive epochs.
 early_stopping = EarlyStopping(patience=50, restore_best_weights=True)
@@ -416,7 +416,7 @@ early_stopping = EarlyStopping(patience=50, restore_best_weights=True)
 # the output (y_train). One input will pass through the LSTM at a time (batch_size) until all inputs are processed. This will be
 # done 1000 times (epochs) and in each iteration the network will (hopefully) 'learn' a little more. One fifth of the training
 # data (0.2) is left out as a validation set for each epoch.
-history = model.fit(x_train, y_train, epochs=1000, batch_size=1, verbose=0, callbacks=[early_stopping],
+lstm_history = lstm_model.fit(x_train, y_train, epochs=1000, batch_size=1, verbose=0, callbacks=[early_stopping],
                     validation_split=0.2)
 
 # ## 5.3 Does differencing make a difference? <a name="lstm_diff"></a>
@@ -424,8 +424,8 @@ history = model.fit(x_train, y_train, epochs=1000, batch_size=1, verbose=0, call
 
 # Make the predictions. The predictions on the training data are only used to measure the model's performance as it should have
 # already learnt it.
-train_prediction = model.predict(x_train)
-test_prediction = model.predict(x_test)
+train_prediction = lstm_model.predict(x_train)
+test_prediction = lstm_model.predict(x_test)
 
 # Rescale predictions.
 scaled_train_predictions = data_handler.rescale_data(train_prediction, 
@@ -452,15 +452,15 @@ scaled_test = data_handler.rescale_data(y_test,
                                         forecast_horizon)
 
 # Calculate the error values.
-train_rmse = rmse(scaled_train, scaled_train_predictions)
-test_rmse = rmse(scaled_test, scaled_test_predictions)
-train_rmsle = rmsle(scaled_train, scaled_train_predictions)
-test_rmsle = rmsle(scaled_test, scaled_test_predictions)
+lstm_train_rmse = rmse(scaled_train, scaled_train_predictions)
+lstm_test_rmse = rmse(scaled_test, scaled_test_predictions)
+lstm_train_rmsle = rmsle(scaled_train, scaled_train_predictions)
+lstm_test_rmsle = rmsle(scaled_test, scaled_test_predictions)
 
 # Plot model loss history.
 fig, ax = plt.subplots()
-ax.plot(history.history['loss'])
-ax.plot(history.history['val_loss'])
+ax.plot(lstm_history.history['loss'])
+ax.plot(lstm_history.history['val_loss'])
 ax.set_title('Model loss')
 ax.set_ylabel('Loss')
 ax.set_xlabel('Epoch')
@@ -491,17 +491,88 @@ start, end = ax.get_xlim()
 ax.xaxis.set_ticks(np.arange(start, end, 4))
 fig.autofmt_xdate()
 
-print(f"RMSE on train: {train_rmse}")
-print(f"RMSE on test: {test_rmse}")
-print(f"RMSLE on train: {train_rmsle}")
-print(f"RMSLE on test: {test_rmsle}")
+print(f"RMSE on train: {lstm_train_rmse}")
+print(f"RMSE on test: {lstm_test_rmse}")
+print(f"RMSLE on train: {lstm_train_rmsle}")
+print(f"RMSLE on test: {lstm_test_rmsle}")
 
 # ## 5.5 Can it generalize? <a name="lstm_gener"></a>
 
 # # 6. The GRU <a name="gru"></a>
+
+gru_model = Sequential()
+
 # ## 6.1 Input, hidden and output layers <a name="gru_layers"></a>
+
+# ### 6.1.1 The input layer.
+
+gru_input_layer = (forecast_horizon, 1)
+
+# ### 6.1.2 The hidden layer.
+
+gru_nodes = 5
+gru_model.add(GRU(gru_nodes, input_shape=gru_input_layer))
+
+gru_activation = "relu"
+gru_model.add(Activation(gru_activation))
+
+gru_rate = 0.1
+gru_model.add(Dropout(gru_rate))
+
+# ### 6.1.3 The output layer.
+
+gru_out_shape = 1
+gru_model.add(Dense(gru_out_shape))
+
+gru_dense_activation = "sigmoid"
+gru_model.add(Activation(gru_dense_activation))
+
 # ## 6.2 Training the model <a name="gru_train"></a>
+
+gru_loss = "mean_squared_error"
+gru_opti = "adam"
+gru_model.compile(loss=gru_loss, optimizer=gru_opti)
+
+# The early stopping callbak is the same as the one used in the LSTM.
+gru_history = gru_model.fit(x_train, y_train, epochs=1000, batch_size=1, verbose=0, callbacks=[early_stopping],
+                            validation_split=0.2)
+
 # ## 6.3 Results on global data <a name="gru_global"></a>
+
+gru_train_prediction = gru_model.predict(x_train)
+gru_test_prediction = gru_model.predict(x_test)
+ 
+gru_scaled_train_predictions = data_handler.rescale_data(gru_train_prediction, 
+                                                     train_diff_one[0], 
+                                                     train_diff_two[0], 
+                                                     train_log[0], 
+                                                     forecast_horizon)
+gru_scaled_test_predictions = data_handler.rescale_data(gru_test_prediction, 
+                                                    test_diff_one[0], 
+                                                    test_diff_two[0], 
+                                                    test_log[0], 
+                                                    forecast_horizon)
+
+gru_scaled_train = data_handler.rescale_data(y_train, 
+                                         train_diff_one[0], 
+                                         train_diff_two[0], 
+                                         train_log[0], 
+                                         forecast_horizon)
+gru_scaled_test = data_handler.rescale_data(y_test, 
+                                        test_diff_one[0], 
+                                        test_diff_two[0], 
+                                        test_log[0], 
+                                        forecast_horizon)
+
+gru_train_rmse = rmse(gru_scaled_train, gru_scaled_train_predictions)
+gru_test_rmse = rmse(gru_scaled_test, gru_scaled_test_predictions)
+gru_train_rmsle = rmsle(gru_scaled_train, gru_scaled_train_predictions)
+gru_test_rmsle = rmsle(gru_scaled_test, gru_scaled_test_predictions)
+
+print(f"RMSE on train: {gru_train_rmse}")
+print(f"RMSE on test: {gru_test_rmse}")
+print(f"RMSLE on train: {gru_train_rmsle}")
+print(f"RMSLE on test: {gru_test_rmsle}")
 
 # # 7. ARIMA <a name="arima"></a>
 # ## 7.1 How many integrations? <a name="arima_int"></a>
