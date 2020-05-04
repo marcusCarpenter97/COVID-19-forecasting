@@ -1,6 +1,6 @@
 # # Table of contents:
 
-# * 1\. [The data](#data) 
+# * 1\. [The data](#data)
 # * 2\. [Objectives](#obj)
 #     * 2.1. [Predict current infected](#obj_predcur)
 #     * 2.2. [Predict deceased](#obj_preddece)
@@ -55,34 +55,34 @@ plt.rcParams['figure.figsize'] = [10, 5]  # Adjust plot sizes.
 
 # # 1. The data <a name="data"></a>
 
-# Before any analysis can be done it is important to understand the data we will be working with. The data comes from the 
+# Before any analysis can be done it is important to understand the data we will be working with. The data comes from the
 # [Johns Hopkins University GitHub repository](https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_time_series). This data set provides three time series; the total infected, recovered and deceased.
 
 # This function fetches the data from the GitHub repository, if necessary, and returns a list of dataframes with each time series.
-raw_data = data_handler.load_data()
+RAW_DATA = data_handler.load_data()
 
 # Here is how the data looks like in table format.
-raw_data[0].head()  # Confirmed.
+RAW_DATA[0].head()  # Confirmed.
 
-raw_data[1].head()  # Deceased.
+RAW_DATA[1].head()  # Deceased.
 
-raw_data[2].head()  # Recovered.
+RAW_DATA[2].head()  # Recovered.
 
 # It is also possible to view the data for a specific country.
-raw_data[0][raw_data[0]['Country/Region'].isin(['United Kingdom'])]  # Total confirmed cases in the UK.
+RAW_DATA[0][RAW_DATA[0]['Country/Region'].isin(['United Kingdom'])]  # Total CONFIRMED cases in the UK.
 
-# The following formula can be used to find the number of current infected as oposed to total infected (confirmed cases):
-# current infected = total infected - (deceased + recovered) 
-current_infected = data_handler.calculate_current_infected(raw_data)
+# The following formula can be used to find the number of current infected as oposed to total infected (CONFIRMED cases):
+# current infected = total infected - (deceased + recovered)
+CURRENT_INFECTED = data_handler.calculate_current_infected(RAW_DATA)
 
 # Plotting the data hepls to visualise it better. But first all rows must be summed up into one time series.
-confirmed = raw_data[0].sum()[2:]  # The first two rows are the sums of Long and Lat which must be removed.
-deceased = raw_data[1].sum()[2:]
-recovered = raw_data[2].sum()[2:]
+CONFIRMED = RAW_DATA[0].sum()[2:]  # The first two rows are the sums of Long and Lat which must be removed.
+deceased = RAW_DATA[1].sum()[2:]
+recovered = RAW_DATA[2].sum()[2:]
 
 fig, ax = plt.subplots()
-ax.plot(confirmed)
-ax.plot(current_infected)
+ax.plot(CONFIRMED)
+ax.plot(CURRENT_INFECTED)
 ax.plot(recovered)
 ax.plot(deceased)
 ax.set_title('COVID-19 data')
@@ -106,7 +106,7 @@ fig.autofmt_xdate()
 
 # ## 2.3 How well can the LSTM model COVID-19? <a name="obj_gener"></a>
 
-# To prove that the LSTM has actualy learnt from the data it is necessary to create forecasts on unseen data. A testing 
+# To prove that the LSTM has actualy learnt from the data it is necessary to create forecasts on unseen data. A testing
 # set is usualy separated from the data before using the rest to train a neural network. But how well can the network model the
 # virus? This can be verified by using the same model trained on the global data and using it to make predictions on individual
 # countries. Technicaly the global data contains all the information present in each individual country. This will allow the
@@ -114,12 +114,12 @@ fig.autofmt_xdate()
 
 # The following code prepares the data for a plot demonstrating the above pagraph.
 uk_data = []
-# Total confirmed cases in the UK.
-uk_data.append(raw_data[0][raw_data[0]['Country/Region'].isin(['United Kingdom'])])
+# Total CONFIRMED cases in the UK.
+uk_data.append(RAW_DATA[0][RAW_DATA[0]['Country/Region'].isin(['United Kingdom'])])
 # Total deceased cases in the UK.
-uk_data.append(raw_data[1][raw_data[1]['Country/Region'].isin(['United Kingdom'])])
+uk_data.append(RAW_DATA[1][RAW_DATA[1]['Country/Region'].isin(['United Kingdom'])])
 # Total recovered cases in the UK.
-uk_data.append(raw_data[2][raw_data[2]['Country/Region'].isin(['United Kingdom'])])
+uk_data.append(RAW_DATA[2][RAW_DATA[2]['Country/Region'].isin(['United Kingdom'])])
 # Make the deceased table into a time series.
 uk_deceased = uk_data[1].sum()[2:]
 # Calculate time series of infected people in UK.
@@ -129,7 +129,7 @@ uk_inf_train, uk_inf_test = data_handler.split_train_test(uk_infected, 0.7)
 # Split UK deceased.
 uk_dec_train, uk_dec_test = data_handler.split_train_test(uk_deceased, 0.7)
 # Split global infected.
-global_inf_train, global_inf_test = data_handler.split_train_test(current_infected, 0.7)
+global_inf_train, global_inf_test = data_handler.split_train_test(CURRENT_INFECTED, 0.7)
 
 fig, ax = plt.subplots()
 ax.plot(global_inf_train)
@@ -194,7 +194,7 @@ def mase(prediction, target, train_size):
 # than simply 'looking' at the data as it can find (and prove the existence of) useful features in the series.
 
 # The plot of the current infected shows a clear trend in the data.
-current_infected.plot()
+CURRENT_INFECTED.plot()
 
 # ## 3.2 ADF and KPSS tests <a name="time_tests"></a>
 
@@ -213,7 +213,7 @@ def print_results(res, index, row_names):
 # * The null hypothesis is assumed to be true until it is proven to be false, i.e. it is assumed that the data is not stationary by default.
 # * To reject the null hypothesis (prove there is no trend) the p-value produced by the test must be less than the Critical Value.
 # * The Critical Value represents how certain the test is of its results, e.g. if the p-value is lest than 0.05 (5%) then we can say that the test is 95% confident that the time series is stationary.
-adf_results = adfuller(current_infected)
+adf_results = adfuller(CURRENT_INFECTED)
 print("Results for the ADF test:")
 print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number of Observations Used'])
 
@@ -229,7 +229,7 @@ print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number
 # * The p-value and the Critical Values work the same ass the ADF test.
 # * However, if the null hypothesis is not rejected, the KPSS shows that the data is 'trend' stationary. This means that it is stationary around a deterministic trend.
 # * For example, a linear trend is present where all values increase over time. If this trend is removed the data will become stationary.
-kpss_results = kpss(current_infected, nlags='auto')
+kpss_results = kpss(CURRENT_INFECTED, nlags='auto')
 print("Results for the KPSS test:")
 print_results(kpss_results, 3, ['Test Statistic', 'p-value', 'Lags Used'])
 
@@ -250,15 +250,15 @@ print_results(kpss_results, 3, ['Test Statistic', 'p-value', 'Lags Used'])
 # Differencing takes the difference between each point in the data. The result of this is a series showing the change in the data.
 # Example: The fist row shows the number of infected people while the second (differenced) row shows the change in infected
 # people. This proces removes the unit root from the data and can be repeated as many times as necessary.
-table = current_infected.head().T
-table.append(current_infected.head().diff().T)
+table = CURRENT_INFECTED.head().T
+table.append(CURRENT_INFECTED.head().diff().T)
 
 # It is important to note that every time the data is differenced some level of detail is lost. This can be verified by the NaN
 # value in the second row.
 
 # Now that differencing has been explained it can be applied on the full dataset. The graph now shows the global rate of
 # infection.
-first_differenced = current_infected.diff().dropna()
+first_differenced = CURRENT_INFECTED.diff().dropna()
 first_differenced.plot()
 
 # Another ADF test on the differenced data shows that there is still a unit root in the data. This means that the data must be differenced again.
@@ -287,14 +287,14 @@ print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number
 # On the other hand, the data after being differenced three times looks more like a Gaussian distribution (the bell shape). This is because the trends where removed.
 
 fig, ax = plt.subplots(2, 1)
-current_infected.plot(kind='hist', ax=ax[0])
+CURRENT_INFECTED.plot(kind='hist', ax=ax[0])
 ax[0].set_title("Original dataset.")
 third_differenced.plot(kind='hist', ax=ax[1])
 ax[1].set_title("Dataset without unit roots.")
 fig.tight_layout()
 
-# #### 3.4.2.1 The BoxCox methods 
-one_d_ci = [i[0] for i in current_infected.values]  # The boxcox methods require 1 dimensional data.
+# #### 3.4.2.1 The BoxCox methods
+one_d_ci = [i[0] for i in CURRENT_INFECTED.values]  # The boxcox methods require 1 dimensional data.
 
 data1 = boxcox(one_d_ci, -1)    # reciprocal transform.
 data2 = boxcox(one_d_ci, -0.5)  # reciprocal square root transform.
@@ -302,22 +302,24 @@ data3 = boxcox(one_d_ci, 0)     # log transform.
 data4 = boxcox(one_d_ci, 0.5)   # square root transform.
 
 fig, axes = plt.subplots(2, 2)
-axes[0,0].hist(data1)
-axes[0,0].set_title('Reciprocal transform')
-start, end = axes[0,0].get_xlim()  # Prevents the labels on the x-axis from overlapping.
-axes[0,0].xaxis.set_ticks(np.arange(start, end, 0.00050))
-axes[0,1].hist(data2)
-axes[0,1].set_title('Reciprocal square root transform')
-axes[1,0].hist(data3)
-axes[1,0].set_title('Log transform')
-axes[1,1].hist(data4)
-axes[1,1].set_title('Square root transform')
+axes[0, 0].hist(data1)
+axes[0, 0].set_title('Reciprocal transform')
+start, end = axes[0, 0].get_xlim()  # Prevents the labels on the x-axis from overlapping.
+axes[0, 0].xaxis.set_ticks(np.arange(start, end, 0.00050))
+axes[0, 1].hist(data2)
+axes[0, 1].set_title('Reciprocal square root transform')
+axes[1, 0].hist(data3)
+axes[1, 0].set_title('Log transform')
+axes[1, 1].hist(data4)
+axes[1, 1].set_title('Square root transform')
 fig.tight_layout()
 
 # From the graphs above it is possible to see that the method that makes the data look more like a Gaussian distribution is the
 # log transform. This can be used on the data to 'squash' the values before giving it to the neural network. This is important
 # because it would take longer to process the larger numbers. Taking the log of the data will reduce training time without
 # drastically affecting the structure of the data.
+
+# Note that the these transformations where applied to the original data before the differencing.
 
 # # 4. Preparing the data for the Neural Network <a name="prep"></a>
 
@@ -331,7 +333,7 @@ train_set_ratio = 0.7  # The size of the training set as a percentage of the dat
 
 # Split the data into train and test sets. This must be done before any transformations to avoid data leakage. Otherwise there might be information about the test set in the train set because of the data transformation applied.
 # Note: the transformations done before where for the analysis of the time series, now they will be used to actually reshape the data.
-train, test = data_handler.split_train_test(current_infected, train_set_ratio)
+train, test = data_handler.split_train_test(CURRENT_INFECTED, train_set_ratio)
 
 # This helps visualize the train and test data.
 fig, ax = plt.subplots()
@@ -417,7 +419,7 @@ early_stopping = EarlyStopping(patience=50, restore_best_weights=True)
 # done 1000 times (epochs) and in each iteration the network will (hopefully) 'learn' a little more. One fifth of the training
 # data (0.2) is left out as a validation set for each epoch.
 lstm_history = lstm_model.fit(x_train, y_train, epochs=1000, batch_size=1, verbose=0, callbacks=[early_stopping],
-                    validation_split=0.2)
+        validation_split=0.2)
 
 # ## 5.3 Does differencing make a difference? <a name="lstm_diff"></a>
 # ## 5.4 Results on global data <a name="lstm_global"></a>
@@ -428,28 +430,28 @@ train_prediction = lstm_model.predict(x_train)
 test_prediction = lstm_model.predict(x_test)
 
 # Rescale predictions.
-scaled_train_predictions = data_handler.rescale_data(train_prediction, 
-                                                     train_diff_one[0], 
-                                                     train_diff_two[0], 
-                                                     train_log[0], 
-                                                     forecast_horizon)
-scaled_test_predictions = data_handler.rescale_data(test_prediction, 
-                                                    test_diff_one[0], 
-                                                    test_diff_two[0], 
-                                                    test_log[0], 
-                                                    forecast_horizon)
+scaled_train_predictions = data_handler.rescale_data(train_prediction,
+        train_diff_one[0],
+        train_diff_two[0],
+        train_log[0],
+        forecast_horizon)
+scaled_test_predictions = data_handler.rescale_data(test_prediction,
+        test_diff_one[0],
+        test_diff_two[0],
+        test_log[0],
+        forecast_horizon)
 
 # Rescale the answers.
-scaled_train = data_handler.rescale_data(y_train, 
-                                         train_diff_one[0], 
-                                         train_diff_two[0], 
-                                         train_log[0], 
-                                         forecast_horizon)
-scaled_test = data_handler.rescale_data(y_test, 
-                                        test_diff_one[0], 
-                                        test_diff_two[0], 
-                                        test_log[0], 
-                                        forecast_horizon)
+scaled_train = data_handler.rescale_data(y_train,
+        train_diff_one[0],
+        train_diff_two[0],
+        train_log[0],
+        forecast_horizon)
+scaled_test = data_handler.rescale_data(y_test,
+        test_diff_one[0],
+        test_diff_two[0],
+        test_log[0],
+        forecast_horizon)
 
 # Calculate the error values.
 lstm_train_rmse = rmse(scaled_train, scaled_train_predictions)
@@ -468,7 +470,7 @@ ax.legend(['Train', 'Test'], loc='best')
 
 # Some preparation to plot the predictions is needed.
 
-# The first sample is lost after each differencing, so the + 2 is required. 
+# The first sample is lost after each differencing, so the + 2 is required.
 empty_arr = np.empty((forecast_horizon+2, 1))
 empty_arr[:] = np.nan
 shifted_train = np.concatenate([empty_arr, scaled_train_predictions])
@@ -479,7 +481,7 @@ shifted_test = np.concatenate([empty_arr, scaled_test_predictions])
 
 # Plot the predictions over the original dataset.
 fig, ax = plt.subplots()
-ax.plot(current_infected)
+ax.plot(CURRENT_INFECTED)
 ax.plot(shifted_train)
 ax.plot(shifted_test)
 ax.set_title('Prediction over original')
@@ -535,34 +537,34 @@ gru_model.compile(loss=gru_loss, optimizer=gru_opti)
 
 # The early stopping callbak is the same as the one used in the LSTM.
 gru_history = gru_model.fit(x_train, y_train, epochs=1000, batch_size=1, verbose=0, callbacks=[early_stopping],
-                            validation_split=0.2)
+        validation_split=0.2)
 
 # ## 6.3 Results on global data <a name="gru_global"></a>
 
 gru_train_prediction = gru_model.predict(x_train)
 gru_test_prediction = gru_model.predict(x_test)
- 
-gru_scaled_train_predictions = data_handler.rescale_data(gru_train_prediction, 
-                                                     train_diff_one[0], 
-                                                     train_diff_two[0], 
-                                                     train_log[0], 
-                                                     forecast_horizon)
-gru_scaled_test_predictions = data_handler.rescale_data(gru_test_prediction, 
-                                                    test_diff_one[0], 
-                                                    test_diff_two[0], 
-                                                    test_log[0], 
-                                                    forecast_horizon)
 
-gru_scaled_train = data_handler.rescale_data(y_train, 
-                                         train_diff_one[0], 
-                                         train_diff_two[0], 
-                                         train_log[0], 
-                                         forecast_horizon)
-gru_scaled_test = data_handler.rescale_data(y_test, 
-                                        test_diff_one[0], 
-                                        test_diff_two[0], 
-                                        test_log[0], 
-                                        forecast_horizon)
+gru_scaled_train_predictions = data_handler.rescale_data(gru_train_prediction,
+        train_diff_one[0],
+        train_diff_two[0],
+        train_log[0],
+        forecast_horizon)
+gru_scaled_test_predictions = data_handler.rescale_data(gru_test_prediction,
+        test_diff_one[0],
+        test_diff_two[0],
+        test_log[0],
+        forecast_horizon)
+
+gru_scaled_train = data_handler.rescale_data(y_train,
+        train_diff_one[0],
+        train_diff_two[0],
+        train_log[0],
+        forecast_horizon)
+gru_scaled_test = data_handler.rescale_data(y_test,
+        test_diff_one[0],
+        test_diff_two[0],
+        test_log[0],
+        forecast_horizon)
 
 gru_train_rmse = rmse(gru_scaled_train, gru_scaled_train_predictions)
 gru_test_rmse = rmse(gru_scaled_test, gru_scaled_test_predictions)
