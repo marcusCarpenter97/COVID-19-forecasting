@@ -1,4 +1,5 @@
 # # Table of contents:
+
 # * 1\. [The data](#data) 
 # * 2\. [Objectives](#obj)
 #     * 2.1. [Predict current infected](#obj_predcur)
@@ -152,38 +153,50 @@ fig.autofmt_xdate()
 # percentages it is possible to compare different methods quite well.
 # The three loss functions used to compare the models performance are:
 
-# #### Root Mean Squared Error (RMSE):
+# ### 2.4.1 Root Mean Squared Error (RMSE):
 # Calculates the average error in the forecasts. Values calculated by this function represent the number of people the forecast
 # got wrong.
 
 # $ RMSE = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(p_i-r_i)^2} $
 # Where *p* is the predicted value, *r* is the real value and *n* is the number of data.
+def rmse(prediction, target):
+    return np.sqrt(((prediction - target) ** 2).mean())
 
-# #### Root Mean Squared Log Error (RMSLE):
+# ### 2.4.2 Root Mean Squared Log Error (RMSLE):
 # Other than being chosen by Kaggle, this loss function penalises predictions smaller than the real value. So, according to this
 # function, overestimating the number of infected people is better than underestimating it.
 
 # $ RMSLE = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(\ln(p_i+1)-\ln(r_i+1))^2} $
 # Where *p* is the predicted value, *r* is the real value and *n* is the number of data.
+def rmsle(prediction, target):
+    return np.sqrt(((np.log(prediction+1) - np.log(target+1)) ** 2).mean())
 
-# #### Mean Absolure Squared Error (MASE):
+# ### 2.4.3 Mean Absolure Scaled Error (MASE):
 # This represents the forecast error as a ratio. This is usefull as it allows forecasts on different scales to be compared.
 
 # $ MASE = \frac{\frac{1}{J}\sum_{j}|p_i-r_i|}{\frac{1}{T-1}\sum_{t=2}^{T}|r_t-r_{t-1}|}  $
 # Where *p* is the predicted value, *r* is the real value , *T* is the size of the training set, *J* is the number of forecats.
+def mase(prediction, target, train_size):
+    mean_error = (abs(prediction - target)).mean()
+    scaling_factor = (1/(train_size-1)) * target.diff().abs().sum()
+    return float(mean_error / scaling_factor)
 
 # # 3. Time series analysis <a name="time"></a>
-# ## 3.1 Present the data <a name="time_data"></a>
-# ## 3.2 Why stationary? <a name="time_station"></a>
 
-# To create accurate forecasts the time series must be stationary. In other words, there must be no trends in the data. From the
-# plot above it is possible to see that the data is not stationary as the trend seems to be increasing.
+# In this chapter an analysis of the time series was performed. This analysis will highlight features in the data which cause the
+# time series to have trends. A time series with a trend is called non-stationary because the mean (average) changes over time.
+# Once these trends are found they can be removed from the data making it a stationary time series.
+
+# ## 3.1 Why stationary? <a name="time_station"></a>
+
+# To create accurate forecasts the time series must be stationary simplly because it is easier to model data without any trends.
 # There are two statistical tests that can be applied to a time series to check whether it is stationary or not. This is better
 # than simply 'looking' at the data as it can find (and prove the existence of) useful features in the series.
 
+# The plot of the current infected shows a clear trend in the data.
 current_infected.plot()
 
-# ## 3.3 ADF and KPSS tests <a name="time_tests"></a>
+# ## 3.2 ADF and KPSS tests <a name="time_tests"></a>
 
 # This function helps print out the results from the following tests.
 def print_results(res, index, row_names):
@@ -192,14 +205,14 @@ def print_results(res, index, row_names):
         formatted_res[f'Critical Value ({key})'] = value
     print(formatted_res)
 
-# #### The Augmented Dickey Fuller (ADF) test.
+# ### 3.2.1 The Augmented Dickey Fuller (ADF) test.
 
-# The null hypothesis for the ADF test is that the time series is not stationary because it has a unit root.
-# The alternate hypothesis is that there is no unit root in the data making it stationary.
-# The unit root is a feature in a time  series that causes a trend. This can be removed by differencing the data.
-# The null hypothesis is assumed to be true until it is proven to be false, i.e. it is assumed that the data is not stationary by default.
-# To reject the null hypothesis (prove there is no trend) the p-value produced by the test must be less than the Critical Value.
-# The Critical Value represents how certain the test is of its results, e.g. if the p-value is lest than 0.05 (5%) then we can say that the test is 95% confident that the time series is stationary.
+# * The null hypothesis for the ADF test is that the time series is not stationary because it has a unit root.
+# * The alternate hypothesis is that there is no unit root in the data making it stationary.
+# * The unit root is a feature in a time  series that causes a trend. This can be removed by differencing the data.
+# * The null hypothesis is assumed to be true until it is proven to be false, i.e. it is assumed that the data is not stationary by default.
+# * To reject the null hypothesis (prove there is no trend) the p-value produced by the test must be less than the Critical Value.
+# * The Critical Value represents how certain the test is of its results, e.g. if the p-value is lest than 0.05 (5%) then we can say that the test is 95% confident that the time series is stationary.
 adf_results = adfuller(current_infected)
 print("Results for the ADF test:")
 print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number of Observations Used'])
@@ -208,15 +221,14 @@ print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number
 # it is possible to multiply the p-value by 100 to see how confident the test is. For example a p-value of 0.973938 means that the
 # test is 97% confident that the is a unit root (trend) in the data.
 
-# #### The Kwiatkowski-Phillips-Schmidt-Shin (KPSS) test.
+# ### 3.2.2 The Kwiatkowski-Phillips-Schmidt-Shin (KPSS) test.
 
-# The KPSS test complements the ADF test.
-# Its null hypothesis states that the time series is stationary.
-# While there alternate hypothesis states that the data has a unit root.
-# The p-value and the Critical Values work the same ass the ADF test.
-# However, if the null hypothesis is not rejected, the KPSS shows that the data is 'trend' stationary. This means that it is stationary around a deterministic trend.
-# For example, a linear trend is present where all values increase over time. If this trend is removed the data will become
-# stationary.
+# * The KPSS test complements the ADF test.
+# * Its null hypothesis states that the time series is stationary.
+# * While there alternate hypothesis states that the data has a unit root.
+# * The p-value and the Critical Values work the same ass the ADF test.
+# * However, if the null hypothesis is not rejected, the KPSS shows that the data is 'trend' stationary. This means that it is stationary around a deterministic trend.
+# * For example, a linear trend is present where all values increase over time. If this trend is removed the data will become stationary.
 kpss_results = kpss(current_infected, nlags='auto')
 print("Results for the KPSS test:")
 print_results(kpss_results, 3, ['Test Statistic', 'p-value', 'Lags Used'])
@@ -226,10 +238,26 @@ print_results(kpss_results, 3, ['Test Statistic', 'p-value', 'Lags Used'])
 # Note: the results will be different every time more data is added to the series.
 
 # ## 3.4 Making the time series stationary <a name="time_transf"></a>
+
+# The tests show there is at least one unit root in the data. This can be removed by differencing the data. As there is no
+# deterministic trend in the data there is no need to use the KPSS test again. Another important factor is the range the data is
+# in. If the neural network is given large numbers to process, e.g. between 10000 and 50000, it will take too long to train it.
+# This range must be 'squashed' into a more  manageable range. However, the method used to transform the data must make it fit in
+# a Gaussian curve as it makes data data easier to forecast.
+
 # ### 3.4.1 Differencing <a name="time_transf_diff"></a>
 
-# As the tests show there is at least one unit root in the data. This can be removed through differencing the time series.
-# Essentially the difference is taken between each point in the data. As there is no deterministic trend in the data there is no need to use the KPSS test again.
+# Differencing takes the difference between each point in the data. The result of this is a series showing the change in the data.
+# Example: The fist row shows the number of infected people while the second (differenced) row shows the change in infected
+# people. This proces removes the unit root from the data and can be repeated as many times as necessary.
+table = current_infected.head().T
+table.append(current_infected.head().diff().T)
+
+# It is important to note that every time the data is differenced some level of detail is lost. This can be verified by the NaN
+# value in the second row.
+
+# Now that differencing has been explained it can be applied on the full dataset. The graph now shows the global rate of
+# infection.
 first_differenced = current_infected.diff().dropna()
 first_differenced.plot()
 
@@ -238,14 +266,14 @@ adf_results = adfuller(first_differenced)
 print("Results for the ADF test:")
 print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number of Observations Used'])
 
-# Differencing the data a second time shows us that even though the graph looks line a stationary time series there still is a unit root in the data as the p-value is greater than all alpha values.
+# Differencing the data a second time shows us that even though the graph looks like a stationary time series there still is an unit root in the data as the p-value is greater than all alpha values.
 second_differenced = first_differenced.diff().dropna()
 second_differenced.plot()
 adf_results = adfuller(second_differenced)
 print("Results for the ADF test:")
 print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number of Observations Used'])
 
-# When differenced a third time the data shows us that there is not more unit roots. The p-value has become so small that there is almost a 100% certainty of it.
+# When differenced a third time the data shows us that there are no more unit roots. The p-value has become so small that there is almost a 100% certainty of it.
 third_differenced = second_differenced.diff().dropna()
 third_differenced.plot()
 adf_results = adfuller(third_differenced)
@@ -265,7 +293,7 @@ third_differenced.plot(kind='hist', ax=ax[1])
 ax[1].set_title("Dataset without unit roots.")
 fig.tight_layout()
 
-# #### The BoxCox method 
+# #### 3.4.2.1 The BoxCox methods 
 one_d_ci = [i[0] for i in current_infected.values]  # The boxcox methods require 1 dimensional data.
 
 data1 = boxcox(one_d_ci, -1)    # reciprocal transform.
@@ -291,12 +319,12 @@ fig.tight_layout()
 # because it would take longer to process the larger numbers. Taking the log of the data will reduce training time without
 # drastically affecting the structure of the data.
 
-
 # # 4. Preparing the data for the Neural Network <a name="prep"></a>
 
 # ## 4.1 Train and test <a name="prep_traintest"></a>
 
-# The neural network used in this experiment is the LSTM, a type of RNN. This was chosen as it was designed to handle sequences like a time series.
+# The neural networks used in this experiment are the LSTM (a type of RNN) and the GRU (a simplified LSTM). These were chosen as
+# they were designed to handle sequence data like a time series.
 
 forecast_horizon = 4   # Number of observations to be used to predict the next event.
 train_set_ratio = 0.7  # The size of the training set as a percentage of the data set.
@@ -323,7 +351,7 @@ test_log, test_diff_one, test_diff_two, stationary_test = data_handler.adjust_da
 
 # ## 4.2 Supervised learning <a name="prep_super"></a>
 
-# Transform the data into a supervised learning dataset. Essentially the LSTM will use a number of observations
+# Transform the data into a supervised learning dataset. Essentially the neural network will use a number of observations
 # (forecast horizon) to predict the next event in the sequence, e.g. use four days of data to predict the fifth.
 supervised_train = data_handler.series_to_supervised(stationary_train, 0, forecast_horizon)
 supervised_test = data_handler.series_to_supervised(stationary_test, 0, forecast_horizon)
@@ -332,13 +360,12 @@ supervised_test = data_handler.series_to_supervised(stationary_test, 0, forecast
 x_train, y_train = data_handler.split_horizon(supervised_train, forecast_horizon)
 x_test, y_test = data_handler.split_horizon(supervised_test, forecast_horizon)
 
-# This part is required by the LSTM as it only takes 3 dimensional input.
+# This part is required by the Keras models as they take 3 dimensional input.
 # Reshape x from [samples, time steps] to [samples, time steps, features]
 # Where samples = rows and time steps = columns.
 features = 1
 x_train = x_train.reshape(x_train.shape[0], x_train.shape[1], features)
 x_test = x_test.reshape(x_test.shape[0], x_test.shape[1], features)
-
 
 # # 5. The LSTM <a name="lstm"></a>
 
@@ -347,12 +374,14 @@ model = Sequential()
 
 # ## 5.1 Input, hidden and output layers <a name="lstm_layers"></a>
 
-# ### The input layer.
+# ### 5.1.1 The input layer.
+
 # The LSTM receives the input as an array of size equals to the forecast horizon where each item is an array of size one.
 # e.g. [[1], [2], [3], [4]]
 input_layer = (forecast_horizon, 1)
 
-# ### The hidden layer.
+# ### 5.1.2 The hidden layer.
+
 nodes = 5  #  The number of nodes in the hidden layer represents how 'wide' the network will be.
 model.add(LSTM(nodes, input_shape=input_layer))
 
@@ -364,7 +393,8 @@ model.add(Activation(lstm_activation))
 rate = 0.1 # The probability of a node being ignored during training, e.g. 10%.
 model.add(Dropout(rate))
 
-# ### The output layer.
+# ### 5.1.3 The output layer.
+
 out_shape = 1  # The number of outputs the LSTM will produce. Technically the number of nodes in the dense layer.
 # It is possible to output the forecasts for the next few days but in this model only one value will be produced.
 model.add(Dense(out_shape))
@@ -388,7 +418,6 @@ early_stopping = EarlyStopping(patience=50, restore_best_weights=True)
 # data (0.2) is left out as a validation set for each epoch.
 history = model.fit(x_train, y_train, epochs=1000, batch_size=1, verbose=0, callbacks=[early_stopping],
                     validation_split=0.2)
-
 
 # ## 5.3 Does differencing make a difference? <a name="lstm_diff"></a>
 # ## 5.4 Results on global data <a name="lstm_global"></a>
@@ -421,13 +450,6 @@ scaled_test = data_handler.rescale_data(y_test,
                                         test_diff_two[0], 
                                         test_log[0], 
                                         forecast_horizon)
-
-# Functions to calculate the error values using the Root Mean Squared Error and the Root Mean Squared Log Error.
-def rmse(target, prediction):
-    return np.sqrt(((target - prediction) ** 2).mean())
-
-def rmsle(prediction, target):
-    return np.sqrt(((np.log(prediction+1) - np.log(target+1)) ** 2).mean())
 
 # Calculate the error values.
 train_rmse = rmse(scaled_train, scaled_train_predictions)
