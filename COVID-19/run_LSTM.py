@@ -29,6 +29,10 @@ supervised_test = data_handler.series_to_supervised(stationary_test, 0, forecast
 x_train, y_train = data_handler.split_horizon(supervised_train, forecast_horizon)
 x_test, y_test = data_handler.split_horizon(supervised_test, forecast_horizon)
 
+# Rescale answers to calculate the error.
+scaled_train = data_handler.rescale_data(y_train, train_diff[0], train_log[0], forecast_horizon)
+scaled_test = data_handler.rescale_data(y_test, test_diff[0], test_log[0], forecast_horizon)
+
 # Reshape x from [samples, time steps] to [samples, time steps, features]
 # Where samples = rows and time steps = columns.
 features = 1
@@ -36,56 +40,72 @@ x_train = x_train.reshape(x_train.shape[0], x_train.shape[1], features)
 x_test = x_test.reshape(x_test.shape[0], x_test.shape[1], features)
 
 # Generate a list of hyperparameters through Random Search. TODO exception handling.
-methods = {1 : "random", 2 : "taguchi"}
-method = int(input("Select hyperparameter search method:\n1. Random\n2. Taguchi\n"))
+methods = {1 : "random", 2 : "taguchi", 3: "default"}
+method = int(input("Select hyperparameter search method:\n1. Random\n2. Taguchi\n3. Default\n"))
 if method == 1:
     hyper_sample_num = int(input("Enter number of hyperparameter combinations to use: "))
     hyper_samples = hyperparameter_search.select_hyperparameters(num_of_samples=hyper_sample_num, method=methods[method])
-else:
+if method == 2:
     hyper_samples = hyperparameter_search.select_hyperparameters(method=methods[method])
+else:  # Hand picked values.
+    hyper_samples = [[5, 0.1, "mean_squared_error", "tanh", "sigmoid"]]
+
+epochs = int(input("Enter number of training epochs (must be > 0): "))
+n_tests = int(input("Enter number of tests (must be > 0): "))
 
 # Create an LSTM model for each combination of hyperparameters.
-lstms = []
-for hyper_sample in hyper_samples:
-    lstm = LSTM.myLSTM()
-    lstm.hyper_params = hyper_sample
-    lstm.create_simple_LSTM(nodes=hyper_sample[0],
-                                dropout=hyper_sample[1],
-                                loss=hyper_sample[2],
-                                lstm_activation=hyper_sample[3],
-                                dense_activation=hyper_sample[4])
-    lstms.append(lstm)
+for idx, hyper_sample in enumerate(hyper_samples):
+    rmse_train = []
+    rmse_test = []
+    rmsle_train = []
+    rmsle_test = []
+    mase_train = []
+    mase_test = []
 
-# Train all of the created models.
-epochs = int(input("Enter number of training epochs (must be > 0): "))
-for idx, lstm in enumerate(lstms):
-    print(f"Training model {idx} out of {len(lstms)}")
-    lstm.train(x_train, y_train, epochs)
-print("Done")
+    for _ in range(n_tests):
+        lstm = LSTM.myLSTM()
+        lstm.hyper_params = hyper_sample
+        lstm.create_simple_LSTM(nodes=hyper_sample[0],
+                                    dropout=hyper_sample[1],
+                                    loss=hyper_sample[2],
+                                    lstm_activation=hyper_sample[3],
+                                    dense_activation=hyper_sample[4])
 
-# Rescale answers to calculate the error.
-scaled_train = data_handler.rescale_data(y_train, train_diff[0], train_log[0], forecast_horizon)
-scaled_test = data_handler.rescale_data(y_test, test_diff[0], test_log[0], forecast_horizon)
+        print(f"Training model with hyperparameters: {hyper_sample}")
+        lstm.train(x_train, y_train, epochs)
+        print("Done")
 
-# Generate performance reports for all models.
-for idx, lstm in enumerate(lstms):
-    model_name = str(idx)
-    # Create predictions for the train and test data.
-    train_prediction = lstm.predict(x_train)
-    test_prediction = lstm.predict(x_test)
+        # Create predictions for the train and test data.
+        train_prediction = lstm.predict(x_train)
+        test_prediction = lstm.predict(x_test)
 
-    # Rescale predictions.
-    lstm.train_predictions = data_handler.rescale_data(train_prediction, train_diff[0], train_log[0], forecast_horizon)
-    lstm.test_predictions = data_handler.rescale_data(test_prediction, test_diff[0], test_log[0], forecast_horizon)
+        # Rescale predictions.
+        lstm.train_predictions = data_handler.rescale_data(train_prediction, train_diff[0], train_log[0], forecast_horizon)
+        lstm.test_predictions = data_handler.rescale_data(test_prediction, test_diff[0], test_log[0], forecast_horizon)
 
-    lstm.plot_history(model_name)
-    lstm.plot_predictions(model_name, current_infected, forecast_horizon)
+        lstm.plot_history(idx)
+        lstm.plot_predictions(idx, current_infected, forecast_horizon)
 
-    report = f"""\n\nModel name: {model_name}
-                RMSE on train: {lstm.rmse(scaled_train, lstm.train_predictions)}
-                RMSE on test: {lstm.rmse(scaled_test, lstm.test_predictions)}
-                RMSLE on train: {lstm.rmsle(scaled_train, lstm.train_predictions)}
-                RMSLE on test: {lstm.rmsle(scaled_test, lstm.test_predictions)}
+        rmse_train.append(lstm.rmse(lstm.train_predictions, scaled_train))
+        rmse_test.append(lstm.rmse(lstm.test_predictions, scaled_test))
+
+        rmsle_train.append(lstm.rmsle(lstm.train_predictions, scaled_train))
+        rmsle_test.append(lstm.rmsle(lstm.test_predictions, scaled_test))
+
+        mase_train.append(lstm.mase(lstm.train_predictions, scaled_train))
+        mase_test.append(lstm.mase(lstm.test_predictions, scaled_test))
+
+    # Generate performance report for model.
+    report = f"""\n\nModel name: {idx}, Number of tests: {n_tests}, Number of epochs: {epochs}
+                RMSE on train: {rmse_train}
+                RMSE on test: {rmse_test}
+                Average RMSE: {np.array(rmse_test).mean()}
+                RMSLE on train: {rmsle_train}
+                RMSLE on test: {rmsle_test}
+                Average RMSLE: {np.array(rmsle_test).mean()}
+                MASE on train: {mase_train}
+                MASE on test: {mase_test}
+                Average MASE: {np.array(mase_test).mean()}
                 Hyperparameters used: {lstm.hyper_params}\n"""
 
     with open("LSTM_results.txt", 'a') as res_file:
