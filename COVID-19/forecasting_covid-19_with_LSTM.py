@@ -75,28 +75,28 @@ def plot_data(data_to_plot, title, legend, x_label, y_label, adjust_xaxis=True):
 # [Johns Hopkins University GitHub repository](https://github.com/CSSEGISandData/COVID-19/tree/master/csse_covid_19_data/csse_covid_19_time_series). This data set provides three time series; the total infected, recovered and deceased.
 
 # This function fetches the data from the GitHub repository, if necessary, and returns a list of dataframes with each time series.
-RAW_DATA = data_handler.load_data()
+raw_data = data_handler.load_data()
 
 # Here is how the data looks like in table format.
-RAW_DATA[0].head()  # Confirmed.
+raw_data[0].head()  # Confirmed.
 
-RAW_DATA[1].head()  # Deceased.
+raw_data[1].head()  # Deceased.
 
-RAW_DATA[2].head()  # Recovered.
+raw_data[2].head()  # Recovered.
 
 # It is also possible to view the data for a specific country.
-RAW_DATA[0][RAW_DATA[0]['Country/Region'].isin(['United Kingdom'])]  # Total CONFIRMED cases in the UK.
+raw_data[0][raw_data[0]['Country/Region'].isin(['United Kingdom'])]  # Total confirmed cases in the UK.
 
-# The following formula can be used to find the number of current infected as oposed to total infected (CONFIRMED cases):
+# The following formula can be used to find the number of current infected as oposed to total infected (confirmed cases):
 # current infected = total infected - (deceased + recovered)
-CURRENT_INFECTED = data_handler.calculate_current_infected(RAW_DATA)
+current_infected = data_handler.calculate_current_infected(raw_data)
 
 # Plotting the data hepls to visualise it better. But first all rows must be summed up into one time series.
-CONFIRMED = RAW_DATA[0].sum()[2:]  # The first two rows are the sums of Long and Lat which must be removed.
-deceased = RAW_DATA[1].sum()[2:]
-recovered = RAW_DATA[2].sum()[2:]
+confirmed = raw_data[0].sum()[2:]  # The first two rows are the sums of Long and Lat which must be removed.
+deceased = raw_data[1].sum()[2:]
+recovered = raw_data[2].sum()[2:]
 
-plot_data([CONFIRMED, CURRENT_INFECTED, recovered, deceased], 'COVID-19 data', ['Total confirmed', 'Current infected',
+plot_data([confirmed, current_infected, recovered, deceased], 'COVID-19 data', ['Total confirmed', 'Current infected',
     'Recovered', 'Deceased'], 'People', 'Time')
 
 # # 2. Objectives <a name="obj"></a>
@@ -119,23 +119,27 @@ plot_data([CONFIRMED, CURRENT_INFECTED, recovered, deceased], 'COVID-19 data', [
 # model to actualy learn how the number of inferted people change over time.
 
 # The following code prepares the data for a plot demonstrating the above pagraph.
-uk_data = []
-# Total CONFIRMED cases in the UK.
-uk_data.append(RAW_DATA[0][RAW_DATA[0]['Country/Region'].isin(['United Kingdom'])])
-# Total deceased cases in the UK.
-uk_data.append(RAW_DATA[1][RAW_DATA[1]['Country/Region'].isin(['United Kingdom'])])
-# Total recovered cases in the UK.
-uk_data.append(RAW_DATA[2][RAW_DATA[2]['Country/Region'].isin(['United Kingdom'])])
-# Make the deceased table into a time series.
-uk_deceased = uk_data[1].sum()[2:]
-# Calculate time series of infected people in UK.
-uk_infected = data_handler.calculate_current_infected(uk_data)
+def get_country_data(country):
+    data = []
+    # Total confirmed cases in the country.
+    data.append(raw_data[0][raw_data[0]['Country/Region'].isin([country])])
+    # Total deceased cases in the country.
+    data.append(raw_data[1][raw_data[1]['Country/Region'].isin([country])])
+    # Total recovered cases in the country.
+    data.append(raw_data[2][raw_data[2]['Country/Region'].isin([country])])
+    # Make the deceased table into a time series.
+    deceased = data[1].sum(numeric_only=True)[2:]
+    # Calculate time series of infected people.
+    infected = data_handler.calculate_current_infected(data)
+    return deceased, infected
+
+uk_deceased, uk_infected = get_country_data('United Kingdom')
 # Split UK infected.
 uk_inf_train, uk_inf_test = data_handler.split_train_test(uk_infected, 0.7)
 # Split UK deceased.
 uk_dec_train, uk_dec_test = data_handler.split_train_test(uk_deceased, 0.7)
 # Split global infected.
-global_inf_train, global_inf_test = data_handler.split_train_test(CURRENT_INFECTED, 0.7)
+global_inf_train, global_inf_test = data_handler.split_train_test(current_infected, 0.7)
 
 plot_data([global_inf_train, global_inf_test, uk_inf_test, uk_dec_test], 'Global train and test data with UK data', ['Global infected (train data)', 'Global infected (test data)', 'UK infected (test data)', 'UK deceased (test data)'], 'Time', 'People')
 
@@ -189,7 +193,7 @@ def mase(prediction, target, train_size):
 # than simply 'looking' at the data as it can find (and prove the existence of) useful features in the series.
 
 # The plot of the current infected shows a clear trend in the data.
-plot_data([CURRENT_INFECTED], 'Global infections of COVID-19', ['Current infected'], 'Time', 'People')
+plot_data([current_infected], 'Global infections of COVID-19', ['Current infected'], 'Time', 'People')
 
 # ## 3.2 ADF and KPSS tests <a name="time_tests"></a>
 
@@ -212,7 +216,7 @@ def print_adf(results):
 # * The null hypothesis is assumed to be true until it is proven to be false, i.e. it is assumed that the data is not stationary by default.
 # * To reject the null hypothesis (prove there is no trend) the p-value produced by the test must be less than the Critical Value.
 # * The Critical Value represents how certain the test is of its results, e.g. if the p-value is lest than 0.05 (5%) then we can say that the test is 95% confident that the time series is stationary.
-adf_results = adfuller(CURRENT_INFECTED)
+adf_results = adfuller(current_infected)
 print_adf(adf_results)
 
 # As the p-value is larger than all levels of alpha (0.01, 0.05 and 0.1) this means that the time series has a unit root. In fact
@@ -227,7 +231,7 @@ print_adf(adf_results)
 # * The p-value and the Critical Values work the same ass the ADF test.
 # * However, if the null hypothesis is not rejected, the KPSS shows that the data is 'trend' stationary. This means that it is stationary around a deterministic trend.
 # * For example, a linear trend is present where all values increase over time. If this trend is removed the data will become stationary.
-kpss_results = kpss(CURRENT_INFECTED, nlags='auto')
+kpss_results = kpss(current_infected, nlags='auto')
 print("Results for the KPSS test:")
 print_results(kpss_results, 3, ['Test Statistic', 'p-value', 'Lags Used'])
 
@@ -248,9 +252,9 @@ print_results(kpss_results, 3, ['Test Statistic', 'p-value', 'Lags Used'])
 # Differencing takes the difference between each point in the data. The result of this is a series showing the change in the data.
 # Example: The fist row shows the number of infected people while the second (differenced) row shows the change in infected
 # people. This proces removes the unit root from the data and can be repeated as many times as necessary.
-orig = CURRENT_INFECTED.head()
+orig = current_infected.head()
 orig.columns = ['Original']
-diff = CURRENT_INFECTED.head().diff()
+diff = current_infected.head().diff()
 diff.columns = ['Differenced']
 pd.concat([orig.T, diff.T])
 
@@ -259,7 +263,7 @@ pd.concat([orig.T, diff.T])
 
 # Now that differencing has been explained it can be applied on the full dataset. The graph now shows the global rate of
 # infection.
-first_differenced = CURRENT_INFECTED.diff().dropna()
+first_differenced = current_infected.diff().dropna()
 plot_data([first_differenced], 'Global rate of infection', ['First difference'], 'Time', 'People')
 
 # Another ADF test on the differenced data shows that there is still a unit root in the data. This means that the data must be differenced again.
@@ -285,14 +289,14 @@ print_adf(adf_results)
 # On the other hand, the data after being differenced three times looks more like a Gaussian distribution (the bell shape). This is because the trends where removed.
 
 fig, ax = plt.subplots(2, 1)
-CURRENT_INFECTED.plot(kind='hist', ax=ax[0])
+current_infected.plot(kind='hist', ax=ax[0])
 ax[0].set_title("Original dataset.")
 third_differenced.plot(kind='hist', ax=ax[1])
 ax[1].set_title("Dataset without unit roots.")
 fig.tight_layout()
 
 # #### 3.4.2.1 The BoxCox methods
-one_d_ci = [i[0] for i in CURRENT_INFECTED.values]  # The boxcox methods require 1 dimensional data.
+one_d_ci = [i[0] for i in current_infected.values]  # The boxcox methods require 1 dimensional data.
 
 data1 = boxcox(one_d_ci, -1)    # reciprocal transform.
 data2 = boxcox(one_d_ci, -0.5)  # reciprocal square root transform.
@@ -331,7 +335,7 @@ train_set_ratio = 0.7  # The size of the training set as a percentage of the dat
 
 # Split the data into train and test sets. This must be done before any transformations to avoid data leakage. Otherwise there might be information about the test set in the train set because of the data transformation applied.
 # Note: the transformations done before where for the analysis of the time series, now they will be used to actually reshape the data.
-train, test = data_handler.split_train_test(CURRENT_INFECTED, train_set_ratio)
+train, test = data_handler.split_train_test(current_infected, train_set_ratio)
 
 # This helps visualize the train and test data.
 plot_data([train, test], 'Test and train data', ['Train data', 'Test data'], 'Number of infected', 'Time')
@@ -463,9 +467,62 @@ empty_arr[:] = np.nan
 shifted_test = np.concatenate([empty_arr, scaled_test_predictions])
 
 # Plot the predictions over the original dataset.
-plot_data([CURRENT_INFECTED, shifted_train, shifted_test], 'LSTM prediction over original', ['Current infected', 'Train predictions', 'Test predictions'], 'Time', 'People', 'Number of infected')
+plot_data([current_infected, shifted_train, shifted_test], 'LSTM prediction over original', ['Current infected', 'Train predictions', 'Test predictions'], 'Time', 'People', 'Number of infected')
 
 # ## 5.5 Can it generalize? <a name="lstm_gener"></a>
+
+# The data must be prepared in the same way as the global infected data. This function provides a more generic approach to the
+# whole task.
+def make_lstm_predictions(data):
+    _, test = data_handler.split_train_test(data, train_set_ratio)
+    log, diff_one, diff_two, stationary = data_handler.adjust_data(test)
+    supervised = data_handler.series_to_supervised(stationary, 0, forecast_horizon)
+    x, y = data_handler.split_horizon(supervised, forecast_horizon)
+    x = x.reshape(x.shape[0], x.shape[1], features)
+
+    predictions = lstm_model.predict(x)
+
+    scaled_predictions = data_handler.rescale_data(predictions, diff_one[0], diff_two[0], log[0], forecast_horizon)
+    scaled_answers = data_handler.rescale_data(y, diff_one[0], diff_two[0], log[0], forecast_horizon)
+    return scaled_predictions, scaled_answers 
+
+# #### Global deceased.
+global_deceased_pred, global_deceased_real = make_lstm_predictions(deceased)
+
+# #### UK.
+
+uk_deceased, uk_infected = get_country_data("United Kingdom")
+uk_infected_pred, uk_infected_real = make_lstm_predictions(uk_infected)
+uk_deceased_pred, uk_deceased_real = make_lstm_predictions(uk_deceased)
+
+# #### USA.
+
+us_deceased, us_infected = get_country_data("US")
+us_infected_pred, us_infected_real = make_lstm_predictions(us_infected)
+us_deceased_pred, us_deceased_real = make_lstm_predictions(us_deceased)
+
+# #### China.
+
+china_deceased, china_infected = get_country_data("China")
+china_infected_pred, china_infected_real = make_lstm_predictions(china_infected)
+china_deceased_pred, china_deceased_real  = make_lstm_predictions(china_deceased)
+
+# The results
+
+fig, axes = plt.subplots(2, 2)
+axes[0, 0].plot(global_deceased_pred)
+axes[0, 0].plot(global_deceased_real)
+axes[0, 0].set_title('Global deceased forecast')
+axes[0, 1].plot(uk_deceased_pred)
+axes[0, 1].plot(uk_deceased_real)
+axes[0, 1].set_title('UK deceased forecast')
+axes[1, 0].plot(us_deceased_pred)
+axes[1, 0].plot(us_deceased_real)
+axes[1, 0].set_title('USA deceased forecast')
+axes[1, 1].plot(china_deceased_pred)
+axes[1, 1].plot(china_deceased_real)
+axes[1, 1].set_title('China deceased forecast')
+fig.tight_layout()
 
 # # 6. The GRU <a name="gru"></a>
 
@@ -549,7 +606,7 @@ empty_arr = np.empty(((forecast_horizon+2)*2+len(gru_scaled_train_predictions), 
 empty_arr[:] = np.nan
 shifted_test = np.concatenate([empty_arr, gru_scaled_test_predictions])
 
-plot_data([CURRENT_INFECTED, shifted_train, shifted_test], 'GRU prediction over original',  ['Current infected', 'Train predictions', 'Test predictions'], 'Time', 'People', 'Number of infected')
+plot_data([current_infected, shifted_train, shifted_test], 'GRU prediction over original',  ['Current infected', 'Train predictions', 'Test predictions'], 'Time', 'People', 'Number of infected')
 
 # LSTM results.
 print(f"RMSE on train: {lstm_train_rmse}")
