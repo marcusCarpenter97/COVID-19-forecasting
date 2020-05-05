@@ -48,7 +48,9 @@ if method == 1:
 if method == 2:
     hyper_samples = hyperparameter_search.select_hyperparameters(method=methods[method])
 else:  # Hand picked values.
-    hyper_samples = [[5, 0.1, "mean_squared_error", "tanh", "sigmoid"]]
+    hyper_samples = [[5, 0.1, "mean_squared_error", "tanh", "sigmoid"],  # Default
+                     [50, 0.1, "mean_absolute_error", "relu", "relu"],  # Taguchi
+                     [10, 0.2, "mean_squared_logarithmic_error", "swish", "swish"]]  # Kaggle
 
 epochs = int(input("Enter number of training epochs (must be > 0): "))
 n_tests = int(input("Enter number of tests (must be > 0): "))
