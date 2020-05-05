@@ -42,11 +42,16 @@ class myLSTM:
     def predict(self, data):
         return self.model.predict(data)
 
-    def rmse(self, target, prediction):
-        return np.sqrt(((target - prediction) ** 2).mean())
+    def rmse(self, prediction, target):
+        return np.sqrt(((prediction - target) ** 2).mean())
 
     def rmsle(self, prediction, target):
         return np.sqrt(((np.log(prediction+1) - np.log(target+1)) ** 2).mean())
+
+    def mase(self, prediction, target, train_size):
+        mean_error = np.mean(np.abs(prediction - target))
+        scaling_factor = (1/(train_size-1)) * np.sum(np.abs(np.diff(target.ravel())))
+        return mean_error / scaling_factor
 
     def swish(self, x, beta=1.0):
             return x * K.sigmoid(beta * x)
