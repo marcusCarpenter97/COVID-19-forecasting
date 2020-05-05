@@ -1,7 +1,7 @@
-import operator
+#import operator
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+#import pandas as pd
+#import matplotlib.pyplot as plt
 
 import LSTM
 import data_handler
@@ -12,14 +12,14 @@ train_set_ratio = 0.7  # The size of the training set as a percentage of the dat
 
 # Setup data.
 raw_data = data_handler.load_data()
-current_infected = data_handler.calculate_total_infected(raw_data)
+current_infected = data_handler.calculate_current_infected(raw_data)
 
 # Split the data into train and test sets.
 train, test = data_handler.split_train_test(current_infected, train_set_ratio)
 
 # Make the time series data stationary.
-train_log, train_diff, stationary_train = data_handler.adjust_data(train)
-test_log, test_diff, stationary_test = data_handler.adjust_data(test)
+train_log, train_diff_one, train_diff_two, stationary_train = data_handler.adjust_data(train)
+test_log, test_diff_one, test_diff_two, stationary_test = data_handler.adjust_data(test)
 
 # Transform the data into a supervised learning dataset.
 supervised_train = data_handler.series_to_supervised(stationary_train, 0, forecast_horizon)
@@ -30,8 +30,8 @@ x_train, y_train = data_handler.split_horizon(supervised_train, forecast_horizon
 x_test, y_test = data_handler.split_horizon(supervised_test, forecast_horizon)
 
 # Rescale answers to calculate the error.
-scaled_train = data_handler.rescale_data(y_train, train_diff[0], train_log[0], forecast_horizon)
-scaled_test = data_handler.rescale_data(y_test, test_diff[0], test_log[0], forecast_horizon)
+scaled_train = data_handler.rescale_data(y_train, train_diff_one[0], train_diff_two[0], train_log[0], forecast_horizon)
+scaled_test = data_handler.rescale_data(y_test, test_diff_one[0], test_diff_two[0], test_log[0], forecast_horizon)
 
 # Reshape x from [samples, time steps] to [samples, time steps, features]
 # Where samples = rows and time steps = columns.
@@ -66,10 +66,10 @@ for idx, hyper_sample in enumerate(hyper_samples):
         lstm = LSTM.myLSTM()
         lstm.hyper_params = hyper_sample
         lstm.create_simple_LSTM(nodes=hyper_sample[0],
-                                    dropout=hyper_sample[1],
-                                    loss=hyper_sample[2],
-                                    lstm_activation=hyper_sample[3],
-                                    dense_activation=hyper_sample[4])
+                                dropout=hyper_sample[1],
+                                loss=hyper_sample[2],
+                                lstm_activation=hyper_sample[3],
+                                dense_activation=hyper_sample[4])
 
         print(f"Training model with hyperparameters: {hyper_sample}")
         lstm.train(x_train, y_train, epochs)
@@ -80,8 +80,12 @@ for idx, hyper_sample in enumerate(hyper_samples):
         test_prediction = lstm.predict(x_test)
 
         # Rescale predictions.
-        lstm.train_predictions = data_handler.rescale_data(train_prediction, train_diff[0], train_log[0], forecast_horizon)
-        lstm.test_predictions = data_handler.rescale_data(test_prediction, test_diff[0], test_log[0], forecast_horizon)
+        lstm.train_predictions = data_handler.rescale_data(train_prediction, train_diff_one[0],
+                                                           train_diff_two[0], train_log[0],
+                                                           forecast_horizon)
+        lstm.test_predictions = data_handler.rescale_data(test_prediction, test_diff_one[0],
+                                                          test_diff_two[0], test_log[0],
+                                                          forecast_horizon)
 
         lstm.plot_history(idx)
         lstm.plot_predictions(idx, current_infected, forecast_horizon)
@@ -92,21 +96,11 @@ for idx, hyper_sample in enumerate(hyper_samples):
         rmsle_train.append(lstm.rmsle(lstm.train_predictions, scaled_train))
         rmsle_test.append(lstm.rmsle(lstm.test_predictions, scaled_test))
 
-        mase_train.append(lstm.mase(lstm.train_predictions, scaled_train))
-        mase_test.append(lstm.mase(lstm.test_predictions, scaled_test))
+        mase_train.append(lstm.mase(lstm.train_predictions, scaled_train, len(x_train)))
+        mase_test.append(lstm.mase(lstm.test_predictions, scaled_test, len(x_train)))
 
     # Generate performance report for model.
-    report = f"""\n\nModel name: {idx}, Number of tests: {n_tests}, Number of epochs: {epochs}
-                RMSE on train: {rmse_train}
-                RMSE on test: {rmse_test}
-                Average RMSE: {np.array(rmse_test).mean()}
-                RMSLE on train: {rmsle_train}
-                RMSLE on test: {rmsle_test}
-                Average RMSLE: {np.array(rmsle_test).mean()}
-                MASE on train: {mase_train}
-                MASE on test: {mase_test}
-                Average MASE: {np.array(mase_test).mean()}
-                Hyperparameters used: {lstm.hyper_params}\n"""
+    report = f"\n\nModel name: {idx}, Number of tests: {n_tests}, Number of epochs: {epochs}\n RMSE on train: {rmse_train}\n RMSE on test: {rmse_test}\n Average RMSE: {np.array(rmse_test).mean()}\n RMSLE on train: {rmsle_train}\n RMSLE on test: {rmsle_test}\n Average RMSLE: {np.array(rmsle_test).mean()}\n MASE on train: {mase_train}\n MASE on test: {mase_test}\n Average MASE: {np.array(mase_test).mean()}\n Hyperparameters used: {lstm.hyper_params}\n"
 
     with open("LSTM_results.txt", 'a') as res_file:
         res_file.write(report)
