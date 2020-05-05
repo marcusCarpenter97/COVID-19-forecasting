@@ -50,7 +50,8 @@ if method == 2:
 else:  # Hand picked values.
     hyper_samples = [[5, 0.1, "mean_squared_error", "tanh", "sigmoid"],  # Default
                      [50, 0.1, "mean_absolute_error", "relu", "relu"],  # Taguchi
-                     [10, 0.2, "mean_squared_logarithmic_error", "swish", "swish"]]  # Kaggle
+                     [10, 0.2, "mean_squared_logarithmic_error", "swish", "swish"],  # Kaggle
+                     [40, 0.5, "mean_squared_error", "relu", "tanh"]]  # Best random
 
 epochs = int(input("Enter number of training epochs (must be > 0): "))
 n_tests = int(input("Enter number of tests (must be > 0): "))
@@ -64,7 +65,7 @@ for idx, hyper_sample in enumerate(hyper_samples):
     mase_train = []
     mase_test = []
 
-    for _ in range(n_tests):
+    for test in range(n_tests):
         lstm = LSTM.myLSTM()
         lstm.hyper_params = hyper_sample
         lstm.create_simple_LSTM(nodes=hyper_sample[0],
@@ -89,8 +90,9 @@ for idx, hyper_sample in enumerate(hyper_samples):
                                                           test_diff_two[0], test_log[0],
                                                           forecast_horizon)
 
-        lstm.plot_history(idx)
-        lstm.plot_predictions(idx, current_infected, forecast_horizon)
+        model_name = f"{idx}-{test}"
+        lstm.plot_history(model_name)
+        lstm.plot_predictions(model_name, current_infected, forecast_horizon)
 
         rmse_train.append(lstm.rmse(lstm.train_predictions, scaled_train))
         rmse_test.append(lstm.rmse(lstm.test_predictions, scaled_test))
