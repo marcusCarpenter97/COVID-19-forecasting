@@ -53,6 +53,22 @@ from statsmodels.tsa.stattools import adfuller, kpss
 import matplotlib.pyplot as plt
 plt.rcParams['figure.figsize'] = [10, 5]  # Adjust plot sizes.
 
+# Function to help plot data.
+def plot_data(data_to_plot, title, legend, x_label, y_label, adjust_xaxis=True):
+    fig, ax = plt.subplots()
+    for dataset in data_to_plot:
+        ax.plot(dataset)
+    ax.set_title(title)
+    ax.legend(legend, loc='best')
+    ax.set_ylabel(y_label)
+    ax.set_xlabel(x_label)
+
+    # Prevent the x-axis labels from overlapping.
+    if adjust_xaxis:
+        start, end = ax.get_xlim()
+        ax.xaxis.set_ticks(np.arange(start, end, 4))
+        fig.autofmt_xdate()
+
 # # 1. The data <a name="data"></a>
 
 # Before any analysis can be done it is important to understand the data we will be working with. The data comes from the
@@ -80,18 +96,8 @@ CONFIRMED = RAW_DATA[0].sum()[2:]  # The first two rows are the sums of Long and
 deceased = RAW_DATA[1].sum()[2:]
 recovered = RAW_DATA[2].sum()[2:]
 
-fig, ax = plt.subplots()
-ax.plot(CONFIRMED)
-ax.plot(CURRENT_INFECTED)
-ax.plot(recovered)
-ax.plot(deceased)
-ax.set_title('COVID-19 data')
-ax.legend(['Total confirmed', 'Current infected', 'Recovered', 'Deceased'])
-ax.set_ylabel('People')
-ax.set_xlabel('Time')
-start, end = ax.get_xlim()
-ax.xaxis.set_ticks(np.arange(start, end, 4))
-fig.autofmt_xdate()
+plot_data([CONFIRMED, CURRENT_INFECTED, recovered, deceased], 'COVID-19 data', ['Total confirmed', 'Current infected',
+    'Recovered', 'Deceased'], 'People', 'Time')
 
 # # 2. Objectives <a name="obj"></a>
 
@@ -131,18 +137,7 @@ uk_dec_train, uk_dec_test = data_handler.split_train_test(uk_deceased, 0.7)
 # Split global infected.
 global_inf_train, global_inf_test = data_handler.split_train_test(CURRENT_INFECTED, 0.7)
 
-fig, ax = plt.subplots()
-ax.plot(global_inf_train)
-ax.plot(global_inf_test)
-ax.plot(uk_inf_test)
-ax.plot(uk_dec_test)
-ax.set_ylabel('People')
-ax.set_xlabel('Time')
-ax.legend(['Global infected (train data)', 'Global infected (test data)', 'UK infected (test data)', 'UK deceased (test data)'], loc='best')
-# Prevent the x-axis labels from overlapping.
-start, end = ax.get_xlim()
-ax.xaxis.set_ticks(np.arange(start, end, 4))
-fig.autofmt_xdate()
+plot_data([global_inf_train, global_inf_test, uk_inf_test, uk_dec_test], 'Global train and test data with UK data', ['Global infected (train data)', 'Global infected (test data)', 'UK infected (test data)', 'UK deceased (test data)'], 'Time', 'People')
 
 # Is a model trined on the global infected (blue  line) capable of creating accurate forecasts for the UK data?
 
@@ -194,16 +189,20 @@ def mase(prediction, target, train_size):
 # than simply 'looking' at the data as it can find (and prove the existence of) useful features in the series.
 
 # The plot of the current infected shows a clear trend in the data.
-CURRENT_INFECTED.plot()
+plot_data([CURRENT_INFECTED], 'Global infections of COVID-19', ['Current infected'], 'Time', 'People')
 
 # ## 3.2 ADF and KPSS tests <a name="time_tests"></a>
 
-# This function helps print out the results from the following tests.
+# These functions help print out the results from the following tests.
 def print_results(res, index, row_names):
     formatted_res = pd.Series(res[0:index], index=row_names)
     for key, value in res[index].items():
         formatted_res[f'Critical Value ({key})'] = value
     print(formatted_res)
+
+def print_adf(results):
+    print("Results for the ADF test:")
+    print_results(results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number of Observations Used'])
 
 # ### 3.2.1 The Augmented Dickey Fuller (ADF) test.
 
@@ -214,8 +213,7 @@ def print_results(res, index, row_names):
 # * To reject the null hypothesis (prove there is no trend) the p-value produced by the test must be less than the Critical Value.
 # * The Critical Value represents how certain the test is of its results, e.g. if the p-value is lest than 0.05 (5%) then we can say that the test is 95% confident that the time series is stationary.
 adf_results = adfuller(CURRENT_INFECTED)
-print("Results for the ADF test:")
-print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number of Observations Used'])
+print_adf(adf_results)
 
 # As the p-value is larger than all levels of alpha (0.01, 0.05 and 0.1) this means that the time series has a unit root. In fact
 # it is possible to multiply the p-value by 100 to see how confident the test is. For example a p-value of 0.973938 means that the
@@ -250,8 +248,11 @@ print_results(kpss_results, 3, ['Test Statistic', 'p-value', 'Lags Used'])
 # Differencing takes the difference between each point in the data. The result of this is a series showing the change in the data.
 # Example: The fist row shows the number of infected people while the second (differenced) row shows the change in infected
 # people. This proces removes the unit root from the data and can be repeated as many times as necessary.
-table = CURRENT_INFECTED.head().T
-table.append(CURRENT_INFECTED.head().diff().T)
+orig = CURRENT_INFECTED.head()
+orig.columns = ['Original']
+diff = CURRENT_INFECTED.head().diff()
+diff.columns = ['Differenced']
+pd.concat([orig.T, diff.T])
 
 # It is important to note that every time the data is differenced some level of detail is lost. This can be verified by the NaN
 # value in the second row.
@@ -259,26 +260,23 @@ table.append(CURRENT_INFECTED.head().diff().T)
 # Now that differencing has been explained it can be applied on the full dataset. The graph now shows the global rate of
 # infection.
 first_differenced = CURRENT_INFECTED.diff().dropna()
-first_differenced.plot()
+plot_data([first_differenced], 'Global rate of infection', ['First difference'], 'Time', 'People')
 
 # Another ADF test on the differenced data shows that there is still a unit root in the data. This means that the data must be differenced again.
 adf_results = adfuller(first_differenced)
-print("Results for the ADF test:")
-print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number of Observations Used'])
+print_adf(adf_results)
 
 # Differencing the data a second time shows us that even though the graph looks like a stationary time series there still is an unit root in the data as the p-value is greater than all alpha values.
 second_differenced = first_differenced.diff().dropna()
-second_differenced.plot()
+plot_data([second_differenced], 'Second difference', ['Second difference'], 'Time', 'People')
 adf_results = adfuller(second_differenced)
-print("Results for the ADF test:")
-print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number of Observations Used'])
+print_adf(adf_results)
 
 # When differenced a third time the data shows us that there are no more unit roots. The p-value has become so small that there is almost a 100% certainty of it.
 third_differenced = second_differenced.diff().dropna()
-third_differenced.plot()
+plot_data([second_differenced], 'Third difference', ['Third difference'], 'Time', 'People')
 adf_results = adfuller(third_differenced)
-print("Results for the ADF test:")
-print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number of Observations Used'])
+print_adf(adf_results)
 
 # ### 3.4.2 Gaussian Curve <a name="time_transf_gauss"></a>
 
@@ -336,16 +334,7 @@ train_set_ratio = 0.7  # The size of the training set as a percentage of the dat
 train, test = data_handler.split_train_test(CURRENT_INFECTED, train_set_ratio)
 
 # This helps visualize the train and test data.
-fig, ax = plt.subplots()
-ax.plot(train)
-ax.plot(test)
-ax.set_ylabel('Number of infected')
-ax.set_xlabel('Time')
-ax.legend(['Train data', 'Test data'], loc='best')
-# Prevent the x-axis labels from overlapping.
-start, end = ax.get_xlim()
-ax.xaxis.set_ticks(np.arange(start, end, 4))
-fig.autofmt_xdate()
+plot_data([train, test], 'Test and train data', ['Train data', 'Test data'], 'Number of infected', 'Time')
 
 # Make the time series data stationary based on what we found before.
 train_log, train_diff_one, train_diff_two, stationary_train = data_handler.adjust_data(train)
@@ -460,13 +449,7 @@ lstm_train_rmsle = rmsle(scaled_train, scaled_train_predictions)
 lstm_test_rmsle = rmsle(scaled_test, scaled_test_predictions)
 
 # Plot model loss history.
-fig, ax = plt.subplots()
-ax.plot(lstm_history.history['loss'])
-ax.plot(lstm_history.history['val_loss'])
-ax.set_title('Model loss')
-ax.set_ylabel('Loss')
-ax.set_xlabel('Epoch')
-ax.legend(['Train', 'Test'], loc='best')
+plot_data([lstm_history.history['loss'], lstm_history.history['val_loss']], 'Loss during LSTM training', ['Train', 'Test'], 'Loss', 'Epoch', adjust_xaxis=False)
 
 # Some preparation to plot the predictions is needed.
 
@@ -480,23 +463,7 @@ empty_arr[:] = np.nan
 shifted_test = np.concatenate([empty_arr, scaled_test_predictions])
 
 # Plot the predictions over the original dataset.
-fig, ax = plt.subplots()
-ax.plot(CURRENT_INFECTED)
-ax.plot(shifted_train)
-ax.plot(shifted_test)
-ax.set_title('Prediction over original')
-ax.set_ylabel('Number of infected')
-ax.set_xlabel('Time')
-ax.legend(['Original data', 'Train predictions', 'Test predictions'], loc='best')
-# Prevent the x-axis labels from overlapping.
-start, end = ax.get_xlim()
-ax.xaxis.set_ticks(np.arange(start, end, 4))
-fig.autofmt_xdate()
-
-print(f"RMSE on train: {lstm_train_rmse}")
-print(f"RMSE on test: {lstm_test_rmse}")
-print(f"RMSLE on train: {lstm_train_rmsle}")
-print(f"RMSLE on test: {lstm_test_rmsle}")
+plot_data([CURRENT_INFECTED, shifted_train, shifted_test], 'LSTM prediction over original', ['Current infected', 'Train predictions', 'Test predictions'], 'Time', 'People', 'Number of infected')
 
 # ## 5.5 Can it generalize? <a name="lstm_gener"></a>
 
@@ -571,6 +538,25 @@ gru_test_rmse = rmse(gru_scaled_test, gru_scaled_test_predictions)
 gru_train_rmsle = rmsle(gru_scaled_train, gru_scaled_train_predictions)
 gru_test_rmsle = rmsle(gru_scaled_test, gru_scaled_test_predictions)
 
+plot_data([gru_history.history['loss'], gru_history.history['val_loss']], 'Loss during GRU training', ['Train', 'Test'], 'Loss', 'Epoch',
+        adjust_xaxis=False)
+
+empty_arr = np.empty((forecast_horizon+2, 1))
+empty_arr[:] = np.nan
+shifted_train = np.concatenate([empty_arr, gru_scaled_train_predictions])
+# The test data mus be shifted by 2 empty arrays plus the training data.
+empty_arr = np.empty(((forecast_horizon+2)*2+len(gru_scaled_train_predictions), 1))
+empty_arr[:] = np.nan
+shifted_test = np.concatenate([empty_arr, gru_scaled_test_predictions])
+
+plot_data([CURRENT_INFECTED, shifted_train, shifted_test], 'GRU prediction over original',  ['Current infected', 'Train predictions', 'Test predictions'], 'Time', 'People', 'Number of infected')
+
+# LSTM results.
+print(f"RMSE on train: {lstm_train_rmse}")
+print(f"RMSE on test: {lstm_test_rmse}")
+print(f"RMSLE on train: {lstm_train_rmsle}")
+print(f"RMSLE on test: {lstm_test_rmsle}")
+# GRU results.
 print(f"RMSE on train: {gru_train_rmse}")
 print(f"RMSE on test: {gru_test_rmse}")
 print(f"RMSLE on train: {gru_train_rmsle}")
