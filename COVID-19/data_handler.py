@@ -79,9 +79,9 @@ def calculate_current_infected(data):
     The time series for each country/region must be summed for a total.
     """
     confirmed, dead, recovered = data
-    c_sum = confirmed.sum()[2:]  # The first two rows are the sums of Long and Lat which must be removed.
-    d_sum = dead.sum()[2:]
-    r_sum = recovered.sum()[2:]
+    c_sum = confirmed.sum(numeric_only=True)[2:]  # The first two rows are the sums of Long and Lat which must be removed.
+    d_sum = dead.sum(numeric_only=True)[2:]
+    r_sum = recovered.sum(numeric_only=True)[2:]
 
     # Find the size of the smallest series.
     new_size = min(len(c_sum), len(d_sum), len(r_sum))
