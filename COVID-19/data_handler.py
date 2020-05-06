@@ -96,6 +96,18 @@ def calculate_current_infected(data):
 
     return c_sum - (d_sum + r_sum) # pandas DataFrame.
 
+def multivariate_to_supervised(data, steps):
+    X, Y = [], []
+    for idx in range(len(data)):
+        offset = idx + steps
+        try:
+            x, y = data[idx:offset].values, data.iloc[offset].values
+        except IndexError:
+            break
+        X.append(x)
+        Y.append(y)
+    return np.stack(X), np.stack(Y)
+
 def series_to_supervised(data, before, after):
     new_cols = []
     
