@@ -532,7 +532,7 @@ axes[1, 0].set_title('USA deceased forecast')
 axes[1, 1].plot(china_deceased_pred)
 axes[1, 1].plot(china_deceased_real)
 axes[1, 1].set_title('China deceased forecast')
-fig.tight_layout()
+fig.tight_layout(rect=[0, 0.03, 1, 0.95])
 
 fig, axes = plt.subplots(2, 2)
 fig.suptitle("Comparisson of LSTM forecasts on infected data")
@@ -548,7 +548,7 @@ axes[1, 0].set_title('USA infected forecast')
 axes[1, 1].plot(china_infected_pred)
 axes[1, 1].plot(china_infected_real)
 axes[1, 1].set_title('China infected forecast')
-fig.tight_layout()
+fig.tight_layout(rect=[0, 0.03, 1, 0.95])
 
 # # 6. The GRU <a name="gru"></a>
 
