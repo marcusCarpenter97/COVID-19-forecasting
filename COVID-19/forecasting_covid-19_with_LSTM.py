@@ -494,7 +494,8 @@ def make_lstm_predictions(data):
     scaled_answers = data_handler.rescale_data(y, diff_one[0], diff_two[0], log[0], forecast_horizon)
     return scaled_predictions, scaled_answers 
 
-# #### Global deceased.
+# #### Global.
+global_infected_pred, global_infected_real = make_lstm_predictions(confirmed)
 global_deceased_pred, global_deceased_real = make_lstm_predictions(deceased)
 
 # #### UK.
