@@ -428,15 +428,15 @@ multi_test_log, multi_test_diff_one, multi_test_diff_two, stationary_multi_test 
 x_multi_train, y_multi_train = data_handler.multivariate_to_supervised(stationary_multi_train, forecast_horizon)
 x_multi_test, y_multi_test = data_handler.multivariate_to_supervised(stationary_multi_test, forecast_horizon)
 
-features = 2  # Two time series.
-x_multi_train = x_multi_train.reshape(x_multi_train.shape[0], x_multi_train.shape[1], features)
-x_multi_test = x_multi_test.reshape(x_multi_test.shape[0], x_multi_test.shape[1], features)
+feature_n = 2  # Number of features = number of time series (infected and deceased).
+x_multi_train = x_multi_train.reshape(x_multi_train.shape[0], x_multi_train.shape[1], feature_n)
+x_multi_test = x_multi_test.reshape(x_multi_test.shape[0], x_multi_test.shape[1], feature_n)
 
 competition_model = Sequential()
-competition_model.add(LSTM(5, input_shape=(forecast_horizon, features)))
+competition_model.add(LSTM(5, input_shape=(forecast_horizon, feature_n)))
 competition_model.add(Activation("relu"))
 competition_model.add(Dropout(0.1))
-competition_model.add(Dense(features))
+competition_model.add(Dense(feature_n))
 competition_model.add(Activation("relu"))
 competition_model.compile(loss="mean_squared_error", optimizer="adam")
 competition_history = competition_model.fit(x_multi_train, y_multi_train, epochs=1000, batch_size=1, verbose=0,
