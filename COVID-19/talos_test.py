@@ -118,14 +118,20 @@ def prepare_data():
     x_test = x_test.reshape(x_test.shape[0], x_test.shape[1], features)
     return x_train, y_train
 
+def run_talos_scan(keras_model, model_name):
+    results = talos.Scan(x=X_TRAIN, y=Y_TRAIN, params=HYPERPARAMETERS, model=keras_model,
+                         reduction_metric='val_loss', minimize_loss=True,
+                         experiment_name=model_name, fraction_limit=0.1)
+    analisys = talos.Analyze(results)
+    analisys.data.to_csv(f'{model_name}.csv', index=False)
+    print(f'{model_name} results')
+    print(analisys.data)
+    print(analisys.high('val_loss'))
+    print(analisys.low('val_loss'))
+    print(analisys.best_params('val_loss', [], ascending=True))
+
 X_TRAIN, Y_TRAIN = prepare_data()
-LSTM_RESULTS = talos.Scan(x=X_TRAIN, y=Y_TRAIN, params=HYPERPARAMETERS, model=lstm_current_infected, experiment_name='lstm',
-                          fraction_limit=0.1)
-LSTM_ANALISYS = talos.Analyze(LSTM_RESULTS)
-print(LSTM_ANALISYS.data)
-print(LSTM_ANALISYS.high('val_acc'))
-print(LSTM_ANALISYS.rounds())
-print(LSTM_ANALISYS.best_params('val_acc', ['acc', 'loss', 'val_loss']))
-#gru_results = talos.Scan()
-#multi_lstm_results = talos.Scan()
-#multi_gru_results = talos.Scan()
+run_talos_scan(lstm_current_infected, 'lstm')
+run_talos_scan(gru_current_infected, 'gru')
+run_talos_scan(multivariate_lstm, 'multi_lstm')
+run_talos_scan(multivariate_gru, 'multi_gru')
