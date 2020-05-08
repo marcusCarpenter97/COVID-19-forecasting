@@ -95,7 +95,7 @@ deceased = raw_data[1].sum()[2:]
 recovered = raw_data[2].sum()[2:]
 
 plot_data([confirmed, current_infected, recovered, deceased], 'COVID-19 data', ['Total confirmed', 'Current infected',
-    'Recovered', 'Deceased'], 'People', 'Time')
+    'Recovered', 'Deceased'], 'Time', 'People')
 
 # # 2. Objectives <a name="obj"></a>
 
@@ -337,7 +337,7 @@ train_set_ratio = 0.7  # The size of the training set as a percentage of the dat
 train, test = data_handler.split_train_test(current_infected, train_set_ratio)
 
 # This helps visualize the train and test data.
-plot_data([train, test], 'Test and train data', ['Train data', 'Test data'], 'Number of infected', 'Time')
+plot_data([train, test], 'Test and train data', ['Train data', 'Test data'], 'Time', 'Number of infected')
 
 # Make the time series data stationary based on what we found before.
 train_log, train_diff_one, train_diff_two, stationary_train = data_handler.adjust_data(train)
@@ -512,16 +512,16 @@ lstm_train_rmsle = rmsle(scaled_train, scaled_train_predictions)
 lstm_test_rmsle = rmsle(scaled_test, scaled_test_predictions)
 
 # Plot model loss history.
-plot_data([lstm_history.history['loss'], lstm_history.history['val_loss']], 'Loss during LSTM training', ['Train', 'Test'], 'Loss', 'Epoch', adjust_xaxis=False)
+plot_data([lstm_history.history['loss'], lstm_history.history['val_loss']], 'Loss during LSTM training', ['Train', 'Test'], 'Epoch', 'Loss', adjust_xaxis=False)
 
 # Some preparation to plot the predictions is needed.
 
-# The first sample is lost after each differencing, so the + 2 is required.
-empty_arr = np.empty((forecast_horizon+2, 1))
+# The first sample is lost after each differencing, so the + 3 is required.
+empty_arr = np.empty((forecast_horizon+3, 1))
 empty_arr[:] = np.nan
 shifted_train = np.concatenate([empty_arr, scaled_train_predictions])
 # The test data mus be shifted by 2 empty arrays plus the training data.
-empty_arr = np.empty(((forecast_horizon+2)*2+len(scaled_train_predictions), 1))
+empty_arr = np.empty(((forecast_horizon+3)*2+len(scaled_train_predictions), 1))
 empty_arr[:] = np.nan
 shifted_test = np.concatenate([empty_arr, scaled_test_predictions])
 
@@ -678,14 +678,13 @@ gru_test_rmse = rmse(gru_scaled_test, gru_scaled_test_predictions)
 gru_train_rmsle = rmsle(gru_scaled_train, gru_scaled_train_predictions)
 gru_test_rmsle = rmsle(gru_scaled_test, gru_scaled_test_predictions)
 
-plot_data([gru_history.history['loss'], gru_history.history['val_loss']], 'Loss during GRU training', ['Train', 'Test'], 'Loss', 'Epoch',
-        adjust_xaxis=False)
+plot_data([gru_history.history['loss'], gru_history.history['val_loss']], 'Loss during GRU training', ['Train', 'Test'], 'Epoch','Loss', adjust_xaxis=False)
 
-empty_arr = np.empty((forecast_horizon+2, 1))
+empty_arr = np.empty((forecast_horizon+3, 1))
 empty_arr[:] = np.nan
 shifted_train = np.concatenate([empty_arr, gru_scaled_train_predictions])
 # The test data mus be shifted by 2 empty arrays plus the training data.
-empty_arr = np.empty(((forecast_horizon+2)*2+len(gru_scaled_train_predictions), 1))
+empty_arr = np.empty(((forecast_horizon+3)*2+len(gru_scaled_train_predictions), 1))
 empty_arr[:] = np.nan
 shifted_test = np.concatenate([empty_arr, gru_scaled_test_predictions])
 
