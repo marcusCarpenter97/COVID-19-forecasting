@@ -118,6 +118,25 @@ def prepare_data():
     x_test = x_test.reshape(x_test.shape[0], x_test.shape[1], features)
     return x_train, y_train
 
+def prepare_multi_data():
+    raw_data = data_handler.load_data()
+    confirmed = raw_data[0].sum()[2:]
+    deceased = raw_data[1].sum()[2:]
+
+    multi_data = pd.concat([confirmed, deceased], axis=1)
+    multi_train, multi_test = data_handler.split_train_test(multi_data, train_set_ratio)
+
+    multi_train_log, multi_train_diff_one, multi_train_diff_two, stationary_multi_train = data_handler.adjust_data(multi_train)
+    multi_test_log, multi_test_diff_one, multi_test_diff_two, stationary_multi_test = data_handler.adjust_data(multi_test)
+
+    x_multi_train, y_multi_train = data_handler.multivariate_to_supervised(stationary_multi_train, forecast_horizon)
+    x_multi_test, y_multi_test = data_handler.multivariate_to_supervised(stationary_multi_test, forecast_horizon)
+
+    feature_n = 2  # Number of features = number of time series (infected and deceased).
+    x_multi_train = x_multi_train.reshape(x_multi_train.shape[0], x_multi_train.shape[1], feature_n)
+    x_multi_test = x_multi_test.reshape(x_multi_test.shape[0], x_multi_test.shape[1], feature_n)
+    return x_multi_train, x_multi_test
+
 def run_talos_scan(keras_model, model_name):
     results = talos.Scan(x=X_TRAIN, y=Y_TRAIN, params=HYPERPARAMETERS, model=keras_model,
                          reduction_metric='val_loss', minimize_loss=True,
@@ -130,8 +149,8 @@ def run_talos_scan(keras_model, model_name):
     print(analisys.low('val_loss'))
     print(analisys.best_params('val_loss', [], ascending=True))
 
-X_TRAIN, Y_TRAIN = prepare_data()
-run_talos_scan(lstm_current_infected, 'lstm')
-run_talos_scan(gru_current_infected, 'gru')
+X_TRAIN, Y_TRAIN = prepare_multi_data()
+#run_talos_scan(lstm_current_infected, 'lstm')
+#run_talos_scan(gru_current_infected, 'gru')
 run_talos_scan(multivariate_lstm, 'multi_lstm')
 run_talos_scan(multivariate_gru, 'multi_gru')
