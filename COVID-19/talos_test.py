@@ -7,6 +7,7 @@ from keras.models import Sequential
 from keras.layers import LSTM, GRU, Dense, Activation, Dropout
 import talos
 import data_handler
+import pandas as pd
 
 def swish(x, beta=1.0):
     return x * K.sigmoid(beta * x)
@@ -119,6 +120,9 @@ def prepare_data():
     return x_train, y_train
 
 def prepare_multi_data():
+    forecast_horizon = 4   # Number of observations to be used to predict the next event.
+    train_set_ratio = 0.7  # The size of the training set as a percentage of the data set.
+
     raw_data = data_handler.load_data()
     confirmed = raw_data[0].sum()[2:]
     deceased = raw_data[1].sum()[2:]
@@ -135,7 +139,7 @@ def prepare_multi_data():
     feature_n = 2  # Number of features = number of time series (infected and deceased).
     x_multi_train = x_multi_train.reshape(x_multi_train.shape[0], x_multi_train.shape[1], feature_n)
     x_multi_test = x_multi_test.reshape(x_multi_test.shape[0], x_multi_test.shape[1], feature_n)
-    return x_multi_train, x_multi_test
+    return x_multi_train, y_multi_train
 
 def run_talos_scan(keras_model, model_name):
     results = talos.Scan(x=X_TRAIN, y=Y_TRAIN, params=HYPERPARAMETERS, model=keras_model,
