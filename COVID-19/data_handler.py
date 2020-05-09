@@ -27,6 +27,7 @@ DIRECTORY = "COVID-19/csse_covid_19_data/csse_covid_19_time_series/"
 # The order of the file names is important in this list.
 FILES = ["time_series_covid19_confirmed_global.csv", "time_series_covid19_deaths_global.csv",
          "time_series_covid19_recovered_global.csv"]
+TRAIN_SET_RATIO = 0.7
 
 def get_github_updates():
     """
@@ -151,8 +152,8 @@ def split_horizon(data, horizon):
     y = data.iloc[:, horizon:].to_numpy()
     return x, y
 
-def split_train_test(data, ratio):
-    train_size = int(data.shape[0] * ratio)
+def split_train_test(data):
+    train_size = int(data.shape[0] * TRAIN_SET_RATIO)
     return data[:train_size], data[train_size:]
 
 def adjust_data(data):
