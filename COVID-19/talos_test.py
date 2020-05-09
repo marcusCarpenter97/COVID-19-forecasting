@@ -85,6 +85,7 @@ def multivariate_gru(x_train, y_train, x_val, y_val, params):
                         validation_split=0.2)
     return history, model
 
+"""
 def prepare_data():
     forecast_horizon = 4   # Number of observations to be used to predict the next event.
     train_set_ratio = 0.7  # The size of the training set as a percentage of the data set.
@@ -140,7 +141,7 @@ def prepare_multi_data():
     x_multi_train = x_multi_train.reshape(x_multi_train.shape[0], x_multi_train.shape[1], feature_n)
     x_multi_test = x_multi_test.reshape(x_multi_test.shape[0], x_multi_test.shape[1], feature_n)
     return x_multi_train, y_multi_train
-
+"""
 def run_talos_scan(keras_model, model_name):
     results = talos.Scan(x=X_TRAIN, y=Y_TRAIN, params=HYPERPARAMETERS, model=keras_model,
                          reduction_metric='val_loss', minimize_loss=True,
@@ -153,8 +154,9 @@ def run_talos_scan(keras_model, model_name):
     print(analisys.low('val_loss'))
     print(analisys.best_params('val_loss', [], ascending=True))
 
-X_TRAIN, Y_TRAIN = prepare_multi_data()
-#run_talos_scan(lstm_current_infected, 'lstm')
-#run_talos_scan(gru_current_infected, 'gru')
-run_talos_scan(multivariate_lstm, 'multi_lstm')
-run_talos_scan(multivariate_gru, 'multi_gru')
+if __name__ == "__main__":
+    X_TRAIN, Y_TRAIN = prepare_multi_data()
+    #run_talos_scan(lstm_current_infected, 'lstm')
+    #run_talos_scan(gru_current_infected, 'gru')
+    run_talos_scan(multivariate_lstm, 'multi_lstm')
+    run_talos_scan(multivariate_gru, 'multi_gru')
