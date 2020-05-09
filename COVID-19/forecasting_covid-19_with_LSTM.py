@@ -2,8 +2,8 @@
 
 # * 1\. [The data](#data)
 # * 2\. [Objectives](#obj)
-#     * 2.1. [Predict current infected](#obj_predcur)
-#     * 2.2. [Predict deceased](#obj_preddece)
+#     * 2.1. [The Kaggle competition](#obj_kaggle)
+#     * 2.2. [How does the LSTM perform when compared with other models?](#obj_comp)
 #     * 2.3. [How well can the LSTM model the problem?](#obj_gener)
 #     * 2.4. [How does the LSTM perform when compared with other models?](#obj_comp)
 # * 3\. [Time series analysis](#time)
@@ -108,7 +108,7 @@ plot_data([confirmed, current_infected, recovered, deceased], 'COVID-19 data', [
 # Now that the data has been explained, it is possible to use any time series forecasting method on it. In this notebook the
 # selected methods where the LSTM and GRU.
 
-# ## 2.3 How well can the LSTM model COVID-19? <a name="obj_gener"></a>
+# ## 2.2 How well can the LSTM model COVID-19? <a name="obj_gener"></a>
 
 # To prove that the LSTM has actualy learnt from the data it is necessary to create forecasts on unseen data. A testing
 # set is usualy separated from the data before using the rest to train a neural network. But how well can the network model the
@@ -144,14 +144,14 @@ plot_data([global_inf_train, global_inf_test, uk_inf_test, uk_dec_test], 'Global
 # Is a model trined on the global infected (blue line) capable of creating accurate forecasts for the UK data? A comparisson
 # between a models trained on the global infected data and a model designed for this compettition was made in Chapter X.
 
-# ## 2.4 How does the LSTM perform when compared with other models? <a name="obj_comp"></a>
+# ## 2.3 How does the LSTM perform when compared with other models? <a name="obj_comp"></a>
 
 # RMSE, allong with the RMSLE, was used to compare the performance for the models. Plots were also used to show how the selected
 # models perform on the data. MASE was used to calculate the accuracy of forecasts. As this uses percentages it is possible to
 # compare different methods quite well.
 # The three loss functions used to compare the models performance are:
 
-# ### 2.4.1 Root Mean Squared Error (RMSE):
+# ### 2.3.1 Root Mean Squared Error (RMSE):
 # Calculates the average error in the forecasts. Values calculated by this function represent the number of people the forecast
 # got wrong.
 
@@ -160,7 +160,7 @@ plot_data([global_inf_train, global_inf_test, uk_inf_test, uk_dec_test], 'Global
 def rmse(prediction, target):
     return np.sqrt(((prediction - target) ** 2).mean())
 
-# ### 2.4.2 Root Mean Squared Log Error (RMSLE):
+# ### 2.3.2 Root Mean Squared Log Error (RMSLE):
 # Other than being chosen by Kaggle, this loss function penalises predictions smaller than the real value. So, according to this
 # function, overestimating the number of infected people is better than underestimating it.
 
@@ -169,7 +169,7 @@ def rmse(prediction, target):
 def rmsle(prediction, target):
     return np.sqrt(((np.log(prediction+1) - np.log(target+1)) ** 2).mean())
 
-# ### 2.4.3 Mean Absolure Scaled Error (MASE):
+# ### 2.3.3 Mean Absolure Scaled Error (MASE):
 # This represents the forecast error as a ratio. This is usefull as it allows forecasts on different scales to be compared.
 
 # $ MASE = \frac{\frac{1}{J}\sum_{j}|p_i-r_i|}{\frac{1}{T-1}\sum_{t=2}^{T}|r_t-r_{t-1}|}  $
@@ -473,6 +473,19 @@ competition_multi_train_rmse = rmse(scaled_multi_train, scaled_multi_train_predi
 competition_multi_test_rmse = rmse(scaled_multi_test, scaled_multi_test_predictions)
 competition_multi_train_rmsle = rmsle(scaled_multi_train, scaled_multi_train_predictions)
 competition_multi_test_rmsle = rmsle(scaled_multi_test, scaled_multi_test_predictions)
+
+plot_data([competition_history.history['loss'], competition_history.history['val_loss']], 'Loss during LSTM training', ['Train', 'Test'], 'Epoch', 'Loss', adjust_xaxis=False)
+
+empty_arr = np.empty((forecast_horizon+3, 1))
+empty_arr[:] = np.nan
+shifted_train = np.concatenate([empty_arr, scaled_train_predictions])
+# The test data mus be shifted by 2 empty arrays plus the training data.
+empty_arr = np.empty(((forecast_horizon+3)*2+len(scaled_train_predictions), 1))
+empty_arr[:] = np.nan
+shifted_test = np.concatenate([empty_arr, scaled_test_predictions])
+
+plot_data([current_infected, shifted_train, shifted_test], 'LSTM prediction over original', ['Current infected', 'Train
+predictions', 'Test predictions'], 'Time', 'People', 'Number of infected')
 
 # ## 5.4 Results on global data <a name="lstm_global"></a>
 
