@@ -32,24 +32,21 @@ TRAIN_SET_RATIO = 0.7
 def get_github_updates():
     """
     Fetch the new data from the remote repo.
+    Executed the git pull command.
     """
     with cd("COVID-19"):
         subprocess.call(["git", "pull", "origin", "master"])
 
 def clone_git_repo():
+    """
+    Executes the git clone on the Johns Hopkins GitHub repository.
+    """
     subprocess.call(["git", "clone", "https://github.com/CSSEGISandData/COVID-19.git"])
 
-def load_data():
+def check_for_updates():
     """
-    Read data from all csv files.
+    Updated the files if they have not been modified today.
     """
-
-    if not os.path.isdir(DIRECTORY):
-        clone_git_repo()
-
-    # Create a list of paths from the file names.
-    paths = [os.path.join(DIRECTORY, f) for f in FILES]
-
     if platform.system() == 'Linux':  # TODO make cross-platform.
         stats = [os.stat(path) for path in paths]
         # Get today's date.
@@ -59,43 +56,56 @@ def load_data():
         if not all(today == creation_time for creation_time in dates):
             get_github_updates()
 
-    data_frames = []
-    # load all csv files into a list of data frames.
-    for path in paths:
-        df = pd.read_csv(path)
-        data_frames.append(df)
-
-    return data_frames # Confirmed, Dead and Recovered.
-
-def load_updated_data():
+def clean_data(df_list):
     """
-    Fetch GitHub updates before loading the data.
+    Remove unnecessary columns from data.
     """
-    get_github_updates()
-    return load_data()
+    return [df.drop(columns=['Province/State', 'Lat', 'Long'], inplace=True) for df in df_list]
+    
 
-def calculate_current_infected(data):
+def load_data():
+    """
+    Read data from all csv files.
+    """
+
+    # First time loding the data.
+    if not os.path.isdir(DIRECTORY):
+        clone_git_repo()
+
+    # Create a list of paths from the file names.
+    paths = [os.path.join(DIRECTORY, f) for f in FILES]
+
+    # Get new data.
+    check_for_updates()
+
+    # Load all csv files into a list of data frames.
+    data_frames = [pd.read_csv(path) for path in paths]
+
+    return clean_data(data_frames) # Confirmed, Dead and Recovered.
+
+def calculate_current_infected(confirmed, dead, recovered):
     """
     Infected people = confirmed - (dead + recovered) 
     The time series for each country/region must be summed for a total.
+    Param: DataFrame
+    Return: DataFrame
     """
-    confirmed, dead, recovered = data
-    c_sum = confirmed.sum(numeric_only=True)[2:]  # The first two rows are the sums of Long and Lat which must be removed.
-    d_sum = dead.sum(numeric_only=True)[2:]
-    r_sum = recovered.sum(numeric_only=True)[2:]
+    #c_sum = confirmed.sum()
+    #d_sum = dead.sum()
+    #r_sum = recovered.sum()
 
     # Find the size of the smallest series.
-    new_size = min(len(c_sum), len(d_sum), len(r_sum))
+    #new_size = min(len(c_sum), len(d_sum), len(r_sum))
 
     # Trim the series so they all have the same size.
-    c_sum = c_sum[:new_size].to_frame() 
-    d_sum = d_sum[:new_size].to_frame() 
-    r_sum = r_sum[:new_size].to_frame()  
+    #c_sum = c_sum[:new_size].to_frame() 
+    #d_sum = d_sum[:new_size].to_frame() 
+    #r_sum = r_sum[:new_size].to_frame()  
 
     # r_sum uses m/dd/yyyy this needs to be converted to m/dd/yy to match the other two sets.
-    r_sum = r_sum.set_index(c_sum.index)
+    #r_sum = r_sum.set_index(c_sum.index)
 
-    return c_sum - (d_sum + r_sum) # pandas DataFrame.
+    return confirmed.sum() - (dead.sum() + recovered.sum())
 
 def multivariate_to_supervised(data, steps):
     X, Y = [], []
