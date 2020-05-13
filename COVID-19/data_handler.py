@@ -43,7 +43,7 @@ def clone_git_repo():
     """
     subprocess.call(["git", "clone", "https://github.com/CSSEGISandData/COVID-19.git"])
 
-def check_for_updates():
+def check_for_updates(paths):
     """
     Updated the files if they have not been modified today.
     """
@@ -60,7 +60,7 @@ def clean_data(df_list):
     """
     Remove unnecessary columns from data.
     """
-    return [df.drop(columns=['Province/State', 'Lat', 'Long'], inplace=True) for df in df_list]
+    return [df.drop(columns=['Province/State', 'Lat', 'Long']) for df in df_list]
     
 
 def load_data():
@@ -76,7 +76,7 @@ def load_data():
     paths = [os.path.join(DIRECTORY, f) for f in FILES]
 
     # Get new data.
-    check_for_updates()
+    check_for_updates(paths)
 
     # Load all csv files into a list of data frames.
     data_frames = [pd.read_csv(path) for path in paths]
@@ -105,7 +105,7 @@ def calculate_current_infected(confirmed, dead, recovered):
     # r_sum uses m/dd/yyyy this needs to be converted to m/dd/yy to match the other two sets.
     #r_sum = r_sum.set_index(c_sum.index)
 
-    return confirmed.sum() - (dead.sum() + recovered.sum())
+    return confirmed.sum(numeric_only=True) - (dead.sum(numeric_only=True) + recovered.sum(numeric_only=True))
 
 def multivariate_to_supervised(data, steps):
     X, Y = [], []
