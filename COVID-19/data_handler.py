@@ -107,8 +107,8 @@ def calculate_current_infected(confirmed, dead, recovered):
     """
     Infected people = confirmed - (dead + recovered) 
     The time series for each country/region must be summed for a total.
-    Param: DataFrame
-    Return: DataFrame
+    Param: Series
+    Return: Series
     """
     #c_sum = confirmed.sum()
     #d_sum = dead.sum()
@@ -125,7 +125,7 @@ def calculate_current_infected(confirmed, dead, recovered):
     # r_sum uses m/dd/yyyy this needs to be converted to m/dd/yy to match the other two sets.
     #r_sum = r_sum.set_index(c_sum.index)
 
-    return confirmed.sum(numeric_only=True) - (dead.sum(numeric_only=True) + recovered.sum(numeric_only=True))
+    return confirmed - (dead + recovered)
 
 def multivariate_to_supervised(data, steps):
     X, Y = [], []
