@@ -1,15 +1,36 @@
 import pandas as pd
 import data_handler
+import country
 
 class Data:
     """ A container for what data_handler produces."""
     def __init__(self):
-        self.confirmed, self.deceased, self.recovered = data_handler.load_data()
+        self.raw_confirmed, self.raw_deceased, self.raw_recovered = data_handler.load_covid_data()
+        self.global_confirmed = self.raw_confirmed.sum(numeric_only=True)
+        self.global_deceased = self.raw_deceased.sum(numeric_only=True)
+        self.global_recovered = self.raw_recovered.sum(numeric_only=True)
+
+        def generate_country_data():
+            population = data_handler.load_population_data()
+            countries = []
+            # For each country in population.
+            for name, pop in population.iterrows():
+                # Get all relevant time series based on counrty name.
+                c = self.raw_confirmed.loc[self.raw_confirmed['Country/Region'] == name]
+                d = self.raw_deceased.loc[self.raw_deceased['Country/Region'] == name]
+                r = self.raw_recovered.loc[self.raw_recovered['Country/Region'] == name]
+                # Create new country object.
+                countries.append(country.Country(name, pop, c, d, r))
+            return countries
+        self.country_data = generate_country_data()
 
     def calculate_current_infected(self):
-        self.current_infected = data_handler.calculate_current_infected((self.confirmed,
-                                                                         self.deceased,
-                                                                         self.recovered))
+        self.global_infected = data_handler.calculate_current_infected(self.global_confirmed,
+                                                                       self.global_deceased,
+                                                                       self.global_recovered)
+
+    def calculate_healthy(self):
+        self.global_healthy = self.global_population  - (self.deceased + self.recovered + self.global_infected)
 
     def make_kaggle_data(self):
         self.confirmed = self.confirmed.sum()[2:]
