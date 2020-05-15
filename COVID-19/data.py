@@ -44,8 +44,17 @@ class Data:
         else:
             self.global_infected = self.global_confirmed - (self.global_deceased + self.global_recovered)
 
-    def calculate_healthy(self):
-        self.global_healthy = self.global_population - (self.deceased + self.recovered + self.global_infected)
+    def calculate_healthy(self, country_name=None):
+        """
+        Healthy people = population - (dead + recovered + infected)
+        If no country is specified it defaults to the global data.
+        """
+        if country_name:
+            country = self.find_country(country_name)
+            if country:
+                country.healthy = country.population - (country.deceased + country.recovered + country.infected)
+        else:
+            self.global_healthy = self.global_population - (self.global_deceased + self.global_recovered + self.global_infected)
 
     def make_kaggle_data(self):
         self.confirmed = self.confirmed.sum()[2:]
