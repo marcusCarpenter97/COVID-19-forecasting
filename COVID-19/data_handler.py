@@ -1,3 +1,4 @@
+import re
 import os
 import platform
 from datetime import datetime
@@ -7,6 +8,12 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+POPULATION_DIR = "population"
+COVID_DIR = "COVID-19/csse_covid_19_data/csse_covid_19_time_series/"
+# The order of the file names is important in this list.
+FILES = ["time_series_covid19_confirmed_global.csv", "time_series_covid19_deaths_global.csv",
+         "time_series_covid19_recovered_global.csv"]
+TRAIN_SET_RATIO = 0.7
 
 class cd:
     """
@@ -22,14 +29,11 @@ class cd:
     def __exit__(self, etype, value, traceback):
         os.chdir(self.savedPath)
 
+def pull_population_updates():
+    with cd("World-Bank"):
+        subprocess.call(["git", "pull", "origin", "master"])
 
-DIRECTORY = "COVID-19/csse_covid_19_data/csse_covid_19_time_series/"
-# The order of the file names is important in this list.
-FILES = ["time_series_covid19_confirmed_global.csv", "time_series_covid19_deaths_global.csv",
-         "time_series_covid19_recovered_global.csv"]
-TRAIN_SET_RATIO = 0.7
-
-def get_github_updates():
+def pull_covid_updates():
     """
     Fetch the new data from the remote repo.
     Executed the git pull command.
@@ -37,11 +41,14 @@ def get_github_updates():
     with cd("COVID-19"):
         subprocess.call(["git", "pull", "origin", "master"])
 
-def clone_git_repo():
+def clone_covid_data():
     """
     Executes the git clone on the Johns Hopkins GitHub repository.
     """
     subprocess.call(["git", "clone", "https://github.com/CSSEGISandData/COVID-19.git"])
+
+def clone_population_data():
+    subprocess.call(["git", "clone", "https://github.com/datasets/population.git"])
 
 def check_for_updates(paths):
     """
@@ -51,29 +58,42 @@ def check_for_updates(paths):
         stats = [os.stat(path) for path in paths]
         # Get today's date.
         today = datetime.utcfromtimestamp(int(time.time())).strftime('%Y-%m-%d')
-        # Check whether all data files have been modified today. If not get updates.
+        # Get last modified date for each file.
         dates = [datetime.utcfromtimestamp(int(stat.st_mtime)).strftime('%Y-%m-%d') for stat in stats]
+        # Check whether all data files have been modified today. If not get updates.
         if not all(today == creation_time for creation_time in dates):
-            get_github_updates()
+            pull_covid_updates()
 
-def clean_data(df_list):
+def clean_data(df_list, cols):
     """
     Remove unnecessary columns from data.
     """
-    return [df.drop(columns=['Province/State', 'Lat', 'Long']) for df in df_list]
+    return [df.drop(columns=cols) for df in df_list]
     
+def load_population_data():
+    """
+    param: country_names - list of strings.
+    """
+    if not os.path.isdir(POPULATION_DIR):
+        clone_population_data()
 
-def load_data():
+    pop = pd.read_csv("kaggle_data/covid19-global-forecasting-week-5/train.csv")
+    # Remove unnecessary columns.
+    pop.drop(columns=["Id", "County", "Province_State", "Weight", "Date", "Target", "TargetValue"], inplace=True)
+    # Find country's population.
+    return pop.groupby(['Country_Region']).max()
+
+def load_covid_data():
     """
     Read data from all csv files.
     """
 
     # First time loding the data.
-    if not os.path.isdir(DIRECTORY):
-        clone_git_repo()
+    if not os.path.isdir(COVID_DIR):
+        clone_covid_data()
 
     # Create a list of paths from the file names.
-    paths = [os.path.join(DIRECTORY, f) for f in FILES]
+    paths = [os.path.join(COVID_DIR, f) for f in FILES]
 
     # Get new data.
     check_for_updates(paths)
@@ -81,7 +101,7 @@ def load_data():
     # Load all csv files into a list of data frames.
     data_frames = [pd.read_csv(path) for path in paths]
 
-    return clean_data(data_frames) # Confirmed, Dead and Recovered.
+    return clean_data(data_frames, ['Province/State', 'Lat', 'Long']) # Confirmed, Dead and Recovered.
 
 def calculate_current_infected(confirmed, dead, recovered):
     """
