@@ -34,22 +34,18 @@ class Data:
 
     def calculate_current_infected(self, country_name=None):
         """
-        Asks the data handler to calculate the current infected.
+        Infected people = confirmed - (dead + recovered)
         If no country is specified it defaults to the global data.
         """
         if country_name:
             country = self.find_country(country_name)
             if country:
-                country.infected = data_handler.calculate_current_infected(country.confirmed,
-                                                                           country.deceased, 
-                                                                           country.recovered)
+                country.infected = country.confirmed - (country.deceased + country.recovered)
         else:
-            self.global_infected = data_handler.calculate_current_infected(self.global_confirmed,
-                                                                           self.global_deceased,
-                                                                           self.global_recovered)
+            self.global_infected = self.global_confirmed - (self.global_deceased + self.global_recovered)
 
     def calculate_healthy(self):
-        self.global_healthy = self.global_population  - (self.deceased + self.recovered + self.global_infected)
+        self.global_healthy = self.global_population - (self.deceased + self.recovered + self.global_infected)
 
     def make_kaggle_data(self):
         self.confirmed = self.confirmed.sum()[2:]

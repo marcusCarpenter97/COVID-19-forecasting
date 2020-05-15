@@ -103,30 +103,6 @@ def load_covid_data():
 
     return clean_data(data_frames, ['Province/State', 'Lat', 'Long']) # Confirmed, Dead and Recovered.
 
-def calculate_current_infected(confirmed, dead, recovered):
-    """
-    Infected people = confirmed - (dead + recovered) 
-    The time series for each country/region must be summed for a total.
-    Param: Series
-    Return: Series
-    """
-    #c_sum = confirmed.sum()
-    #d_sum = dead.sum()
-    #r_sum = recovered.sum()
-
-    # Find the size of the smallest series.
-    #new_size = min(len(c_sum), len(d_sum), len(r_sum))
-
-    # Trim the series so they all have the same size.
-    #c_sum = c_sum[:new_size].to_frame() 
-    #d_sum = d_sum[:new_size].to_frame() 
-    #r_sum = r_sum[:new_size].to_frame()  
-
-    # r_sum uses m/dd/yyyy this needs to be converted to m/dd/yy to match the other two sets.
-    #r_sum = r_sum.set_index(c_sum.index)
-
-    return confirmed - (dead + recovered)
-
 def multivariate_to_supervised(data, steps):
     X, Y = [], []
     for idx in range(len(data)):
