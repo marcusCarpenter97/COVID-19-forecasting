@@ -1,4 +1,3 @@
-import re
 import os
 import platform
 from datetime import datetime
@@ -8,7 +7,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-POPULATION_DIR = "population"
 COVID_DIR = "COVID-19/csse_covid_19_data/csse_covid_19_time_series/"
 # The order of the file names is important in this list.
 FILES = ["time_series_covid19_confirmed_global.csv", "time_series_covid19_deaths_global.csv",
@@ -29,10 +27,6 @@ class cd:
     def __exit__(self, etype, value, traceback):
         os.chdir(self.savedPath)
 
-def pull_population_updates():
-    with cd("World-Bank"):
-        subprocess.call(["git", "pull", "origin", "master"])
-
 def pull_covid_updates():
     """
     Fetch the new data from the remote repo.
@@ -46,9 +40,6 @@ def clone_covid_data():
     Executes the git clone on the Johns Hopkins GitHub repository.
     """
     subprocess.call(["git", "clone", "https://github.com/CSSEGISandData/COVID-19.git"])
-
-def clone_population_data():
-    subprocess.call(["git", "clone", "https://github.com/datasets/population.git"])
 
 def check_for_updates(paths):
     """
@@ -64,19 +55,10 @@ def check_for_updates(paths):
         if not all(today == creation_time for creation_time in dates):
             pull_covid_updates()
 
-def clean_data(df_list, cols):
-    """
-    Remove unnecessary columns from data.
-    """
-    return [df.drop(columns=cols) for df in df_list]
-    
 def load_population_data():
     """
     param: country_names - list of strings.
     """
-    if not os.path.isdir(POPULATION_DIR):
-        clone_population_data()
-
     pop = pd.read_csv("kaggle_data/covid19-global-forecasting-week-5/train.csv")
     # Remove unnecessary columns.
     pop.drop(columns=["Id", "County", "Province_State", "Weight", "Date", "Target", "TargetValue"], inplace=True)
@@ -101,7 +83,8 @@ def load_covid_data():
     # Load all csv files into a list of data frames.
     data_frames = [pd.read_csv(path) for path in paths]
 
-    return clean_data(data_frames, ['Province/State', 'Lat', 'Long']) # Confirmed, Dead and Recovered.
+    # Remove unnecessary columns and return dataframes.
+    return [df.drop(columns=['Province/State', 'Lat', 'Long']) for df in data_frames]  # Confirmed, Dead and Recovered.
 
 def multivariate_to_supervised(data, steps):
     X, Y = [], []

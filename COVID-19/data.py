@@ -56,11 +56,6 @@ class Data:
         else:
             self.global_healthy = self.global_population - (self.global_deceased + self.global_recovered + self.global_infected)
 
-    def make_kaggle_data(self):
-        self.confirmed = self.confirmed.sum()[2:]
-        self.deceased = self.deceased.sum()[2:]
-        self.kaggle_data = pd.concat([self.confirmed, self.deceased], axis=1)
-
     def split_train_test(self, data):
         self.train, self.test = data_handler.split_train_test(data)
 
