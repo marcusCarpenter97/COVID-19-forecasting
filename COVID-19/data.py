@@ -70,7 +70,7 @@ class Data:
         Return:
         A slice from country - DataFrame
         """
-        return country.data.iloc[start:end]
+        return country.get_slice(start, end)
 
     def split_train_test(self, data):
         self.train, self.test = data_handler.split_train_test(data)

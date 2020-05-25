@@ -28,3 +28,6 @@ class Country:
             except RuntimeWarning as runw:
                 print(f"RuntimeWarning: {runw}")
                 print("The numbers given to exp where too big and caused an error. The data wasn't affected.")
+
+    def get_slice(self, start, end):
+        return self.data.iloc[start:end]
