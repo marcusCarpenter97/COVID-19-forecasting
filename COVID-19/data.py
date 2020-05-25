@@ -75,6 +75,11 @@ class Data:
         for country in self.country_data:
             country.int_data()
 
+    def plot_data(self, country_name):
+        country = self.find_country(country_name)
+        country.data[["Confirmed", "Deceased", "Recovered", "Infected"]].plot()
+
+# TODO remove all below.
     def split_train_test(self, data):
         self.train, self.test = data_handler.split_train_test(data)
 
