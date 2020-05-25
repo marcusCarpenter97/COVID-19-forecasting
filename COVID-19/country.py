@@ -1,4 +1,7 @@
+import numpy as np
 import pandas as pd
+import warnings
+
 
 class Country:
     """ Represents a country with COVID-19 """
@@ -14,3 +17,15 @@ class Country:
         print(self.name)
         print(self.population)
         print(self.data)
+
+    def log_data(self):
+        self.data = np.log(self.data)
+
+    def exp_data(self):
+        with warnings.catch_warnings():
+            warnings.filterwarnings('error')
+            try:
+                self.data = np.exp(self.data)
+            except RuntimeWarning as runw:
+                print(f"RuntimeWarning: {runw}")
+                print("The numbers given to exp where too big and caused an error. The data wasn't affected.")

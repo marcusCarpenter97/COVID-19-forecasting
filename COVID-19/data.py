@@ -16,7 +16,7 @@ class Data:
             # For each country in population.
             for name, pop in population.iterrows():
                 p = pop['Population']
-                # Get all relevant time series based on counrty name.
+                # Get all relevant time series based on country name.
                 c = self.raw_confirmed.loc[self.raw_confirmed['Country/Region'] == name].sum(numeric_only=True)
                 d = self.raw_deceased.loc[self.raw_deceased['Country/Region'] == name].sum(numeric_only=True)
                 r = self.raw_recovered.loc[self.raw_recovered['Country/Region'] == name].sum(numeric_only=True)
@@ -46,6 +46,14 @@ class Data:
         Healthy people = population - (dead + recovered + infected)
         """
         return p - (d + r + i)
+
+    def log_country_data(self):
+        for country  in self.country_data:
+            country.log_data()
+
+    def exp_country_data(self):
+        for country  in self.country_data:
+            country.exp_data()
 
     def split_train_test(self, data):
         self.train, self.test = data_handler.split_train_test(data)
