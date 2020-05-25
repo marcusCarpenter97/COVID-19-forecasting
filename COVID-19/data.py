@@ -15,12 +15,15 @@ class Data:
             countries = []
             # For each country in population.
             for name, pop in population.iterrows():
+                p = pop['Population']
                 # Get all relevant time series based on counrty name.
-                c = self.raw_confirmed.loc[self.raw_confirmed['Country/Region'] == name]
-                d = self.raw_deceased.loc[self.raw_deceased['Country/Region'] == name]
-                r = self.raw_recovered.loc[self.raw_recovered['Country/Region'] == name]
+                c = self.raw_confirmed.loc[self.raw_confirmed['Country/Region'] == name].sum(numeric_only=True)
+                d = self.raw_deceased.loc[self.raw_deceased['Country/Region'] == name].sum(numeric_only=True)
+                r = self.raw_recovered.loc[self.raw_recovered['Country/Region'] == name].sum(numeric_only=True)
+                i = self.calculate_current_infected(c, d, r)
+                h = self.calculate_healthy(p, d, r, i)
                 # Create new country object.
-                countries.append(country.Country(name, pop, c, d, r))
+                countries.append(country.Country(name, p, c, d, r, i, h))
             return countries
         self.country_data = generate_country_data()
 
@@ -32,29 +35,17 @@ class Data:
         res = [country for country in self.country_data if country.name == name]
         return None if len(res) == 0 else res[0]
 
-    def calculate_current_infected(self, country_name=None):
+    def calculate_current_infected(self, c, d, r):
         """
         Infected people = confirmed - (dead + recovered)
-        If no country is specified it defaults to the global data.
         """
-        if country_name:
-            country = self.find_country(country_name)
-            if country:
-                country.infected = country.confirmed - (country.deceased + country.recovered)
-        else:
-            self.global_infected = self.global_confirmed - (self.global_deceased + self.global_recovered)
+        return c - (d + r)
 
-    def calculate_healthy(self, country_name=None):
+    def calculate_healthy(self, p, d, r, i):
         """
         Healthy people = population - (dead + recovered + infected)
-        If no country is specified it defaults to the global data.
         """
-        if country_name:
-            country = self.find_country(country_name)
-            if country:
-                country.healthy = country.population - (country.deceased + country.recovered + country.infected)
-        else:
-            self.global_healthy = self.global_population - (self.global_deceased + self.global_recovered + self.global_infected)
+        return p - (d + r + i)
 
     def split_train_test(self, data):
         self.train, self.test = data_handler.split_train_test(data)

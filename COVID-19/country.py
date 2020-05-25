@@ -1,21 +1,16 @@
+import pandas as pd
 
 class Country:
     """ Represents a country with COVID-19 """
 
-    def __init__(self, n, p, c=None, d=None, r=None):
+    def __init__(self, n, p, c, d, r, i, h):
+        #print(c, d, r, i, h)
         self.name = n
-        self.population = p['Population']
-        self.confirmed = c.sum(numeric_only=True)
-        self.deceased = d.sum(numeric_only=True)
-        self.recovered = r.sum(numeric_only=True)
-        self.infected = None
-        self.healthy = None
+        self.population = p
+        self.data = pd.concat([c, d, r, i, h], axis=1)
+        self.data.columns=["Confirmed", "Deceased", "Recovered", "Infected", "Healthy"]
 
     def print_country(self):
         print(self.name)
         print(self.population)
-        print(self.confirmed)
-        print(self.deceased)
-        print(self.recovered)
-        print(self.infected)
-        print(self.healthy)
+        print(self.data)
