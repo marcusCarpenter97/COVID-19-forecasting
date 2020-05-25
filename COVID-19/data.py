@@ -48,12 +48,29 @@ class Data:
         return p - (d + r + i)
 
     def log_country_data(self):
-        for country  in self.country_data:
+        """
+        Apply the log function on all countries.
+        """
+        for country in self.country_data:
             country.log_data()
 
     def exp_country_data(self):
-        for country  in self.country_data:
+        """
+        Apply the exp function on all countries.
+        """
+        for country in self.country_data:
             country.exp_data()
+
+    def get_country_data_slice(self, country, start, end):
+        """
+        Parameters:
+        country - DataFrame
+        start   - int
+        end     - int
+        Return:
+        A slice from country - DataFrame
+        """
+        return country.data.iloc[start:end]
 
     def split_train_test(self, data):
         self.train, self.test = data_handler.split_train_test(data)
