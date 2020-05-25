@@ -65,8 +65,15 @@ class Data:
         """
         Apply the diff function on all countries.
         """
-        for  country in self.country_data:
+        for country in self.country_data:
             country.diff_data()
+
+    def integrate(self):
+        """
+        Integrate the data for all countries.
+        """
+        for country in self.country_data:
+            country.int_data()
 
     def split_train_test(self, data):
         self.train, self.test = data_handler.split_train_test(data)

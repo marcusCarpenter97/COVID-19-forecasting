@@ -18,7 +18,15 @@ class Country:
         print(self.data)
 
     def diff_data(self):
+        # The first row must be saved so the differencing can be undone.
+        self.first_row = self.data.iloc[0]
         self.data = self.data.diff()
+
+    def int_data(self):
+        def calc_row(diffed):
+            return self.first_row + diffed.sum()
+        res = [calc_row(self.data.iloc[:row]) for row in range(1, len(self.data)+1)]
+        self.data = pd.DataFrame(res)
 
     def log_data(self):
         self.data = np.log(self.data)
