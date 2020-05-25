@@ -17,6 +17,9 @@ class Country:
         print(self.population)
         print(self.data)
 
+    def diff_data(self):
+        self.data = self.data.diff()
+
     def log_data(self):
         self.data = np.log(self.data)
 

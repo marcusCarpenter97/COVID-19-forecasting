@@ -61,8 +61,12 @@ class Data:
         for country in self.country_data:
             country.exp_data()
 
-    def difference(self, country):
-        return
+    def difference(self):
+        """
+        Apply the diff function on all countries.
+        """
+        for  country in self.country_data:
+            country.diff_data()
 
     def split_train_test(self, data):
         self.train, self.test = data_handler.split_train_test(data)
