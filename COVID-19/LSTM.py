@@ -53,8 +53,8 @@ class myLSTM:
 
         self.model.compile(loss=loss, optimizer=opti)
 
-    def train(self, x_train, y_train, e, b_size=1, v=0):
-        early_stopping = EarlyStopping(patience=5, restore_best_weights=True)
+    def train(self, x_train, y_train, e, b_size=1, v=0, p=5):
+        early_stopping = EarlyStopping(patience=p, restore_best_weights=True)
         self.history = self.model.fit(x_train, y_train, epochs=e, batch_size=b_size, verbose=v, callbacks=[early_stopping],
                 validation_split=0.2)
 
