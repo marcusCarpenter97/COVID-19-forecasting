@@ -13,7 +13,7 @@ class Country:
         self.data.columns=["Confirmed", "Deceased", "Recovered", "Infected", "Healthy"]
 
     def plot_country(self):
-        country.data[["Confirmed", "Deceased", "Recovered", "Infected"]].plot()
+        self.data[["Confirmed", "Deceased", "Recovered", "Infected"]].plot()
 
     def print_country(self):
         print(self.name)
