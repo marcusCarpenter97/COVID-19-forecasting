@@ -6,8 +6,10 @@ class Data:
     """ A container for what data_handler produces."""
     def __init__(self):
         self.raw_confirmed, self.raw_deceased, self.raw_recovered = data_handler.load_covid_data()
+        self.population = data_handler.load_population_data()
 
         def generate_global_data():
+            p = self.population.sum(numeric_only=True)['Population']
             c = self.raw_confirmed.sum(numeric_only=True)
             d = self.raw_deceased.sum(numeric_only=True)
             r = self.raw_recovered.sum(numeric_only=True)
@@ -16,10 +18,9 @@ class Data:
             return pd.DataFrame([c, d, r, i, h], columns=["Confirmed", "Deceased", "Recovered", "Infected", "Healthy"])
 
         def generate_country_data():
-            population = data_handler.load_population_data()
             countries = []
             # For each country in population.
-            for name, pop in population.iterrows():
+            for name, pop in self.population.iterrows():
                 p = pop['Population']
                 # Get all relevant time series based on country name.
                 c = self.raw_confirmed.loc[self.raw_confirmed['Country/Region'] == name].sum(numeric_only=True)
