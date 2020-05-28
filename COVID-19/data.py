@@ -15,7 +15,10 @@ class Data:
             r = self.raw_recovered.sum(numeric_only=True)
             i = self.calculate_current_infected(c, d, r)
             h = self.calculate_healthy(p, d, r, i)
-            return pd.DataFrame([c, d, r, i, h], columns=["Confirmed", "Deceased", "Recovered", "Infected", "Healthy"])
+
+            df = pd.concat([c, d, r, i, h], axis=1)
+            df.columns=["Confirmed", "Deceased", "Recovered", "Infected", "Healthy"]
+            return df
 
         def generate_country_data():
             countries = []
