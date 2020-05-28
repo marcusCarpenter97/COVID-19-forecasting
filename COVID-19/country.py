@@ -16,6 +16,7 @@ class Country:
         ax = self.data[["Confirmed", "Deceased", "Recovered", "Infected"]].plot(title=f"{self.name}")
         ax.set_xlabel("Days")
         ax.set_ylabel("People")
+        ax.legend(loc="upper left")
         if train_date:
             ax.axvline(train_date, color="red", linestyle="--")
 
