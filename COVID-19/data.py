@@ -83,10 +83,10 @@ class Data:
             country.int_data()
 
     def print_global(self):
-        pass
+        print(self.global_data)
+
     def plot_global(self):
-        #country.data[["Confirmed", "Deceased", "Recovered", "Infected"]].plot()
-        pass
+        self.global_data[["Confirmed", "Deceased", "Recovered", "Infected"]].plot()
 
 # TODO remove all below.
     def split_train_test(self, data):
