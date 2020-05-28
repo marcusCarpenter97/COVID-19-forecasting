@@ -9,6 +9,7 @@ from keras.callbacks.callbacks import EarlyStopping
 from keras import backend as K
 from keras.utils.generic_utils import get_custom_objects
 
+get_custom_objects().update({'swish': Activation(swish)})
 
 class myLSTM:
 
@@ -32,6 +33,24 @@ class myLSTM:
         self.model.add(Dropout(dropout))
         self.model.add(Dense(out_shape))
         self.model.add(Activation(dense_activation))
+        self.model.compile(loss=loss, optimizer=opti)
+
+    def create_multivariate_LSTM(self, nodes=10, in_shape=(4,1), out_shape=1, loss='mean_squared_error', opti='adam', 
+            dropout=0.1, lstm_activation='tanh', dense_activation='sigmoid'):
+
+        self.model = Sequential()
+
+        self.model.add(LSTM(nodes, return_sequences=True, input_shape=in_shape))
+        self.model.add(Activation(lstm_activation))
+        self.model.add(Dropout(dropout))
+
+        self.model.add(LSTM(nodes, input_shape=in_shape))
+        self.model.add(Activation(lstm_activation))
+        self.model.add(Dropout(dropout))
+
+        self.model.add(Dense(out_shape))
+        self.model.add(Activation(dense_activation))
+
         self.model.compile(loss=loss, optimizer=opti)
 
     def train(self, x_train, y_train, e, b_size=1, v=0):
