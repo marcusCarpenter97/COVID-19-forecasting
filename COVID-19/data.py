@@ -90,7 +90,9 @@ class Data:
         print(self.global_data)
 
     def plot_global(self):
-        self.global_data[["Confirmed", "Deceased", "Recovered", "Infected"]].plot()
+        ax = self.global_data[["Confirmed", "Deceased", "Recovered", "Infected"]].plot(title="Global data")
+        ax.set_xlabel("Days")
+        ax.set_ylabel("People")
 
 # TODO remove all below.
     def split_train_test(self, data):

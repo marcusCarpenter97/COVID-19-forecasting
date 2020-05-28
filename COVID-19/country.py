@@ -13,7 +13,9 @@ class Country:
         self.data.columns=["Confirmed", "Deceased", "Recovered", "Infected", "Healthy"]
 
     def plot_country(self):
-        self.data[["Confirmed", "Deceased", "Recovered", "Infected"]].plot()
+        ax = self.data[["Confirmed", "Deceased", "Recovered", "Infected"]].plot(title=f"{self.name}")
+        ax.set_xlabel("Days")
+        ax.set_ylabel("People")
 
     def print_country(self):
         print(self.name)
