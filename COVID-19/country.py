@@ -12,10 +12,12 @@ class Country:
         self.data = pd.concat([c, d, r, i, h], axis=1)
         self.data.columns=["Confirmed", "Deceased", "Recovered", "Infected", "Healthy"]
 
-    def plot_country(self):
+    def plot_country(self, train_date=None):
         ax = self.data[["Confirmed", "Deceased", "Recovered", "Infected"]].plot(title=f"{self.name}")
         ax.set_xlabel("Days")
         ax.set_ylabel("People")
+        if train_date:
+            ax.axvline(train_date, color="red", linestyle="--")
 
     def print_country(self):
         print(self.name)
