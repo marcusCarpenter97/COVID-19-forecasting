@@ -12,6 +12,9 @@ class Country:
         self.data = pd.concat([c, d, r, i, h], axis=1)
         self.data.columns=["Confirmed", "Deceased", "Recovered", "Infected", "Healthy"]
 
+    def plot_country(self):
+        country.data[["Confirmed", "Deceased", "Recovered", "Infected"]].plot()
+
     def print_country(self):
         print(self.name)
         print(self.population)
