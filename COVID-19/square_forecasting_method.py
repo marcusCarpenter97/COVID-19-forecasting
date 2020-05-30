@@ -104,7 +104,7 @@ COVID_DATA.difference()
 
 # ## TRAIN_END ...
 
-print_n_plot_country(UK, train_bar=True)
+#print_n_plot_country(UK, train_bar=True)
 
 # ## Forecasting the horizon.
 
@@ -123,6 +123,26 @@ LSTM_MODEL = LSTM.myLSTM()
 LSTM_MODEL.create_multivariate_LSTM(data_shape, OUTPUT_SIZE)
 LSTM_MODEL.print_summmary()
 LSTM_MODEL.plot_model()
+
+print(UK.name)
+print(UK.encoded_name)
+
+print(COVID_DATA.encode_names())
+
+print(UK.name)
+print(UK.encoded_name)
+
+# onehot names
+#  vocabulary = number of countries * 1.25
+#  for each country name
+#   onehod name
+#   pad new name
+# embed (how to choose output_dim?)
+# flatten and dense
+# concat with lstm
+# length of longest name to pad the others.
+# number of unique words in the vocabulary. input_dim
+# number of inputs one country one input. input_length
 
 # ## GRU.
 

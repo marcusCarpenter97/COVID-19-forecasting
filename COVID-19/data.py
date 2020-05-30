@@ -1,3 +1,6 @@
+from keras.preprocessing.sequence import pad_sequences
+from keras.preprocessing.text import one_hot
+import math
 import pandas as pd
 import data_handler
 import country
@@ -45,6 +48,23 @@ class Data:
         """
         res = [country for country in self.country_data if country.name == name]
         return None if len(res) == 0 else res[0]
+
+    def encode_names(self, extra_size=1.25):
+        """
+        Creates encoded versions of the country names.
+        These will be used in the Embedding layer of the network.
+        Param: extra_size float - extra space to guarantee uniqueness.
+        Returns:
+        vocab_size - int - number of unique words plus some extra space
+        max_length - int - size of biggest word.
+        """
+        vocab_size = math.ceil(len(self.country_data) * extra_size) # words not country names
+        encoded = [one_hot(country.name, vocab_size) for country in self.country_data]
+        max_length = len(max(encoded, key=lambda x: len(x)))
+        padded = pad_sequences(encoded, maxlen=max_length, padding='post')
+        for country, enc_name in zip(self.country_data, padded):
+            country.encoded_name = enc_name
+        return vocab_size, max_length
 
     def calculate_current_infected(self, c, d, r):
         """
