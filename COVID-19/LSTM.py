@@ -4,11 +4,13 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Removes tensorflow messages.
 import numpy as np
 import matplotlib.pyplot as plt
 
-from tensorflow import keras
-from tensorflow.keras import layers
+#from tensorflow import keras
+from keras import Input, Model
+from keras.utils import plot_model
+from keras.layers.merge import concatenate
 
 from keras.models import Sequential 
-from keras.layers import LSTM, Dense, Activation, Dropout
+from keras.layers import LSTM, Dense, Activation, Dropout, Embedding, Flatten
 from keras.callbacks.callbacks import EarlyStopping
 from keras import backend as K
 from keras.utils.generic_utils import get_custom_objects
@@ -40,19 +42,28 @@ class myLSTM:
         self.model.add(Activation(dense_activation))
         self.model.compile(loss=loss, optimizer=opti)
 
-    def create_multivariate_LSTM(self, in_shape, out_shape, nodes=10, loss='mean_squared_error', opti='adam',
-            dropout_val=0.1, lstm_activation='tanh', dense_activation='sigmoid'):
+    def create_multivariate_LSTM(self, in_shape, out_shape, vocab_size, output_size, input_size, nodes=10,
+            loss='mean_squared_error', opti='adam', dropout_val=0.1, lstm_activation='tanh', dense_activation='sigmoid'):
 
-        input_layer = keras.Input(in_shape)
+        # Embedding layer for the coutry names.
+        embedded_input = Input([input_size])
+        embedding_layer = Embedding(vocab_size, output_size, input_length=input_size)(embedded_input)
+        dense_embedding = Dense(nodes)(embedding_layer)
+        flat_embedded_layer = Flatten()(dense_embedding)
 
-        lstm_layer_1 = layers.LSTM(nodes, return_sequences=True, activation=lstm_activation, dropout=dropout_val)(input_layer)
+        # Two layer LSTM for the time series.
+        input_layer = Input(in_shape)
+        lstm_layer_1 = LSTM(nodes, return_sequences=True, activation=lstm_activation, dropout=dropout_val)(input_layer)
+        lstm_layer_2 = LSTM(nodes, activation=lstm_activation, dropout=dropout_val)(lstm_layer_1)
 
-        lstm_layer_2 = layers.LSTM(nodes, activation=lstm_activation, dropout=dropout_val)(lstm_layer_1)
+        # Merge both.
+        merged = concatenate([flat_embedded_layer, lstm_layer_2])
 
-        output_layer = layers.Dense(out_shape, activation=dense_activation)(lstm_layer_2)
+        # Dense output layer to make predictions.
+        output_layer = Dense(out_shape, activation=dense_activation)(merged)
 
-        self.model = keras.Model(inputs=input_layer, outputs=output_layer, name="COVID-19_Multivariate_LSTM")
-
+        # Create model from the layers.
+        self.model = Model(inputs=[embedded_input, input_layer], outputs=output_layer, name="COVID-19_Multivariate_LSTM")
         self.model.compile(loss=loss, optimizer=opti)
 
     def train(self, x_train, y_train, e, b_size=1, v=0, p=5):
@@ -81,7 +92,7 @@ class myLSTM:
         print(self.model.summary())
 
     def plot_model(self):
-        return keras.utils.plot_model(self.model, "model_shape_info.png", show_shapes=True)
+        return plot_model(self.model, "model_shape_info.png", show_shapes=True)
 
     def plot_history(self, fig_name):
         # Plot model loss history.
