@@ -77,6 +77,9 @@ class myLSTM:
     def swish(self, x, beta=1.0):
         return x * K.sigmoid(beta * x)
 
+    def print_summmary(self):
+        print(self.model.summary())
+
     def plot_model(self):
         return keras.utils.plot_model(self.model, "model_shape_info.png", show_shapes=True)
 
