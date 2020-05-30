@@ -3,17 +3,22 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Removes tensorflow messages.
 
 import numpy as np
 import matplotlib.pyplot as plt
+
+from tensorflow import keras
+from tensorflow.keras import layers
+
 from keras.models import Sequential 
 from keras.layers import LSTM, Dense, Activation, Dropout
 from keras.callbacks.callbacks import EarlyStopping
 from keras import backend as K
 from keras.utils.generic_utils import get_custom_objects
 
-get_custom_objects().update({'swish': Activation(swish)})
 
 class myLSTM:
 
     def __init__(self):
+        get_custom_objects().update({'swish': Activation(self.swish)})
+
         self.model = None
         self.history = None
         self.train_predictions = None
@@ -35,21 +40,18 @@ class myLSTM:
         self.model.add(Activation(dense_activation))
         self.model.compile(loss=loss, optimizer=opti)
 
-    def create_multivariate_LSTM(self, nodes=10, in_shape=(4,1), out_shape=1, loss='mean_squared_error', opti='adam', 
-            dropout=0.1, lstm_activation='tanh', dense_activation='sigmoid'):
+    def create_multivariate_LSTM(self, in_shape, out_shape, nodes=10, loss='mean_squared_error', opti='adam',
+            dropout_val=0.1, lstm_activation='tanh', dense_activation='sigmoid'):
 
-        self.model = Sequential()
+        input_layer = keras.Input(in_shape)
 
-        self.model.add(LSTM(nodes, return_sequences=True, input_shape=in_shape))
-        self.model.add(Activation(lstm_activation))
-        self.model.add(Dropout(dropout))
+        lstm_layer_1 = layers.LSTM(nodes, return_sequences=True, activation=lstm_activation, dropout=dropout_val)(input_layer)
 
-        self.model.add(LSTM(nodes, input_shape=in_shape))
-        self.model.add(Activation(lstm_activation))
-        self.model.add(Dropout(dropout))
+        lstm_layer_2 = layers.LSTM(nodes, activation=lstm_activation, dropout=dropout_val)(lstm_layer_1)
 
-        self.model.add(Dense(out_shape))
-        self.model.add(Activation(dense_activation))
+        output_layer = layers.Dense(out_shape, activation=dense_activation)(lstm_layer_2)
+
+        self.model = keras.Model(inputs=input_layer, outputs=output_layer, name="COVID-19_Multivariate_LSTM")
 
         self.model.compile(loss=loss, optimizer=opti)
 
@@ -73,7 +75,10 @@ class myLSTM:
         return mean_error / scaling_factor
 
     def swish(self, x, beta=1.0):
-            return x * K.sigmoid(beta * x)
+        return x * K.sigmoid(beta * x)
+
+    def plot_model(self):
+        return keras.utils.plot_model(self.model, "model_shape_info.png", show_shapes=True)
 
     def plot_history(self, fig_name):
         # Plot model loss history.
