@@ -119,30 +119,12 @@ data_shape = (TRAIN_SIZE, COVID_DATA.global_data.shape[1])
 
 # ## LSTM.
 
+vocab_size, input_size = COVID_DATA.encode_names()
+
 LSTM_MODEL = LSTM.myLSTM()
-LSTM_MODEL.create_multivariate_LSTM(data_shape, OUTPUT_SIZE)
+LSTM_MODEL.create_multivariate_LSTM(data_shape, OUTPUT_SIZE, vocab_size, 32, input_size)
 LSTM_MODEL.print_summmary()
 LSTM_MODEL.plot_model()
-
-print(UK.name)
-print(UK.encoded_name)
-
-print(COVID_DATA.encode_names())
-
-print(UK.name)
-print(UK.encoded_name)
-
-# onehot names
-#  vocabulary = number of countries * 1.25
-#  for each country name
-#   onehod name
-#   pad new name
-# embed (how to choose output_dim?)
-# flatten and dense
-# concat with lstm
-# length of longest name to pad the others.
-# number of unique words in the vocabulary. input_dim
-# number of inputs one country one input. input_length
 
 # ## GRU.
 
