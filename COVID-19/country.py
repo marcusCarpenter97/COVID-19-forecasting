@@ -19,7 +19,8 @@ class Country:
         ax.set_ylabel("People")
         ax.legend(loc="upper left")
         if train_date:
-            ax.axvline(train_date, color="red", linestyle="--")
+            for i in train_date:
+                ax.axvline(i, color="red", linestyle="--")
 
     def print_country(self):
         print(self.name)
