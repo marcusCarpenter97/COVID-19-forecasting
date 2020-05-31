@@ -31,13 +31,20 @@ class Country:
     def diff_data(self):
         # The first row must be saved so the differencing can be undone.
         self.first_row = self.data.iloc[0]
-        self.data = self.data.diff()
+        self.data = self.data.diff().dropna()
 
     def int_data(self):
         def calc_row(diffed):
             return self.first_row + diffed.sum()
         res = [calc_row(self.data.iloc[:row]) for row in range(1, len(self.data)+1)]
+        res.insert(0, self.first_row)
         self.data = pd.DataFrame(res)
+
+        # The integration messes up the dates in the index column so they need to be fixed.
+        self.data.reset_index(inplace=True, drop=True)
+        self.data['days'] = pd.date_range(start=self.first_row.name, periods=len(self.data))
+        self.data['days'] = self.data['days'].dt.strftime("%m/%d/%y")
+        self.data.set_index('days', inplace=True)
 
     def log_data(self):
         self.data = np.log(self.data)
