@@ -88,7 +88,7 @@ class myLSTM:
     def swish(self, x, beta=1.0):
         return x * K.sigmoid(beta * x)
 
-    def print_summmary(self):
+    def print_summary(self):
         print(self.model.summary())
 
     def plot_model(self):

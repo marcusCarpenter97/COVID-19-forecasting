@@ -11,7 +11,7 @@ TRAIN_SIZE = 104  # Number of days since the first day in the timeseries.
 # The model will output 'test_offset' days worth of predictions.
 # Out of those, 'validation_offset' days will be know and used
 # to verify the model's accuracy.
-VAL_OFFSET = 21
+VAL_SIZE = 21
 OUTPUT_SIZE = 37
 
 def print_n_plot():
@@ -102,6 +102,9 @@ COVID_DATA.difference()
 #print_n_plot_country(CHINA)
 #print_n_plot_country(BRAZIL)
 
+#COVID_DATA.integrate()
+#print_n_plot_country(UK)
+
 # ## TRAIN_END ...
 
 #print_n_plot_country(UK, train_bar=True)
@@ -123,9 +126,24 @@ vocab_size, input_size = COVID_DATA.encode_names()
 
 LSTM_MODEL = LSTM.myLSTM()
 LSTM_MODEL.create_multivariate_LSTM(data_shape, OUTPUT_SIZE, vocab_size, 32, input_size)
-LSTM_MODEL.print_summmary()
+LSTM_MODEL.print_summary()
 LSTM_MODEL.plot_model()
 
+training_data = COVID_DATA.get_ts_samples(0, TRAIN_SIZE)
+validation_data = COVID_DATA.get_ts_samples(TRAIN_SIZE, TRAIN_SIZE+VAL_SIZE)
+testing_data = COVID_DATA.get_ts_samples(TRAIN_SIZE+VAL_SIZE, -1)
+encoded_names = COVID_DATA.get_encoded_names()
+#print(len(training_data))
+#print(len(testing_data))
+#print(len(encoded_names))
+#print(len(training_data[0]))
+#print(len(testing_data[0]))
+#print(len(encoded_names[0]))
+
+print(training_data.shape)
+print(validation_data.shape)
+print(testing_data.shape)
+print(encoded_names.shape)
 # ## GRU.
 
 # # Results
