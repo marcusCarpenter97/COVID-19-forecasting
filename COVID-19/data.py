@@ -1,6 +1,7 @@
 from keras.preprocessing.sequence import pad_sequences
 from keras.preprocessing.text import one_hot
 import math
+import numpy as np
 import pandas as pd
 import data_handler
 import country
@@ -106,10 +107,19 @@ class Data:
         for country in self.country_data:
             country.int_data()
 
+    def get_training_samples(self, test_size):
+        return [[np.array(country.get_slice(0, test_size)), country.encoded_name] for country in self.country_data]
+
     def print_global(self):
+        """
+        Print the DataFrame.
+        """
         print(self.global_data)
 
     def plot_global(self):
+        """
+        Plot the global data. The Healthy column is ommited because it overshadows the rest of the data.
+        """
         ax = self.global_data[["Confirmed", "Deceased", "Recovered", "Infected"]].plot(title="Global data")
         ax.set_xlabel("Days")
         ax.set_ylabel("People")
