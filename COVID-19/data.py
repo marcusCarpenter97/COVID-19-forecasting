@@ -107,8 +107,11 @@ class Data:
         for country in self.country_data:
             country.int_data()
 
-    def get_training_samples(self, test_size):
-        return [[np.array(country.get_slice(0, test_size)), country.encoded_name] for country in self.country_data]
+    def get_ts_samples(self, start, end):
+        return [np.array(country.get_slice(start, end)) for country in self.country_data]
+
+    def get_encoded_names(self):
+        return [country.encoded_name for country in self.country_data]
 
     def print_global(self):
         """
