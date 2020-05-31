@@ -108,10 +108,11 @@ class Data:
             country.int_data()
 
     def get_ts_samples(self, start, end):
-        return [np.array(country.get_slice(start, end)) for country in self.country_data]
+        return np.array([np.array(country.get_slice(start, end)) for country in self.country_data])
 
     def get_encoded_names(self):
-        return [country.encoded_name for country in self.country_data]
+        names = np.array([country.encoded_name for country in self.country_data])
+        return names.reshape(names.shape[0], 1, names.shape[1])
 
     def print_global(self):
         """
