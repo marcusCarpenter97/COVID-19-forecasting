@@ -11,6 +11,7 @@ class Data:
     def __init__(self):
         self.raw_confirmed, self.raw_deceased, self.raw_recovered = data_handler.load_covid_data()
         self.population = data_handler.load_population_data()
+        self.countries = []
 
         def generate_global_data():
             p = self.population.sum(numeric_only=True)['Population']
@@ -19,12 +20,9 @@ class Data:
             r = self.raw_recovered.sum(numeric_only=True)
             i = self.calculate_current_infected(c, d, r)
             h = self.calculate_healthy(p, d, r, i)
+            return country.Country("World", p, c, d, r, i, h)
 
-            df = pd.concat([c, d, r, i, h], axis=1)
-            df.columns=["Confirmed", "Deceased", "Recovered", "Infected", "Healthy"]
-            return df
-
-        def generate_country_data():
+        def generate_countries():
             countries = []
             # For each country in population.
             for name, pop in self.population.iterrows():
@@ -39,15 +37,15 @@ class Data:
                 countries.append(country.Country(name, p, c, d, r, i, h))
             return countries
 
-        self.global_data = generate_global_data()
-        self.country_data = generate_country_data()
+        self.countries.append(generate_global_data())
+        self.countries.extend(generate_countries())
 
     def find_country(self, name):
         """
         Takes a country's name and returns its object object.
         Returns None if country is not found.
         """
-        res = [country for country in self.country_data if country.name == name]
+        res = [country for country in self.countries if country.name == name]
         return None if len(res) == 0 else res[0]
 
     def encode_names(self, extra_size=1.25):
@@ -59,11 +57,11 @@ class Data:
         vocab_size - int - number of unique words plus some extra space
         max_length - int - size of biggest word.
         """
-        vocab_size = math.ceil(len(self.country_data) * extra_size) # words not country names
-        encoded = [one_hot(country.name, vocab_size) for country in self.country_data]
+        vocab_size = math.ceil(len(self.countries) * extra_size) # words not country names
+        encoded = [one_hot(country.name, vocab_size) for country in self.countries]
         max_length = len(max(encoded, key=lambda x: len(x)))
         padded = pad_sequences(encoded, maxlen=max_length, padding='post')
-        for country, enc_name in zip(self.country_data, padded):
+        for country, enc_name in zip(self.countries, padded):
             country.encoded_name = enc_name
         return vocab_size, max_length
 
@@ -83,35 +81,35 @@ class Data:
         """
         Apply the log function on all countries.
         """
-        for country in self.country_data:
+        for country in self.countries:
             country.log_data()
 
     def exp(self):
         """
         Apply the exp function on all countries.
         """
-        for country in self.country_data:
+        for country in self.countries:
             country.exp_data()
 
     def difference(self):
         """
         Apply the diff function on all countries.
         """
-        for country in self.country_data:
+        for country in self.countries:
             country.diff_data()
 
     def integrate(self):
         """
         Integrate the data for all countries.
         """
-        for country in self.country_data:
+        for country in self.countries:
             country.int_data()
 
     def get_ts_samples(self, start, end):
-        return np.array([np.array(country.get_slice(start, end)) for country in self.country_data])
+        return np.array([np.array(country.get_slice(start, end)) for country in self.countries])
 
     def get_encoded_names(self):
-        names = np.array([country.encoded_name for country in self.country_data])
+        names = np.array([country.encoded_name for country in self.countries])
         return names.reshape(names.shape[0], 1, names.shape[1])
 
     def print_global(self):
