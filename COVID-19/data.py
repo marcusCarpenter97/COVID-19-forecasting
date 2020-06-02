@@ -13,7 +13,7 @@ class Data:
         self.population = data_handler.load_population_data()
         self.countries = []
 
-        def generate_global_data():
+        def generate_world_data():
             p = self.population.sum(numeric_only=True)['Population']
             c = self.raw_confirmed.sum(numeric_only=True)
             d = self.raw_deceased.sum(numeric_only=True)
@@ -37,7 +37,7 @@ class Data:
                 countries.append(country.Country(name, p, c, d, r, i, h))
             return countries
 
-        self.countries.append(generate_global_data())
+        self.countries.append(generate_world_data())
         self.countries.extend(generate_countries())
 
     def find_country(self, name):
@@ -111,20 +111,6 @@ class Data:
     def get_encoded_names(self):
         names = np.array([country.encoded_name for country in self.countries])
         return names.reshape(names.shape[0], 1, names.shape[1])
-
-    def print_global(self):
-        """
-        Print the DataFrame.
-        """
-        print(self.global_data)
-
-    def plot_global(self):
-        """
-        Plot the global data. The Healthy column is ommited because it overshadows the rest of the data.
-        """
-        ax = self.global_data[["Confirmed", "Deceased", "Recovered", "Infected"]].plot(title="Global data")
-        ax.set_xlabel("Days")
-        ax.set_ylabel("People")
 
 # TODO remove all below.
     def split_train_test(self, data):
