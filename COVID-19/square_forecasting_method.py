@@ -34,5 +34,8 @@ def print_n_plot_country(country, train_bar=None):
         country.plot_country()
 
 COVID_DATA = data.Data()
-print_n_plot_global()
+WORLD = COVID_DATA.find_country("World")
+print_n_plot_country(WORLD)
+COVID_DATA.difference()
+print_n_plot_country(WORLD)
 plt.show()
