@@ -59,5 +59,34 @@ class Country:
                 print(f"RuntimeWarning: {runw}")
                 print("The numbers given to exp where too big and caused an error. The data wasn't affected.")
 
+    def find_divisor_offset(self, num, div):
+        """
+        Calculates an offset to make the data divisible by the horizon. 
+        By finding the greatest divisor of div that is smaller than num.
+
+        Example: If splitting the data into weeks.
+        num = 137
+        div = 7
+        137/7 = 19.57... (Not divisible)
+        Using the formula below:
+        137 - (floor(137/7) * 7) = 4
+        Four is the offset to make 137 divisible by 7 because
+        137 - 4 = 133
+        133/7 = 19 (Divisible)
+        """
+        return num - ((num//div)*div)
+
+    def split_data(self, horizon, train_size):
+
+        # Calculate the offset as the data will not always be divisible by the horizon.
+        offset = self.find_divisor_offset(len(self.data), horizon)
+
+        # Split the data.
+        self.train, self.test = self.data.values[offset:offset+train_size], self.data.values[offset+train_size:]
+
+        # Reshape it so that it is split into horizon sized chunks.
+        self.train.reshape(self.train.shape[0]//horizon, horizon, self.train.shape[1])
+        self.test.reshape(self.test.shape[0]//horizon, horizon, self.test.shape[1])
+
     def get_slice(self, start, end):
         return self.data.iloc[start:end]

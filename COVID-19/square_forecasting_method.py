@@ -6,7 +6,11 @@ import data
 import LSTM
 
 TRAIN_END = "5/4/20"  # M/D/YY TODO remove
-TRAIN_SIZE = 104  # Number of days since the first day in the timeseries.
+
+# Values chosen to fit the data.
+# Might break model if changed without care.
+HORIZON = 7  # Number of days in a horizon.
+TRAIN_SIZE = 105  # Number of days to be included in the train set.
 
 # The model will output 'test_offset' days worth of predictions.
 # Out of those, 'validation_offset' days will be know and used
@@ -38,4 +42,5 @@ WORLD = COVID_DATA.find_country("World")
 print_n_plot_country(WORLD)
 COVID_DATA.difference()
 print_n_plot_country(WORLD)
+COVID_DATA.split_train_test(HORIZON, TRAIN_SIZE)
 plt.show()

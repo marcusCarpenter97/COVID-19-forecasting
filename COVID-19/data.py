@@ -105,6 +105,10 @@ class Data:
         for country in self.countries:
             country.int_data()
 
+    def split_train_test(self, horizon, train_size):
+        for country in self.countries:
+            country.split_data(horizon, train_size)
+
     def get_ts_samples(self, start, end):
         return np.array([np.array(country.get_slice(start, end)) for country in self.countries])
 
