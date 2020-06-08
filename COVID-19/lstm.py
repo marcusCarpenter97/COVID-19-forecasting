@@ -27,6 +27,19 @@ class myLSTM:
         self.test_predictions = None
         self.hyper_params = None
 
+    def univariate_encoder_decoder(self, input_shape, out_shape, nodes=200, 
+                           loss='mean_squared_error', optimizer='adam', 
+                           dropout=0.1, lstm_activation='tanh',
+                           dense_activation='sigmoid'):
+
+        self.model = Sequential()
+        self.model.add(LSTM(nodes, activation=lstm_activation, input_shape=input_shape))
+        self.model.add(Dense(100, activation=dense_activation))
+        self.model.add(Dense(out_shape))
+
+        self.model.compile(loss=loss, optimizer=optimizer)
+
+    # TODO remove
     def create_simple_LSTM(self, nodes=10, in_shape=(4,1), out_shape=1, loss='mean_squared_error', opti='adam', dropout=0.1,
             lstm_activation='tanh', dense_activation='sigmoid'):
         if lstm_activation == 'swish':
@@ -42,6 +55,7 @@ class myLSTM:
         self.model.add(Activation(dense_activation))
         self.model.compile(loss=loss, optimizer=opti)
 
+    # TODO remove
     def create_multivariate_LSTM(self, in_shape, out_shape, vocab_size, output_size, input_size, nodes=10,
             loss='mean_squared_error', opti='adam', dropout_val=0.1, lstm_activation='tanh', dense_activation='sigmoid'):
 
@@ -66,10 +80,14 @@ class myLSTM:
         self.model = Model(inputs=[embedded_input, input_layer], outputs=output_layer, name="COVID-19_Multivariate_LSTM")
         self.model.compile(loss=loss, optimizer=opti)
 
-    def train(self, x_train, y_train, e, b_size=1, v=0, p=5):
-        early_stopping = EarlyStopping(patience=p, restore_best_weights=True)
-        self.history = self.model.fit(x_train, y_train, epochs=e, batch_size=b_size, verbose=v, callbacks=[early_stopping],
-                validation_split=0.2)
+    def train(self, x_train, y_train, epochs=500, batch_size=32, verbose=0, patience=10):
+
+        early_stopping = EarlyStopping(patience=patience, restore_best_weights=True)
+
+        self.history = self.model.fit(x_train, y_train, epochs=epochs,
+                                      batch_size=batch_size, verbose=verbose,
+                                      callbacks=[early_stopping],
+                                      validation_split=0.2) 
 
     def predict(self, data):
         return self.model.predict(data)
@@ -105,6 +123,7 @@ class myLSTM:
         ax.legend(['train', 'test'], loc='best')
         fig.savefig(f"hist_{fig_name}")
 
+    # TODO too specific. Improve
     def plot_predictions(self, fig_name, original, forecast_horizon):
         # The first sample is lost after each differencing, so the + 2 is required. 
         empty_arr = np.empty((forecast_horizon+2, 1))
