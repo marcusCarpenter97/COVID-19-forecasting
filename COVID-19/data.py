@@ -1,5 +1,5 @@
-from keras.preprocessing.sequence import pad_sequences
-from keras.preprocessing.text import one_hot
+#from keras.preprocessing.sequence import pad_sequences
+#from keras.preprocessing.text import one_hot
 import math
 import numpy as np
 import pandas as pd
@@ -106,8 +106,18 @@ class Data:
             country.int_data()
 
     def split_train_test(self, horizon, train_size):
+        """
+        Create training and testing datasets for all countries.
+        """
         for country in self.countries:
             country.split_data(horizon, train_size)
+
+    def supervise_data(self, horizon):
+        """
+        Create input and output test sets for all countries.
+        """
+        for country in self.countries:
+            country.supervise_data(horizon)
 
     def get_ts_samples(self, start, end):
         return np.array([np.array(country.get_slice(start, end)) for country in self.countries])

@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import date
 import data
-import LSTM
+#import LSTM
 
 TRAIN_END = "5/4/20"  # M/D/YY TODO remove
 
@@ -43,4 +43,11 @@ print_n_plot_country(WORLD)
 COVID_DATA.difference()
 print_n_plot_country(WORLD)
 COVID_DATA.split_train_test(HORIZON, TRAIN_SIZE)
+print(WORLD.train.shape)
+print(WORLD.test.shape)
+COVID_DATA.supervise_data(HORIZON)
+print(WORLD.train_x.shape)
+print(WORLD.train_y.shape)
+print(WORLD.train_x)
+print(WORLD.train_y)
 plt.show()

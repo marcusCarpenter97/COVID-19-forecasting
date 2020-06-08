@@ -88,5 +88,27 @@ class Country:
         self.train.reshape(self.train.shape[0]//horizon, horizon, self.train.shape[1])
         self.test.reshape(self.test.shape[0]//horizon, horizon, self.test.shape[1])
 
+    def supervise_data(self, horizon):
+        """
+        Convert the training data into a supervised set.
+        """
+        start = 0
+        x, y = [], []
+        # For each data point.
+        for _ in range(len(self.train)):
+            # Calculate offsets for end of in and out samples.
+            end = start + horizon
+            out_end = end + horizon
+            # Check if output offset is still within the data.
+            if out_end <= len(self.train):
+                # Copy in and out sections fron data.
+                x.append(self.train[start:end])
+                y.append(self.train[end:out_end])
+            # Mode to the naxt step.
+            start += 1
+        # Stack all sub arrays into one 2d array.
+        self.train_x = np.stack(x)
+        self.train_y = np.stack(y)
+
     def get_slice(self, start, end):
         return self.data.iloc[start:end]
