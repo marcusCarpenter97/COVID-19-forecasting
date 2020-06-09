@@ -29,8 +29,8 @@ class myLSTM:
 
     def multivariate_encoder_decoder(self, input_shape, out_shape, nodes=200, 
                            loss='mean_squared_error', optimizer='adam', 
-                           dropout=0.1, lstm_activation='tanh',
-                           dense_activation='sigmoid'):
+                           dropout=0.1, lstm_activation='relu',
+                           dense_activation='relu'):
 
         self.model = Sequential()
         self.model.add(LSTM(nodes, activation=lstm_activation, return_sequences=True, input_shape=input_shape))
