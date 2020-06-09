@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import date
 import data
-#import LSTM
+import lstm
 
 TRAIN_END = "5/4/20"  # M/D/YY TODO remove
 
@@ -38,16 +38,45 @@ def print_n_plot_country(country, train_bar=None):
         country.plot_country()
 
 COVID_DATA = data.Data()
+
 WORLD = COVID_DATA.find_country("World")
 print_n_plot_country(WORLD)
-COVID_DATA.difference()
+
+COVID_DATA.log()
+
 print_n_plot_country(WORLD)
+
+COVID_DATA.difference()
+
+print_n_plot_country(WORLD)
+
 COVID_DATA.split_train_test(HORIZON, TRAIN_SIZE)
 print(WORLD.train.shape)
 print(WORLD.test.shape)
+
 COVID_DATA.supervise_data(HORIZON)
 print(WORLD.train_x.shape)
 print(WORLD.train_y.shape)
-print(WORLD.train_x)
-print(WORLD.train_y)
+
+input_shape = (WORLD.train_x.shape[1], WORLD.train_x.shape[2])  # timesteps, features.
+output_shape = WORLD.train_y.shape[1] # features.
+
+LSTM = lstm.myLSTM()
+LSTM.multivariate_encoder_decoder(input_shape, output_shape)
+
+LSTM.print_summary()
+
+LSTM.train(WORLD.train_x, WORLD.train_y)
+
+LSTM.plot_history("uni_ed_LSTM")
+
+# multivariate parallel, many to one.
+# multivariate parallel, many to many.
+
+# Evaluation:
+# Walk forward method
+# make prediction and save it
+# add new test week to data
+# repreat for all test data
+# calculate error on predictions.
 plt.show()

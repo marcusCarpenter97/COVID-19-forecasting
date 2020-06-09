@@ -27,14 +27,14 @@ class myLSTM:
         self.test_predictions = None
         self.hyper_params = None
 
-    def univariate_encoder_decoder(self, input_shape, out_shape, nodes=200, 
+    def multivariate_encoder_decoder(self, input_shape, out_shape, nodes=200, 
                            loss='mean_squared_error', optimizer='adam', 
                            dropout=0.1, lstm_activation='tanh',
                            dense_activation='sigmoid'):
 
         self.model = Sequential()
-        self.model.add(LSTM(nodes, activation=lstm_activation, input_shape=input_shape))
-        self.model.add(Dense(100, activation=dense_activation))
+        self.model.add(LSTM(nodes, activation=lstm_activation, return_sequences=True, input_shape=input_shape))
+        self.model.add(LSTM(nodes, activation=dense_activation))
         self.model.add(Dense(out_shape))
 
         self.model.compile(loss=loss, optimizer=optimizer)
