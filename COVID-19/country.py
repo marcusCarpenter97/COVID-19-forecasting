@@ -35,6 +35,7 @@ class Country:
         self.data = self.data.diff().dropna()
 
     def int_data(self):
+        # TODO slow, make faster..
         def calc_row(diffed):
             return self.first_row + diffed.sum()
         res = [calc_row(self.data.iloc[:row]) for row in range(1, len(self.data)+1)]
@@ -48,13 +49,14 @@ class Country:
         self.data.set_index('days', inplace=True)
 
     def log_data(self):
-        self.data = np.log(self.data)
+        # Using the log(x+1) function to handle zeroes in the data.
+        self.data = np.log1p(self.data)
 
     def exp_data(self):
         with warnings.catch_warnings():
             warnings.filterwarnings('error')
             try:
-                self.data = np.exp(self.data)
+                self.data = np.expm1(self.data)
             except RuntimeWarning as runw:
                 print(f"RuntimeWarning: {runw}")
                 print("The numbers given to exp where too big and caused an error. The data wasn't affected.")
@@ -91,6 +93,28 @@ class Country:
     def supervise_data(self, horizon):
         """
         Convert the training data into a supervised set.
+        Many to one.
+        """
+        x, y = [], []
+        for i in range(len(self.train)):
+            end = i + horizon
+            if end < len(self.train):
+                x.append(self.train[i:end, :])
+                y.append(self.train[end, :])
+        # Stack all sub arrays into one 2d array.
+        try:
+            self.train_x = np.stack(x)
+            self.train_y = np.stack(y)
+        except ValueError:
+            print(self.name)
+            print(self.data)
+            print(len(x))
+            print(len(y))
+
+    def _supervise_data(self, horizon):
+        """
+        Convert the training data into a supervised set.
+        Many to many.
         """
         start = 0
         x, y = [], []
