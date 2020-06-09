@@ -81,7 +81,38 @@ for offset in range(len(WORLD.test)):
         predictions.append(LSTM.predict(pred_in))
 
 predictions = np.stack(predictions)
+predictions = predictions.reshape(predictions.shape[0], predictions.shape[2])
 print(predictions.shape)
 print(predictions)
 
+COVID_DATA.integrate()
+
+# Minus one becasuse of the 0 indexed arrays.
+idx = len(WORLD.data) - len(predictions) - 1
+before_pred = WORLD.data.iloc[idx].values
+
+print(before_pred)
+
+def int_data(before_pred):
+    def calc_row(before_pred, diffed):
+        return before_pred + diffed.sum()
+    res = [calc_row(before_pred, predictions[:row]) for row in range(1, len(predictions)+1)]
+    res.insert(0, before_pred)
+    return pd.DataFrame(res)
+
+ans = int_data(before_pred)
+ans = ans.iloc[1:]
+
+COVID_DATA.exp()
+
+ans = np.expm1(ans)
+
+print(ans)
+
+# The test set is bigger than the predictions
+# so only the part that overlaps with the test
+# is used to calculate the errors.
+RMSE = LSTM.rmse(ans.values, WORLD.data[-len(ans):].values)
+
+print(RMSE)
 plt.show()
