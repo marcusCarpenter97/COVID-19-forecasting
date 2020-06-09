@@ -70,13 +70,18 @@ LSTM.train(WORLD.train_x, WORLD.train_y)
 
 LSTM.plot_history("uni_ed_LSTM")
 
-# multivariate parallel, many to one.
-# multivariate parallel, many to many.
+# Make predictions.
+predictions = []
+for offset in range(len(WORLD.test)):
+    idx = HORIZON+offset
+    if idx < len(WORLD.test):
+        target = WORLD.test[idx]
+        pred_in = WORLD.test[offset:idx]
+        pred_in = pred_in.reshape(1, HORIZON, pred_in.shape[1])
+        predictions.append(LSTM.predict(pred_in))
 
-# Evaluation:
-# Walk forward method
-# make prediction and save it
-# add new test week to data
-# repreat for all test data
-# calculate error on predictions.
+predictions = np.stack(predictions)
+print(predictions.shape)
+print(predictions)
+
 plt.show()
