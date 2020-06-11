@@ -59,12 +59,13 @@ print(WORLD.train_x.shape)
 print(WORLD.train_y.shape)
 
 input_shape = (WORLD.train_x.shape[1], WORLD.train_x.shape[2])  # timesteps, features.
-output_shape = WORLD.train_y.shape[1] # features.
+output_shape = WORLD.train_y.shape[2] # features.
 
 LSTM = lstm.myLSTM()
-LSTM.multivariate_encoder_decoder(input_shape, output_shape)
+LSTM.multivariate_encoder_decoder(input_shape, output_shape, HORIZON)
 
 LSTM.print_summary()
+LSTM.plot_model()
 
 LSTM.train(WORLD.train_x, WORLD.train_y)
 
@@ -81,7 +82,8 @@ for offset in range(len(WORLD.test)):
         predictions.append(LSTM.predict(pred_in))
 
 predictions = np.stack(predictions)
-predictions = predictions.reshape(predictions.shape[0], predictions.shape[2])
+print(predictions.shape)
+predictions = predictions.reshape(predictions.shape[0], predictions.shape[3])
 print(predictions.shape)
 print(predictions)
 
@@ -116,3 +118,6 @@ RMSE = LSTM.rmse(ans.values, WORLD.data[-len(ans):].values)
 
 print(RMSE)
 plt.show()
+# TODO: dont use Healthy
+# TODO: make data in shape w1 -> w2 etc...
+# TODO: implement encoder decoder LSTM for weeks.

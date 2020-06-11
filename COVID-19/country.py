@@ -101,15 +101,10 @@ class Country:
             if end < len(self.train):
                 x.append(self.train[i:end, :])
                 y.append(self.train[end, :])
-        # Stack all sub arrays into one 2d array.
-        try:
-            self.train_x = np.stack(x)
-            self.train_y = np.stack(y)
-        except ValueError:
-            print(self.name)
-            print(self.data)
-            print(len(x))
-            print(len(y))
+        # Stack all sub arrays.
+        self.train_x = np.stack(x)
+        self.train_y = np.stack(y)
+        self.train_y = self.train_y.reshape(self.train_y.shape[0], 1, self.train_y.shape[1])
 
     def _supervise_data(self, horizon):
         """

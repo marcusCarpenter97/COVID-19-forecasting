@@ -10,7 +10,7 @@ from keras.utils import plot_model
 from keras.layers.merge import concatenate
 
 from keras.models import Sequential 
-from keras.layers import LSTM, Dense, Activation, Dropout, Embedding, Flatten
+from keras.layers import LSTM, Dense, Activation, Dropout, Embedding, Flatten, RepeatVector, TimeDistributed
 from keras.callbacks.callbacks import EarlyStopping
 from keras import backend as K
 from keras.utils.generic_utils import get_custom_objects
@@ -27,15 +27,16 @@ class myLSTM:
         self.test_predictions = None
         self.hyper_params = None
 
-    def multivariate_encoder_decoder(self, input_shape, out_shape, nodes=200, 
+    def multivariate_encoder_decoder(self, input_shape, out_shape, horizon, nodes=50, 
                            loss='mean_squared_error', optimizer='adam', 
                            dropout=0.1, lstm_activation='relu',
                            dense_activation='relu'):
 
         self.model = Sequential()
-        self.model.add(LSTM(nodes, activation=lstm_activation, return_sequences=True, input_shape=input_shape))
-        self.model.add(LSTM(nodes, activation=dense_activation))
-        self.model.add(Dense(out_shape))
+        self.model.add(LSTM(nodes, activation=lstm_activation, input_shape=input_shape))
+        self.model.add(RepeatVector(1))
+        self.model.add(LSTM(nodes, activation=dense_activation, return_sequences=True))
+        self.model.add(TimeDistributed(Dense(out_shape)))
 
         self.model.compile(loss=loss, optimizer=optimizer)
 
