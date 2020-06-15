@@ -90,33 +90,31 @@ def make_predictions(country):
         predictions.append(LSTM.predict(week))
 
     predictions = np.stack(predictions)
-    # Stacking the arrays  prodices a 4D array which needs to be reshaped to 3D.
-    return predictions.reshape(predictions.shape[0], predictions.shape[2], predictions.shape[3])
+    # Stacking the arrays produces a 4D array which needs to be reshaped to 2D.
+    return predictions.reshape(predictions.shape[0] * predictions.shape[2], predictions.shape[3])
 
 predictions = make_predictions(WORLD)
 print(predictions)
 print(predictions.shape)
 
-raise SystemExit
-
 COVID_DATA.integrate()
 
-# Minus one becasuse of the 0 indexed arrays.
-idx = len(WORLD.data) - len(predictions) - 1
-before_pred = WORLD.data.iloc[idx].values
+def integrate_country_pred(country, predictions):
+    # Get the original value for the row imediately before the prediction data.
+    # This will be used to integrate the predictions.
+    # Minus one becasuse of the 0 indexed arrays.
+    idx = len(country.data) - len(predictions) - 1
+    before_pred = country.data.iloc[idx].values
 
-print(before_pred)
+    def int_data(before_pred, predictions):
+        def calc_row(before_pred, diffed):
+            return before_pred + diffed.sum()
+        res = [calc_row(before_pred, predictions[:row]) for row in range(1, len(predictions)+1)]
+        return pd.DataFrame(res)
 
-def int_data(before_pred):
-    def calc_row(before_pred, diffed):
-        return before_pred + diffed.sum()
-    res = [calc_row(before_pred, predictions[:row]) for row in range(1, len(predictions)+1)]
-    res.insert(0, before_pred)
-    return pd.DataFrame(res)
+    return int_data(before_pred, predictions)
 
-ans = int_data(before_pred)
-ans = ans.iloc[1:]
-
+ans = integrate_country_pred(WORLD, predictions)
 print(ans)
 print(ans.shape)
 #plt.show()
