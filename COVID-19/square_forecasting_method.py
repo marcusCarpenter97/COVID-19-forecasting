@@ -72,24 +72,20 @@ LSTM.train(WORLD.train_x, WORLD.train_y)
 
 LSTM.plot_history("multi_ed_LSTM")
 
-plt.show()
-raise SystemExit
-
-# Make predictions.
 predictions = []
-for offset in range(len(WORLD.test)):
-    idx = HORIZON+offset
-    if idx < len(WORLD.test):
-        target = WORLD.test[idx]
-        pred_in = WORLD.test[offset:idx]
-        pred_in = pred_in.reshape(1, HORIZON, pred_in.shape[1])
-        predictions.append(LSTM.predict(pred_in))
+# Make a prediction for each week in the test data.
+# The last week won't have a ground truth.
+for week in WORLD.test:
+    week = week.reshape(1, week.shape[0], week.shape[1])
+    predictions.append(LSTM.predict(week))
 
 predictions = np.stack(predictions)
-print(predictions.shape)
-predictions = predictions.reshape(predictions.shape[0], predictions.shape[3])
-print(predictions.shape)
+# Stacking the arrays  prodices a 4D array which needs to be reshaped to 3D.
+predictions = predictions.reshape(predictions.shape[0], predictions.shape[2], predictions.shape[3])
 print(predictions)
+print(predictions.shape)
+#plt.show()
+raise SystemExit
 
 COVID_DATA.integrate()
 

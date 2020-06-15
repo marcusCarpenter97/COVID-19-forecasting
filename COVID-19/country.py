@@ -87,8 +87,8 @@ class Country:
         self.train, self.test = self.data.values[offset:-test_size], self.data.values[-test_size:]
 
         # Reshape it so that it is split into horizon sized chunks.
-        self.train.reshape(self.train.shape[0]//horizon, horizon, self.train.shape[1])
-        self.test.reshape(self.test.shape[0]//horizon, horizon, self.test.shape[1])
+        #self.train.reshape(self.train.shape[0]//horizon, horizon, self.train.shape[1])
+        self.test = self.test.reshape(self.test.shape[0]//horizon, horizon, self.test.shape[1])
 
     def supervise_data2(self, horizon):
         """
