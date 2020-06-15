@@ -78,19 +78,19 @@ class Country:
         """
         return num - ((num//div)*div)
 
-    def split_data(self, horizon, train_size):
+    def split_data(self, test_size, horizon):
 
         # Calculate the offset as the data will not always be divisible by the horizon.
         offset = self.find_divisor_offset(len(self.data), horizon)
 
         # Split the data.
-        self.train, self.test = self.data.values[offset:offset+train_size], self.data.values[offset+train_size:]
+        self.train, self.test = self.data.values[offset:-test_size], self.data.values[-test_size:]
 
         # Reshape it so that it is split into horizon sized chunks.
         self.train.reshape(self.train.shape[0]//horizon, horizon, self.train.shape[1])
         self.test.reshape(self.test.shape[0]//horizon, horizon, self.test.shape[1])
 
-    def supervise_data(self, horizon):
+    def supervise_data2(self, horizon):
         """
         Convert the training data into a supervised set.
         Many to one.
@@ -106,7 +106,7 @@ class Country:
         self.train_y = np.stack(y)
         self.train_y = self.train_y.reshape(self.train_y.shape[0], 1, self.train_y.shape[1])
 
-    def _supervise_data(self, horizon):
+    def supervise_data(self, horizon):
         """
         Convert the training data into a supervised set.
         Many to many.

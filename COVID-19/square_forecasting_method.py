@@ -16,7 +16,8 @@ TRAIN_SIZE = 105  # Number of days to be included in the train set.
 # Out of those, 'validation_offset' days will be know and used
 # to verify the model's accuracy.
 VAL_SIZE = 25
-OUTPUT_SIZE = 38
+HORIZONS = 4  # The number of horizons to forecast.
+TEST_SIZE = HORIZON * HORIZONS # Size of the test data depends on the number of horizons.
 
 def print_n_plot_global():
     """ Helper function to display the global data. """
@@ -50,7 +51,7 @@ COVID_DATA.difference()
 
 print_n_plot_country(WORLD)
 
-COVID_DATA.split_train_test(HORIZON, TRAIN_SIZE)
+COVID_DATA.split_train_test(TEST_SIZE, HORIZON)
 print(WORLD.train.shape)
 print(WORLD.test.shape)
 
@@ -69,7 +70,10 @@ LSTM.plot_model()
 
 LSTM.train(WORLD.train_x, WORLD.train_y)
 
-LSTM.plot_history("uni_ed_LSTM")
+LSTM.plot_history("multi_ed_LSTM")
+
+plt.show()
+raise SystemExit
 
 # Make predictions.
 predictions = []

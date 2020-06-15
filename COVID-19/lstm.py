@@ -27,14 +27,14 @@ class myLSTM:
         self.test_predictions = None
         self.hyper_params = None
 
-    def multivariate_encoder_decoder(self, input_shape, out_shape, horizon, nodes=50, 
+    def multivariate_encoder_decoder(self, input_shape, out_shape, horizon, nodes=10, 
                            loss='mean_squared_error', optimizer='adam', 
                            dropout=0.1, lstm_activation='relu',
                            dense_activation='relu'):
 
         self.model = Sequential()
         self.model.add(LSTM(nodes, activation=lstm_activation, input_shape=input_shape))
-        self.model.add(RepeatVector(1))
+        self.model.add(RepeatVector(horizon))
         self.model.add(LSTM(nodes, activation=dense_activation, return_sequences=True))
         self.model.add(TimeDistributed(Dense(out_shape)))
 

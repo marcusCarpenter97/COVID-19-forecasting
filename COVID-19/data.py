@@ -105,12 +105,12 @@ class Data:
         for country in self.countries:
             country.int_data()
 
-    def split_train_test(self, horizon, train_size):
+    def split_train_test(self, test_size, horizon):
         """
         Create training and testing datasets for all countries.
         """
         for country in self.countries:
-            country.split_data(horizon, train_size)
+            country.split_data(test_size, horizon)
 
     def supervise_data(self, horizon):
         """
