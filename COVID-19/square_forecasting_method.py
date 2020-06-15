@@ -100,19 +100,26 @@ print(predictions.shape)
 COVID_DATA.integrate()
 
 def integrate_country_pred(country, predictions):
+    """
+    Rescales predictions by integrating values.
+
+    Parameters
+    country: country obj.
+    predictions: numpy array.
+
+    Returns
+    DataFrame.
+    """
     # Get the original value for the row imediately before the prediction data.
     # This will be used to integrate the predictions.
     # Minus one becasuse of the 0 indexed arrays.
     idx = len(country.data) - len(predictions) - 1
     before_pred = country.data.iloc[idx].values
 
-    def int_data(before_pred, predictions):
-        def calc_row(before_pred, diffed):
-            return before_pred + diffed.sum()
-        res = [calc_row(before_pred, predictions[:row]) for row in range(1, len(predictions)+1)]
-        return pd.DataFrame(res)
-
-    return int_data(before_pred, predictions)
+    def calc_row(before_pred, diffed):
+        return before_pred + diffed.sum()
+    res = [calc_row(before_pred, predictions[:row]) for row in range(1, len(predictions)+1)]
+    return pd.DataFrame(res)
 
 ans = integrate_country_pred(WORLD, predictions)
 print(ans)
