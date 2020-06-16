@@ -94,8 +94,6 @@ def make_predictions(country):
     return predictions.reshape(predictions.shape[0] * predictions.shape[2], predictions.shape[3])
 
 predictions = make_predictions(WORLD)
-print(predictions)
-print(predictions.shape)
 
 COVID_DATA.integrate()
 
@@ -119,27 +117,38 @@ def integrate_country_pred(country, predictions):
     def calc_row(before_pred, diffed):
         return before_pred + diffed.sum()
     res = [calc_row(before_pred, predictions[:row]) for row in range(1, len(predictions)+1)]
-    return pd.DataFrame(res)
+    return np.stack(res)
 
-ans = integrate_country_pred(WORLD, predictions)
-print(ans)
-print(ans.shape)
-#plt.show()
-raise SystemExit
+int_pred = integrate_country_pred(WORLD, predictions)
 
 COVID_DATA.exp()
 
-ans = np.expm1(ans)
+exp_pred = np.expm1(int_pred)
 
-print(ans)
+# Slit the weeks.
+exp_pred = exp_pred.reshape(exp_pred.shape[0]//HORIZON, HORIZON, exp_pred.shape[1])
 
-# The test set is bigger than the predictions
-# so only the part that overlaps with the test
-# is used to calculate the errors.
-RMSE = LSTM.rmse(ans.values, WORLD.data[-len(ans):].values)
+print(exp_pred)
+print(exp_pred.shape)
 
-print(RMSE)
+# Skip last week as there is no gound thruth for it.
+pred_weeks = exp_pred[:-1]
+# Get the original values. Numper of days = number of weeks * horizon.
+orig_weeks = np.array(WORLD.data[-len(pred_weeks)*HORIZON:])
+# Make the shape equal to pred_weeks.
+orig_weeks = orig_weeks.reshape(orig_weeks.shape[0]//HORIZON, HORIZON, orig_weeks.shape[1])
+
+print(pred_weeks.shape)
+print(orig_weeks.shape)
+
+weekly_errors = []
+# Calculate RMSE for each feature in each week.
+for pred_week, orig_week in zip(pred_weeks, orig_weeks):
+    feature_errors = []
+    # Transpose array to iterate through columns which represents a feature.
+    for pred_feature, orig_feature in zip(pred_week.T, orig_week.T):
+        feature_errors.append(LSTM.rmse(pred_feature, orig_feature))
+    weekly_errors.append(feature_errors)
+
+print(weekly_errors)
 plt.show()
-# TODO: dont use Healthy
-# TODO: make data in shape w1 -> w2 etc...
-# TODO: implement encoder decoder LSTM for weeks.
