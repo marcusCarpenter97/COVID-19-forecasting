@@ -48,6 +48,27 @@ class Country:
         self.data['days'] = self.data['days'].dt.strftime("%m/%d/%y")
         self.data.set_index('days', inplace=True)
 
+    def int_pred(self, predictions):
+        """
+        Rescales predictions by integrating values.
+
+        Parameters
+        predictions: numpy array.
+
+        Returns
+        numpy array.
+        """
+        # Get the original value for the row imediately before the prediction data.
+        # This will be used to integrate the predictions.
+        # Minus one becasuse of the 0 indexed arrays.
+        idx = len(self.data) - len(predictions) - 1
+        before_pred = self.data.iloc[idx].values
+
+        def calc_row(before_pred, diffed):
+            return before_pred + diffed.sum()
+        res = [calc_row(before_pred, predictions[:row]) for row in range(1, len(predictions)+1)]
+        return np.stack(res)
+
     def log_data(self):
         # Using the log(x+1) function to handle zeroes in the data.
         self.data = np.log1p(self.data)
