@@ -93,6 +93,27 @@ class myLSTM:
     def predict(self, data):
         return self.model.predict(data)
 
+    def make_predictions(self, country):
+        """
+        Create predictions for a country on a weekly basis.
+
+        Parameter:
+        country: country obj.
+
+        Returns:
+        numpy array containing predictions for country.
+        """
+        predictions = []
+        # Make a prediction for each week in the test data.
+        # The last week won't have a ground truth.
+        for week in country.test:
+            week = week.reshape(1, week.shape[0], week.shape[1])
+            predictions.append(self.predict(week))
+
+        predictions = np.stack(predictions)
+        # Stacking the arrays produces a 4D array which needs to be reshaped to 2D.
+        return predictions.reshape(predictions.shape[0] * predictions.shape[2], predictions.shape[3])
+
     def rmse(self, prediction, target):
         return np.sqrt(((prediction - target) ** 2).mean())
 
