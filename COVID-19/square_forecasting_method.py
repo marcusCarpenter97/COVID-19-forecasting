@@ -19,19 +19,12 @@ VAL_SIZE = 25
 HORIZONS = 4  # The number of horizons to forecast.
 TEST_SIZE = HORIZON * HORIZONS # Size of the test data depends on the number of horizons.
 
-def print_n_plot_global():
-    """ Helper function to display the global data. """
-    print("Global data.")
-    COVID_DATA.print_global()
-    COVID_DATA.plot_global()
-
 def print_n_plot_country(country, train_bar=None):
     """ Helper function to display a country's data.
         train_bar is a flag for chosing whether to
         display a line dividing the training and 
         testing sets.
     """
-    print(f"Data for: {country.name}.")
     country.print_country()
     if train_bar:
         country.plot_country(train_date=train_bar)
@@ -39,6 +32,8 @@ def print_n_plot_country(country, train_bar=None):
         country.plot_country()
 
 COVID_DATA = data.Data()
+
+VOCAB_SIZE, MAX_LENGTH = COVID_DATA.encode_names()
 
 WORLD = COVID_DATA.find_country("World")
 print_n_plot_country(WORLD)

@@ -24,8 +24,7 @@ class Country:
 
     def print_country(self):
         print(self.name)
-        if self.encoded_name:
-            print(self.encoded_name)
+        print(self.encoded_name)
         print(self.population)
         print(self.data)
 
@@ -35,7 +34,7 @@ class Country:
         self.data = self.data.diff().dropna()
 
     def int_data(self):
-        # TODO slow, make faster..
+        # TODO slow, make faster.
         def calc_row(diffed):
             return self.first_row + diffed.sum()
         res = [calc_row(self.data.iloc[:row]) for row in range(1, len(self.data)+1)]
@@ -90,6 +89,7 @@ class Country:
         #self.train.reshape(self.train.shape[0]//horizon, horizon, self.train.shape[1])
         self.test = self.test.reshape(self.test.shape[0]//horizon, horizon, self.test.shape[1])
 
+    # TODO unsused.
     def supervise_data2(self, horizon):
         """
         Convert the training data into a supervised set.
@@ -129,5 +129,6 @@ class Country:
         self.train_x = np.stack(x)
         self.train_y = np.stack(y)
 
+    # TODO unsused.
     def get_slice(self, start, end):
         return self.data.iloc[start:end]

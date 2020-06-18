@@ -1,5 +1,5 @@
-#from keras.preprocessing.sequence import pad_sequences
-#from keras.preprocessing.text import one_hot
+from keras.preprocessing.sequence import pad_sequences
+from keras.preprocessing.text import one_hot
 import math
 import numpy as np
 import pandas as pd
@@ -57,12 +57,17 @@ class Data:
         vocab_size - int - number of unique words plus some extra space
         max_length - int - size of biggest word.
         """
-        vocab_size = math.ceil(len(self.countries) * extra_size) # words not country names
+        # Idealy this should use the number of words not the country names.
+        vocab_size = math.ceil(len(self.countries) * extra_size)
+
         encoded = [one_hot(country.name, vocab_size) for country in self.countries]
         max_length = len(max(encoded, key=lambda x: len(x)))
+
         padded = pad_sequences(encoded, maxlen=max_length, padding='post')
+
         for country, enc_name in zip(self.countries, padded):
             country.encoded_name = enc_name
+
         return vocab_size, max_length
 
     def calculate_current_infected(self, c, d, r):
@@ -119,9 +124,11 @@ class Data:
         for country in self.countries:
             country.supervise_data(horizon)
 
+    # TODO unsused.
     def get_ts_samples(self, start, end):
         return np.array([np.array(country.get_slice(start, end)) for country in self.countries])
 
+    # TODO unsused.
     def get_encoded_names(self):
         names = np.array([country.encoded_name for country in self.countries])
         return names.reshape(names.shape[0], 1, names.shape[1])
