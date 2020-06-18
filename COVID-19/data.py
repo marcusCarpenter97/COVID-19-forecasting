@@ -124,6 +124,24 @@ class Data:
         for country in self.countries:
             country.supervise_data(horizon)
 
+    def print_n_plot_country(self, name, bars=[]):
+        """ 
+        Display a country's data.
+
+        Parametes
+        country: str - a countries name.
+        bars: list - list of x coordinates 
+        defining where to place vertical bars.
+        """
+        country = self.find_country(name)
+
+        country.print_country()
+
+        if len(bars) > 0:
+            country.plot_country(train_date=bars)
+        else:
+            country.plot_country()
+
     # TODO unsused.
     def get_ts_samples(self, start, end):
         return np.array([np.array(country.get_slice(start, end)) for country in self.countries])

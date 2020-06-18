@@ -13,14 +13,15 @@ class Country:
         self.data = pd.concat([c, d, r, i, h], axis=1)
         self.data.columns=["Confirmed", "Deceased", "Recovered", "Infected", "Healthy"]
 
-    def plot_country(self, train_date=None):
+    def plot_country(self, bars=[]):
         ax = self.data[["Confirmed", "Deceased", "Recovered", "Infected"]].plot(title=f"{self.name}")
         ax.set_xlabel("Days")
         ax.set_ylabel("People")
         ax.legend(loc="upper left")
-        if train_date:
-            for i in train_date:
-                ax.axvline(i, color="red", linestyle="--")
+
+        if len(bars) > 0:
+            for bar in bars:
+                ax.axvline(bar, color="red", linestyle="--")
 
     def print_country(self):
         print(self.name)
