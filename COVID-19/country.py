@@ -99,17 +99,24 @@ class Country:
         """
         return num - ((num//div)*div)
 
-    def split_data(self, test_size, horizon):
+    def split_data(self, test_size):
+        """
+        Split data into train, validation and test.
 
-        # Calculate the offset as the data will not always be divisible by the horizon.
-        offset = self.find_divisor_offset(len(self.data), horizon)
+        Example:
+        >>>data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0]
+        >>>data[:-s*2], data[-s*2:-s], data[-s:]
+        ([1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4], [5, 6, 7], [8, 9, 0])
 
-        # Split the data.
-        self.train, self.test = self.data.values[offset:-test_size], self.data.values[-test_size:]
+        Parameters
+        ----------
+        test_size: int
+            Size of validation and test set.
+        """
+        self.train_x, self.train_y, self.test = self.data.values[:-test_size*2], self.data.values[-test_size*2:-test_size], self.data.values[-test_size:]
 
-        # Reshape it so that it is split into horizon sized chunks.
-        #self.train.reshape(self.train.shape[0]//horizon, horizon, self.train.shape[1])
-        self.test = self.test.reshape(self.test.shape[0]//horizon, horizon, self.test.shape[1])
+    def supervise_data(self, test_size, horizon):
+        pass
 
     # TODO unsused.
     def supervise_data2(self, horizon):
@@ -128,7 +135,8 @@ class Country:
         self.train_y = np.stack(y)
         self.train_y = self.train_y.reshape(self.train_y.shape[0], 1, self.train_y.shape[1])
 
-    def supervise_data(self, horizon):
+    # TODO unsused.
+    def supervise_data3(self, horizon):
         """
         Convert the training data into a supervised set.
         Many to many.

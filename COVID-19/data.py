@@ -110,19 +110,19 @@ class Data:
         for country in self.countries:
             country.int_data()
 
-    def split_train_test(self, test_size, horizon):
+    def split_train_test(self, test_size):
         """
         Create training and testing datasets for all countries.
         """
         for country in self.countries:
-            country.split_data(test_size, horizon)
+            country.split_data(test_size)
 
-    def supervise_data(self, horizon):
+    def supervise_data(self, test_size, horizon):
         """
         Create input and output test sets for all countries.
         """
         for country in self.countries:
-            country.supervise_data(horizon)
+            country.supervise_data(test_size, horizon)
 
     def print_n_plot_country(self, name, bars=[]):
         """ 
