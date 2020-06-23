@@ -11,6 +11,7 @@ import lstm
 HORIZON = 7  # Number of days in a horizon.
 HORIZONS = 4  # The number of horizons to forecast.
 TEST_SIZE = HORIZON * HORIZONS # Size of the test data depends on the number of horizons.
+EMBEDDING_SIZE = 10
 
 COUNTRY_NAME = "World"  # For testing.
 
@@ -28,9 +29,13 @@ COVID_DATA.difference()
 
 COVID_DATA.print_n_plot_country(COUNTRY_NAME)
 
-COVID_DATA.split_train_test(TEST_SIZE, HORIZON)
+COVID_DATA.split_train_test(TEST_SIZE)
 
-COVID_DATA.supervise_data(HORIZON)
+WORLD = COVID_DATA.find_country("World")
+print(WORLD.train_x.shape)
+print(WORLD.train_y.shape)
+print(WORLD.test.shape)
+raise SystemExit
 
 # The first country in the data is used to define the input and output shapes.
 # This assumes that all countries have the same shape.
@@ -38,14 +43,15 @@ input_shape = (COVID_DATA.countries[0].train_x.shape[1], COVID_DATA.countries[0]
 output_shape = COVID_DATA.countries[0].train_y.shape[2] # features.
 
 LSTM = lstm.myLSTM()
-LSTM.multivariate_encoder_decoder(input_shape, output_shape, HORIZON)
+LSTM.multivariate_embedded_lstm(MAX_LENGTH, EMBEDDING_SIZE, VOCAB_SIZE, input_shape, output_shape)
 
 LSTM.print_summary()
 LSTM.plot_model()
 
 # Train and test on World data.
-WORLD = COVID_DATA.find_country("World")
 
+# add embedded name total rows in each country.
+# merge all caountrues into one.
 LSTM.train(WORLD.train_x, WORLD.train_y)
 
 LSTM.plot_history("multi_ed_LSTM")

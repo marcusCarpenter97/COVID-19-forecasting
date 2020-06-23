@@ -117,13 +117,6 @@ class Data:
         for country in self.countries:
             country.split_data(test_size)
 
-    def supervise_data(self, test_size, horizon):
-        """
-        Create input and output test sets for all countries.
-        """
-        for country in self.countries:
-            country.supervise_data(test_size, horizon)
-
     def print_n_plot_country(self, name, bars=[]):
         """ 
         Display a country's data.
@@ -141,12 +134,3 @@ class Data:
             country.plot_country(train_date=bars)
         else:
             country.plot_country()
-
-    # TODO unsused.
-    def get_ts_samples(self, start, end):
-        return np.array([np.array(country.get_slice(start, end)) for country in self.countries])
-
-    # TODO unsused.
-    def get_encoded_names(self):
-        names = np.array([country.encoded_name for country in self.countries])
-        return names.reshape(names.shape[0], 1, names.shape[1])

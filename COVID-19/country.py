@@ -82,23 +82,6 @@ class Country:
                 print(f"RuntimeWarning: {runw}")
                 print("The numbers given to exp where too big and caused an error. The data wasn't affected.")
 
-    def find_divisor_offset(self, num, div):
-        """
-        Calculates an offset to make the data divisible by the horizon. 
-        By finding the greatest divisor of div that is smaller than num.
-
-        Example: If splitting the data into weeks.
-        num = 137
-        div = 7
-        137/7 = 19.57... (Not divisible)
-        Using the formula below:
-        137 - (floor(137/7) * 7) = 4
-        Four is the offset to make 137 divisible by 7 because
-        137 - 4 = 133
-        133/7 = 19 (Divisible)
-        """
-        return num - ((num//div)*div)
-
     def split_data(self, test_size):
         """
         Split data into train, validation and test.
@@ -113,52 +96,5 @@ class Country:
         test_size: int
             Size of validation and test set.
         """
-        self.train_x, self.train_y, self.test = self.data.values[:-test_size*2], self.data.values[-test_size*2:-test_size], self.data.values[-test_size:]
-
-    def supervise_data(self, test_size, horizon):
-        pass
-
-    # TODO unsused.
-    def supervise_data2(self, horizon):
-        """
-        Convert the training data into a supervised set.
-        Many to one.
-        """
-        x, y = [], []
-        for i in range(len(self.train)):
-            end = i + horizon
-            if end < len(self.train):
-                x.append(self.train[i:end, :])
-                y.append(self.train[end, :])
-        # Stack all sub arrays.
-        self.train_x = np.stack(x)
-        self.train_y = np.stack(y)
-        self.train_y = self.train_y.reshape(self.train_y.shape[0], 1, self.train_y.shape[1])
-
-    # TODO unsused.
-    def supervise_data3(self, horizon):
-        """
-        Convert the training data into a supervised set.
-        Many to many.
-        """
-        start = 0
-        x, y = [], []
-        # For each data point.
-        for _ in range(len(self.train)):
-            # Calculate offsets for end of in and out samples.
-            end = start + horizon
-            out_end = end + horizon
-            # Check if output offset is still within the data.
-            if out_end <= len(self.train):
-                # Copy in and out sections fron data.
-                x.append(self.train[start:end])
-                y.append(self.train[end:out_end])
-            # Mode to the naxt step.
-            start += 1
-        # Stack all sub arrays into one 2d array.
-        self.train_x = np.stack(x)
-        self.train_y = np.stack(y)
-
-    # TODO unsused.
-    def get_slice(self, start, end):
-        return self.data.iloc[start:end]
+        self.train_x, self.train_y, self.test = (self.data.values[:-test_size*2], self.data.values[-test_size*2:-test_size],
+                self.data.values[-test_size:])

@@ -4,7 +4,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Removes tensorflow messages.
 import numpy as np
 import matplotlib.pyplot as plt
 
-#from tensorflow import keras
 from keras import Input, Model
 from keras.utils import plot_model
 from keras.layers.merge import concatenate
@@ -27,59 +26,41 @@ class myLSTM:
         self.test_predictions = None
         self.hyper_params = None
 
-    def multivariate_encoder_decoder(self, input_shape, out_shape, horizon, nodes=10, 
-                           loss='mean_squared_error', optimizer='adam', 
-                           dropout=0.1, lstm_activation='relu',
-                           dense_activation='relu'):
-
-        self.model = Sequential()
-        self.model.add(LSTM(nodes, activation=lstm_activation, input_shape=input_shape))
-        self.model.add(RepeatVector(horizon))
-        self.model.add(LSTM(nodes, activation=dense_activation, return_sequences=True))
-        self.model.add(TimeDistributed(Dense(out_shape)))
-
-        self.model.compile(loss=loss, optimizer=optimizer)
-
-    # TODO remove
-    def create_simple_LSTM(self, nodes=10, in_shape=(4,1), out_shape=1, loss='mean_squared_error', opti='adam', dropout=0.1,
-            lstm_activation='tanh', dense_activation='sigmoid'):
-        if lstm_activation == 'swish':
-            lstm_activation = self.swish
-        if dense_activation == 'swish': 
-            dense_activation = self.swish
-
-        self.model = Sequential()
-        self.model.add(LSTM(nodes, input_shape=in_shape))
-        self.model.add(Activation(lstm_activation))
-        self.model.add(Dropout(dropout))
-        self.model.add(Dense(out_shape))
-        self.model.add(Activation(dense_activation))
-        self.model.compile(loss=loss, optimizer=opti)
-
-    # TODO remove
-    def create_multivariate_LSTM(self, in_shape, out_shape, vocab_size, output_size, input_size, nodes=10,
-            loss='mean_squared_error', opti='adam', dropout_val=0.1, lstm_activation='tanh', dense_activation='sigmoid'):
-
+    def multivariate_embedded_lstm(self, word_size, embed_size, vocab_size, lstm_shape, out_shape,
+                           nodes=10, loss='mean_squared_error', optimizer='adam', dropout=0.1,
+                           lstm_activation='relu', dense_activation='relu'):
+        """
+        Parameters
+        ----------
+        word_size : int
+            Size of word verctor used to represent country names.
+        embed_size : int
+            Size of the output from the embeding layer.
+        vocab_size : int
+            Number of unique words in the vocabulary.
+        lstm_shape : tuple
+            A tuple representing the shape of the input for the LSTM layer.
+        out_shape : int
+            Number of outputs to be produced.
+        """
         # Embedding layer for the coutry names.
-        embedded_input = Input([input_size])
-        embedding_layer = Embedding(vocab_size, output_size, input_length=input_size)(embedded_input)
-        dense_embedding = Dense(nodes)(embedding_layer)
-        flat_embedded_layer = Flatten()(dense_embedding)
+        embedded_input = Input([word_size])
+        embedding_layer = Embedding(vocab_size, embed_size, input_length=word_size)(embedded_input)
+        flat_embedded_layer = Flatten()(embedding_layer)
 
         # Two layer LSTM for the time series.
-        input_layer = Input(in_shape)
-        lstm_layer_1 = LSTM(nodes, return_sequences=True, activation=lstm_activation, dropout=dropout_val)(input_layer)
-        lstm_layer_2 = LSTM(nodes, activation=lstm_activation, dropout=dropout_val)(lstm_layer_1)
+        lstm_input = Input(lstm_shape)
+        lstm_layer = LSTM(nodes, activation=lstm_activation, dropout=dropout)(lstm_input)
 
         # Merge both.
-        merged = concatenate([flat_embedded_layer, lstm_layer_2])
+        merged = concatenate([flat_embedded_layer, lstm_layer])
 
         # Dense output layer to make predictions.
         output_layer = Dense(out_shape, activation=dense_activation)(merged)
 
         # Create model from the layers.
-        self.model = Model(inputs=[embedded_input, input_layer], outputs=output_layer, name="COVID-19_Multivariate_LSTM")
-        self.model.compile(loss=loss, optimizer=opti)
+        self.model = Model(inputs=[embedded_input, lstm_input], outputs=output_layer, name="COVID-19_Multivariate_LSTM")
+        self.model.compile(loss=loss, optimizer=optimizer)
 
     def train(self, x_train, y_train, epochs=500, batch_size=32, verbose=0, patience=10):
 
@@ -144,24 +125,3 @@ class myLSTM:
         ax.set_xlabel('epoch')
         ax.legend(['train', 'test'], loc='best')
         fig.savefig(f"hist_{fig_name}")
-
-    # TODO too specific. Improve
-    def plot_predictions(self, fig_name, original, forecast_horizon):
-        # The first sample is lost after each differencing, so the + 2 is required. 
-        empty_arr = np.empty((forecast_horizon+2, 1))
-        empty_arr[:] = np.nan
-        shifted_train = np.concatenate([empty_arr, self.train_predictions])
-        # The test data mus be shifted by 2 empty arrays plus the training data.
-        empty_arr = np.empty(((forecast_horizon+2)*2+len(self.train_predictions), 1))
-        empty_arr[:] = np.nan
-        shifted_test = np.concatenate([empty_arr, self.test_predictions])
-
-        fig, ax = plt.subplots()
-        ax.plot(original)
-        ax.plot(shifted_train)
-        ax.plot(shifted_test)
-        ax.set_title('Prediction over original')
-        ax.set_ylabel('Number of infected')
-        ax.set_xlabel('Time')
-        ax.legend(['original data', 'train predictions', 'test predictions'], loc='best')
-        fig.savefig(f"pred_{fig_name}")
