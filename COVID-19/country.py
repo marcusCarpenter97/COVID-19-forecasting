@@ -98,5 +98,3 @@ class Country:
         """
         self.train_x, self.train_y, self.test = (self.data.values[:-test_size*2], self.data.values[-test_size*2:-test_size],
                 self.data.values[-test_size:])
-
-        self.train_x = self.train_x.reshape(1, self.train_x.shape[0], self.train_x.shape[1])

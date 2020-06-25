@@ -31,30 +31,33 @@ COVID_DATA.print_n_plot_country(COUNTRY_NAME)
 
 COVID_DATA.split_train_test(TEST_SIZE)
 
-WORLD = COVID_DATA.find_country("World")
-print(WORLD.train_x.shape)
-print(WORLD.train_y.shape)
-print(WORLD.test.shape)
+TRAIN_NAMES, TRAIN_TS, TRAIN_Y = COVID_DATA.get_train_data()
 
+print(TRAIN_NAMES.shape)
+print(TRAIN_TS.shape)
+print(TRAIN_Y.shape)
+
+WORLD = COVID_DATA.find_country("World")
 # The first country in the data is used to define the input and output shapes.
 # This assumes that all countries have the same shape.
-input_shape = (COVID_DATA.countries[0].train_x.shape[1], COVID_DATA.countries[0].train_x.shape[2])  # timesteps, features.
-output_shape = COVID_DATA.countries[0].train_y.shape[1] # features.
+input_shape = (TRAIN_TS.shape[1], TRAIN_TS.shape[2])  # timesteps, features.
+output_shape = TRAIN_Y.shape[2] # features.
 
 LSTM = lstm.myLSTM()
 LSTM.multivariate_embedded_lstm(MAX_LENGTH, EMBEDDING_SIZE, VOCAB_SIZE, input_shape, output_shape)
 
 LSTM.print_summary()
 LSTM.plot_model()
+
+count = 0
+for name, ts, y in zip(TRAIN_NAMES, TRAIN_TS, TRAIN_Y):
+    count+=1
+    print(f"Training progress {count}/{len(TRAIN_NAMES)}")
+    print(name.shape, ts.shape, y.shape)
+    print(type(name), type(ts), type(y))
+    LSTM.train(name, ts, y)
+    LSTM.plot_history("multi_ed_LSTM_{i}")
 raise SystemExit
-
-# Train and test on World data.
-
-# add embedded name total rows in each country.
-# merge all caountrues into one.
-LSTM.train(WORLD.train_x, WORLD.train_y)
-
-LSTM.plot_history("multi_ed_LSTM")
 
 predictions = LSTM.make_predictions(WORLD)
 

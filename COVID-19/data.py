@@ -117,6 +117,14 @@ class Data:
         for country in self.countries:
             country.split_data(test_size)
 
+    def get_train_data(self):
+        names, timeseries, y = [], [], []
+        for country in self.countries:
+            names.append(country.encoded_name)
+            timeseries.append(country.train_x)
+            y.append(country.train_y)
+        return np.stack(names), np.stack(timeseries), np.stack(y)
+
     def print_n_plot_country(self, name, bars=[]):
         """ 
         Display a country's data.

@@ -62,14 +62,15 @@ class myLSTM:
         self.model = Model(inputs=[embedded_input, lstm_input], outputs=output_layer, name="COVID-19_Multivariate_LSTM")
         self.model.compile(loss=loss, optimizer=optimizer)
 
-    def train(self, x_train, y_train, epochs=500, batch_size=32, verbose=0, patience=10):
+    def train(self, name, ts, y_train, epochs=500, batch_size=32, verbose=0, patience=10):
 
+        print("In train")
+        print(name.shape, ts.shape, y_train.shape)
+        print(type(name), type(ts), type(y_train))
         early_stopping = EarlyStopping(patience=patience, restore_best_weights=True)
 
-        self.history = self.model.fit(x_train, y_train, epochs=epochs,
-                                      batch_size=batch_size, verbose=verbose,
-                                      callbacks=[early_stopping],
-                                      validation_split=0.2) 
+        self.history = self.model.fit(x=[name, ts], y=y_train, epochs=epochs, batch_size=batch_size, verbose=verbose,
+                                      callbacks=[early_stopping], validation_split=0.2) 
 
     def predict(self, data):
         return self.model.predict(data)
