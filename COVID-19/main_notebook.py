@@ -26,7 +26,9 @@
 # ## 1.1 Code initialization <a name="1.1"></a>
 import data
 import matplotlib.pyplot as plt
+import pandas as pd
 from statsmodels.graphics.tsaplots import plot_acf
+from statsmodels.tsa.stattools import adfuller, kpss
 COVID_DATA = data.Data()
 
 # # 2. Data <a name="2"></a>
@@ -92,10 +94,36 @@ fig.tight_layout()
 # the total number of infected people, if differenced, will now show the numbers of newlly infected people at each timestep.
 
 # If a time series has a deterministic trend then the mean of the data will follow it no matter what. There might be small
-# perturbation mmaking the values on the y-axis go up or down, however, the mean will always follow the trend. An example of
-# this is
+# perturbation mmaking the values on the y-axis go up or down, however, the mean will always follow the trend.
+
+# There are two tests that check for trends in a time series. The Augmented Dickey Fuller (ADF) and the
+# Kwiatkowski-Phillips-Schmidt-Shin (KPSS). These statistical tests complement each other in the sence that the ADF checks for
+# the unot root while the KPSS verifies the presence of a trend. Both tests use the null hypothesis to prove or disprove the
+# presence of a trend.
+
+def print_results(res, index, row_names):
+    """
+    This function helps print the results from both the ADF and the KPSS tests.
+    """
+    formatted_res = pd.Series(res[0:index], index=row_names)
+    for key, value in res[index].items():
+        formatted_res[f'Critical Value ({key})'] = value
+    print(formatted_res)
 
 # ### 3.2.1 Augmented Dickey Fuller (ADF) <a name="3.2.1"></a>
+
+# The ADF test states that the null hypothesis is that the time series has a unit root (not stationary). The alternate
+# hypothesis states that the time series is stationary as there is no trend. By default the null hypothesis is asumed to be
+# true. The test attempts to disprove this by calculating a p-value which must be less than a Critical value.
+
+# Critical values are set percentages essentialy a lookup table of numbers. The p-value represents the confidence in which the
+# null hypothesis is rejected.
+
+adf_results = adfuller(COVID_DATA.find_country("World").data["Confirmed"])
+print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number of Observations Used'])
+
+# The ADF test was applied to the Confirmed cases for the World. The results show a p-values of 0.98 meaning that it is 98% 
+# confident that there is a unit root (trend) present in the data. This is noticeable by looking at its plot in section 2.2.
 
 # ### 3.2.2 Kwiatkowski-Phillips-Schmidt-Shin (KPSS) <a name="3.2.2"></a>
 
