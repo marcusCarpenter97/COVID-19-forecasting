@@ -102,14 +102,14 @@ class Country:
     def split_data(self, test_size, horizon):
 
         # Calculate the offset as the data will not always be divisible by the horizon.
-        offset = self.find_divisor_offset(len(self.data), horizon)
+        #offset = self.find_divisor_offset(len(self.data), horizon)
 
-        # Split the data.
-        self.train, self.test = self.data.values[offset:-test_size], self.data.values[-test_size:]
+        # Split the data. The horizon produces an overlap between the train and test set.
+        self.train, self.test = self.data.values[:-test_size], self.data.values[-(test_size+horizon):]
 
         # Reshape it so that it is split into horizon sized chunks.
-        #self.train.reshape(self.train.shape[0]//horizon, horizon, self.train.shape[1])
-        self.test = self.test.reshape(self.test.shape[0]//horizon, horizon, self.test.shape[1])
+        #self.train = self.train.reshape(self.train.shape[0]//horizon, horizon, self.train.shape[1])
+        #self.test = self.test.reshape(self.test.shape[0]//horizon, horizon, self.test.shape[1])
 
     # TODO unsused.
     def supervise_data2(self, horizon):
