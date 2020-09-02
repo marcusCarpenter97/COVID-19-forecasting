@@ -26,9 +26,16 @@
 # ## 1.1 Code initialization <a name="1.1"></a>
 import data
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 import pandas as pd
 from statsmodels.graphics.tsaplots import plot_acf
 from statsmodels.tsa.stattools import adfuller, kpss
+from sklearn.preprocessing import StandardScaler
+from keras.models import Sequential
+from keras.layers import LSTM
+from keras.layers import Dense
+from keras.layers import RepeatVector
+from keras.layers import TimeDistributed
 COVID_DATA = data.Data()
 
 # # 2. Data <a name="2"></a>
@@ -58,6 +65,31 @@ COVID_DATA = data.Data()
 COVID_DATA.print_n_plot_country("World")
 
 # The Healthy column is not included in the plot as it would overshadow the other values.
+scaler = StandardScaler()
+scaled_data = scaler.fit_transform(COVID_DATA.find_country("World").data.values)
+
+fig, ax = plt.subplots(2, 4, figsize=(15,5))
+COVID_DATA.find_country("World").data["Confirmed"].plot(title="Confirmed", kind="hist", ax=ax[0,0])
+COVID_DATA.find_country("World").data["Deceased"].plot(title="Deceased", kind="hist", ax=ax[0,1])
+COVID_DATA.find_country("World").data["Recovered"].plot(title="Recovered", kind="hist", ax=ax[0,2])
+COVID_DATA.find_country("World").data["Infected"].plot(title="Infected", kind="hist", ax=ax[0,3])
+ax[1,0].hist(scaled_data[:,0])
+ax[1,0].set_title("Confirmed (Scaled)")
+ax[1,1].hist(scaled_data[:,1])
+ax[1,1].set_title("Deceased (Scaled)")
+ax[1,2].hist(scaled_data[:,2])
+ax[1,2].set_title("Recovered (Scaled)")
+ax[1,3].hist(scaled_data[:,3])
+ax[1,3].set_title("Infected (Scaled)")
+fig.tight_layout()
+
+# The plot above shows a comparison between the original data (top row) and its standarized version (bottom row). This process 
+# used the formula $ y = (x-u)/s $ where y is the standarrizes data, x is the original, u represents the mean and s is the 
+# standard deviation.
+
+# Standardizing the data does not change its distribution as it simply makes the mean of the data zero and the standard 
+# deviation 1. It is important to note that to avoid data leakeage the train and test sets must be split before applying 
+# standarization on the data.
 
 # # 3. Time series <a name="3"></a>
 
@@ -69,12 +101,11 @@ COVID_DATA.print_n_plot_country("World")
 # lags. When the autocorrelation plot shows a value of 1 the time series is identical to its lagged version, if the plot shows a
 # 0 then the values are random. Any values outside of the shaded area are considered to be statistically significant.
 
-fig, ax = plt.subplots(3, 2, figsize=(15, 10))
+fig, ax = plt.subplots(2, 2, figsize=(15, 10))
 temp_ax = plot_acf(COVID_DATA.find_country("World").data["Confirmed"], title="Confirmed", ax=ax[0,0])
 temp_ax = plot_acf(COVID_DATA.find_country("World").data["Deceased"], title="Deceased", ax=ax[0,1])
 temp_ax = plot_acf(COVID_DATA.find_country("World").data["Recovered"], title="Recovered", ax=ax[1,0])
 temp_ax = plot_acf(COVID_DATA.find_country("World").data["Infected"], title="Infected", ax=ax[1,1])
-temp_ax = plot_acf(COVID_DATA.find_country("World").data["Healthy"], title="Healthy", ax=ax[2,0])
 fig.tight_layout()
 
 # The autocorrelation plots show that the World data is not random as there is a clear pattern in the plots. This finding is
@@ -174,6 +205,95 @@ print_results(adf_results, 4, ['Test Statistic', 'p-value', 'Lags Used', 'Number
 # $ x^r_{t} $
 
 # # 6. The model <a name="6"></a>
+
+# ## Data preparation
+
+COVID_DATA.print_n_plot_country("World")
+import numpy as np
+def apply_sliding_window(data, time_steps, horizon):
+    """
+    Implementation of the sliding window method that when applyed on multivariate time series data produces a multi step output.
+    input: data (numpy array), number of time steps (int), horizon[size of output produced by time steps] (int)
+    output: numpy array
+    """
+    x, y = [], []
+    for row_idx, row in enumerate(data):
+        end_x = row_idx + time_steps
+        end_y = end_x + horizon
+        if end_y > len(data):
+            break
+        sub_x, sub_y = data[row_idx:end_x], data[end_x:end_y]
+        x.append(sub_x)
+        y.append(sub_y)
+    return np.array(x), np.array(y)
+
+def split_train_test_set(data, test_size):
+    """
+    Split the data into training and testing sets for the model.
+    input: data (numpy array), test_size (int)
+    output: numpy array
+    """
+    return data[:-test_size], data[-test_size:]
+
+# The healthy and infected columns were removed as they can be calculated from the data. This makes the model simpler allowing it to learn better. 
+train, test = split_train_test_set(COVID_DATA.find_country("World").data.values[:,[0,1,2]], 28)
+
+print("Tain and test")
+print(train.shape)
+print(test.shape)
+
+train_scaler = StandardScaler()
+test_scaler = StandardScaler()
+
+scaled_train = scaler.fit_transform(train)
+scaled_test = scaler.fit_transform(test)
+
+print("Scaled")
+print(scaled_train.shape)
+print(scaled_test.shape)
+
+train_x, train_y = apply_sliding_window(scaled_train, 7, 7)
+test_x, test_y = apply_sliding_window(scaled_test, 7, 7)
+
+print("Split")
+print(train_x.shape, train_y.shape)
+print(test_x.shape, test_y.shape)
+
+fig, ax = plt.subplots(2,2)
+ax[0,0].plot(train)
+ax[0,0].set_title("Train")
+ax[0,1].plot(test)
+ax[0,1].set_title("Test")
+ax[1,0].plot(scaled_train)
+ax[1,0].set_title("Train (Scaled)")
+ax[1,1].plot(scaled_test)
+ax[1,1].set_title("Test (Scaled)")
+fig.tight_layout()
+
+# ## 6.1 Multivariate Iterative LSTM
+
+n_steps_in = 7
+n_steps_out = 7
+n_features = 3
+
+model = Sequential()
+model.add(LSTM(100, activation='relu', input_shape=(n_steps_in, n_features)))
+model.add(RepeatVector(n_steps_out))
+model.add(LSTM(100, activation='relu', return_sequences=True))
+model.add(TimeDistributed(Dense(n_features)))
+model.compile(optimizer='adam', loss='mse')
+
+history = model.fit(train_x, train_y, epochs=300, verbose=0)
+
+fig, ax = plt.subplots()
+ax.plot(history.history['loss'])
+ax.set_title('model loss')
+ax.set_ylabel('loss')
+ax.set_xlabel('epoch')
+ax.legend(['loss on train data'], loc='best')
+
+# ## 6.2 Multivariate Direct LSTM
+
 # # 7. Experiments <a name="7"></a>
 # # 8. Analysing the results <a name="8"></a>
 # # 9. Comparrison with previous experiments <a name="9"></a>
