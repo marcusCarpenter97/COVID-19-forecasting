@@ -235,6 +235,24 @@ def split_train_test_set(data, test_size):
     """
     return data[:-test_size], data[-test_size:]
 
+def make_train_x_y(data, time_steps, horizon):
+    """
+    Split testing data into input and output.
+    input: data (numpy array), horizon (int)
+    output: x [input data] (numpy array), y [output data] (numpy array)
+    """
+    x, y =  [], []
+    for row_idx in range(0, len(data), time_steps):
+        end_x = row_idx + time_steps
+        end_y = end_x + horizon
+
+        if end_y > len(data):
+            break
+
+        x.append(data[row_idx:end_x])
+        y.append(data[end_x:end_y])
+    return np.array(x), np.array(y)
+
 # The healthy and infected columns were removed as they can be calculated from the data. This makes the model simpler allowing it to learn better. 
 train, test = split_train_test_set(COVID_DATA.find_country("World").data.values[:,[0,1,2]], 28)
 
@@ -253,10 +271,12 @@ print(scaled_train.shape)
 print(scaled_test.shape)
 
 train_x, train_y = apply_sliding_window(scaled_train, 7, 7)
-test_x, test_y = apply_sliding_window(scaled_test, 7, 7)
+wind_test_x, wind_test_y = apply_sliding_window(scaled_test, 7, 7)
+test_x, test_y = make_train_x_y(scaled_test, 7, 7)
 
 print("Split")
 print(train_x.shape, train_y.shape)
+print(wind_test_x.shape, wind_test_y.shape)
 print(test_x.shape, test_y.shape)
 
 fig, ax = plt.subplots(2,2)
@@ -284,6 +304,11 @@ model.add(TimeDistributed(Dense(n_features)))
 model.compile(optimizer='adam', loss='mse')
 
 history = model.fit(train_x, train_y, epochs=300, verbose=0)
+scores = model.evaluate(test_x, test_y)
+wind_scores = model.evaluate(wind_test_x, wind_test_y)
+
+print(model.metrics_names)
+print(scores, wind_scores)
 
 fig, ax = plt.subplots()
 ax.plot(history.history['loss'])
@@ -291,6 +316,22 @@ ax.set_title('model loss')
 ax.set_ylabel('loss')
 ax.set_xlabel('epoch')
 ax.legend(['loss on train data'], loc='best')
+
+predictions = model.predict(test_x)
+wind_predictions = model.predict(wind_test_x)
+wind_predictions = np.stack([wind_predictions[0], wind_predictions[7], wind_predictions[14]])
+predictions = predictions.reshape(21, 3)
+wind_predictions = wind_predictions.reshape(21, 3)
+
+fig, ax = plt.subplots(1, 3)
+ax[0].plot(scaled_test)
+ax[0].set_title('Original')
+ax[1].plot(predictions)
+ax[1].set_title('Weekly')
+ax[2].plot(wind_predictions)
+ax[2].set_title('Windowed')
+#print(predictions)
+#print(wind_predictions)
 
 # ## 6.2 Multivariate Direct LSTM
 
