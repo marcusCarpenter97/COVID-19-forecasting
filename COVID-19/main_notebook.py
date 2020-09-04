@@ -24,6 +24,9 @@
 # The main objective of this work is to produce long range forecasts for the number of COVID-19 cases for a given country.
 
 # ## 1.1 Code initialization <a name="1.1"></a>
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
 import data
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -31,11 +34,6 @@ import pandas as pd
 from statsmodels.graphics.tsaplots import plot_acf
 from statsmodels.tsa.stattools import adfuller, kpss
 from sklearn.preprocessing import StandardScaler
-from keras.models import Sequential
-from keras.layers import LSTM
-from keras.layers import Dense
-from keras.layers import RepeatVector
-from keras.layers import TimeDistributed
 COVID_DATA = data.Data()
 
 # # 2. Data <a name="2"></a>
@@ -260,6 +258,7 @@ print("Tain and test")
 print(train.shape)
 print(test.shape)
 
+# Standardize the data.
 train_scaler = StandardScaler()
 test_scaler = StandardScaler()
 
@@ -270,9 +269,10 @@ print("Scaled")
 print(scaled_train.shape)
 print(scaled_test.shape)
 
+# Apply the sliding window method on the data.
 train_x, train_y = apply_sliding_window(scaled_train, 7, 7)
 wind_test_x, wind_test_y = apply_sliding_window(scaled_test, 7, 7)
-test_x, test_y = make_train_x_y(scaled_test, 7, 7)
+test_x, test_y = make_train_x_y(scaled_test, 7, 7) # Make version of test data with only the three target weeks.
 
 print("Split")
 print(train_x.shape, train_y.shape)
@@ -290,25 +290,24 @@ ax[1,1].plot(scaled_test)
 ax[1,1].set_title("Test (Scaled)")
 fig.tight_layout()
 
-# ## 6.1 Multivariate Iterative LSTM
+# Comparison of original data with its starndarized version.
+
+# ## 6.1 Multivariate Iterative Encoder Decoder LSTM
 
 n_steps_in = 7
 n_steps_out = 7
 n_features = 3
 
-model = Sequential()
-model.add(LSTM(100, activation='relu', input_shape=(n_steps_in, n_features)))
-model.add(RepeatVector(n_steps_out))
-model.add(LSTM(100, activation='relu', return_sequences=True))
-model.add(TimeDistributed(Dense(n_features)))
+model = keras.Sequential()
+model.add(layers.LSTM(100, activation='relu', input_shape=(n_steps_in, n_features)))
+model.add(layers.RepeatVector(n_steps_out))
+model.add(layers.LSTM(100, activation='relu', return_sequences=True))
+model.add(layers.TimeDistributed(layers.Dense(n_features)))
 model.compile(optimizer='adam', loss='mse')
 
 history = model.fit(train_x, train_y, epochs=300, verbose=0)
 scores = model.evaluate(test_x, test_y)
 wind_scores = model.evaluate(wind_test_x, wind_test_y)
-
-print(model.metrics_names)
-print(scores, wind_scores)
 
 fig, ax = plt.subplots()
 ax.plot(history.history['loss'])
@@ -330,10 +329,13 @@ ax[1].plot(predictions)
 ax[1].set_title('Weekly')
 ax[2].plot(wind_predictions)
 ax[2].set_title('Windowed')
-#print(predictions)
-#print(wind_predictions)
+fig.tight_layout()
 
-# ## 6.2 Multivariate Direct LSTM
+# The plot shows how the output of the model compares to the original data. Even though the loss for the windowed method is
+# smaller than the weelky method, when ploted, the outputs look similar.
+
+# ## 6.2 Multivariate Multi-output Iterative LSTM
+
 
 # # 7. Experiments <a name="7"></a>
 # # 8. Analysing the results <a name="8"></a>
