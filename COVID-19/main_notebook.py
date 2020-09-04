@@ -336,8 +336,39 @@ fig.tight_layout()
 
 # ## 6.2 Multivariate Multi-output Iterative LSTM
 
+def make_multi_output_data(data):
+	"""
+    
+	"""
+	confirmed, deceased, recovered = [], [], []
+	for sample in train_y:
+		confirmed.append(sample[:,0])
+		deceased.append(sample[:,1])
+		recovered.append(sample[:,2])
+	confirmed = np.stack(confirmed)
+	deceased = np.stack(deceased)
+	recovered = np.stack(recovered)
+
+	return np.stack([confirmed, deceased, recovered])
+
+inputs = keras.Input(shape=(7, 3))
+hidden_lstm = layers.LSTM(100, activation='relu', return_sequences=True)(inputs)
+output = layers.Dense(1)
+confimed_out = layers.TimeDistributed(output)(hidden_lstm)
+deceased_out = layers.TimeDistributed(output)(hidden_lstm)
+recovered_out = layers.TimeDistributed(output)(hidden_lstm)
+
+model = keras.Model(inputs=inputs, outputs=[confimed_out, deceased_out, recovered_out])
+
+model.compile(optimizer=keras.optimizers.Adam(0.001), loss=keras.losses.MeanSquaredError(), metrics=['mse', 'rmse'])
+
+history = model.fit(train_x, [confirmed, deceased, recovered], epochs=300, verbose=0)
+scores = model.evaluate(test_x, test_y)
+
+print(model.metrics_names)
+print(scores, wind_scores)
 
 # # 7. Experiments <a name="7"></a>
 # # 8. Analysing the results <a name="8"></a>
-# # 9. Comparrison with previous experiments <a name="9"></a>
+# # 9. Comparison with previous experiments <a name="9"></a>
 # # 10. Conclusion <a name="10"></a>
