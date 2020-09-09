@@ -251,6 +251,14 @@ def make_train_x_y(data, time_steps, horizon):
         y.append(data[end_x:end_y])
     return np.array(x), np.array(y)
 
+def plot_training_history(hist):
+    fig, ax = plt.subplots()
+    ax.plot(hist.history['loss'])
+    ax.set_title('model loss')
+    ax.set_ylabel('loss')
+    ax.set_xlabel('epoch')
+    ax.legend(['loss on train data'], loc='best')
+
 # The healthy and infected columns were removed as they can be calculated from the data. This makes the model simpler allowing it to learn better. 
 train, test = split_train_test_set(COVID_DATA.find_country("World").data.values[:,[0,1,2]], 28)
 
@@ -309,12 +317,7 @@ history = model.fit(train_x, train_y, epochs=300, verbose=0)
 scores = model.evaluate(test_x, test_y)
 wind_scores = model.evaluate(wind_test_x, wind_test_y)
 
-fig, ax = plt.subplots()
-ax.plot(history.history['loss'])
-ax.set_title('model loss')
-ax.set_ylabel('loss')
-ax.set_xlabel('epoch')
-ax.legend(['loss on train data'], loc='best')
+plot_training_history(history)
 
 predictions = model.predict(test_x)
 wind_predictions = model.predict(wind_test_x)
@@ -337,19 +340,24 @@ fig.tight_layout()
 # ## 6.2 Multivariate Multi-output Iterative LSTM
 
 def make_multi_output_data(data):
-	"""
-    
-	"""
-	confirmed, deceased, recovered = [], [], []
-	for sample in train_y:
-		confirmed.append(sample[:,0])
-		deceased.append(sample[:,1])
-		recovered.append(sample[:,2])
-	confirmed = np.stack(confirmed)
-	deceased = np.stack(deceased)
-	recovered = np.stack(recovered)
+    """
+    Takes a dataset with shape (sample, timestep, feature) and 
+    reshapes it to (feature, sample, timestep)
+    """
+    confirmed, deceased, recovered = [], [], []
+    for sample in data:
+        confirmed.append(sample[:,0])
+        deceased.append(sample[:,1])
+        recovered.append(sample[:,2])
+    confirmed = np.stack(confirmed)
+    deceased = np.stack(deceased)
+    recovered = np.stack(recovered)
 
-	return np.stack([confirmed, deceased, recovered])
+    return np.stack([confirmed, deceased, recovered])
+
+print(train_y.shape)
+multi_train_y = make_multi_output_data(train_y)
+print(multi_train_y.shape)
 
 inputs = keras.Input(shape=(7, 3))
 hidden_lstm = layers.LSTM(100, activation='relu', return_sequences=True)(inputs)
@@ -360,10 +368,15 @@ recovered_out = layers.TimeDistributed(output)(hidden_lstm)
 
 model = keras.Model(inputs=inputs, outputs=[confimed_out, deceased_out, recovered_out])
 
-model.compile(optimizer=keras.optimizers.Adam(0.001), loss=keras.losses.MeanSquaredError(), metrics=['mse', 'rmse'])
+model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss=tf.keras.losses.MeanSquaredError(),
+        metrics=[tf.keras.metrics.MeanSquaredError(), tf.keras.metrics.RootMeanSquaredError()])
 
-history = model.fit(train_x, [confirmed, deceased, recovered], epochs=300, verbose=0)
-scores = model.evaluate(test_x, test_y)
+print(model.summary())
+
+history = model.fit(train_x, [multi_train_y[0], multi_train_y[1], multi_train_y[2]], epochs=300, verbose=0)
+#scores = model.evaluate(x=test_x, y={multi_train_y[0], multi_train_y[1], multi_train_y[2]})
+
+plot_training_history(history)
 
 print(model.metrics_names)
 print(scores, wind_scores)
