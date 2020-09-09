@@ -359,12 +359,19 @@ print(train_y.shape)
 multi_train_y = make_multi_output_data(train_y)
 print(multi_train_y.shape)
 
+print(test_y.shape)
+multi_test_y = make_multi_output_data(test_y)
+print(multi_test_y.shape)
+
+print(wind_test_y.shape)
+multi_wind_test_y = make_multi_output_data(wind_test_y)
+print(multi_wind_test_y.shape)
+
 inputs = keras.Input(shape=(7, 3))
 hidden_lstm = layers.LSTM(100, activation='relu', return_sequences=True)(inputs)
-output = layers.Dense(1)
-confimed_out = layers.TimeDistributed(output)(hidden_lstm)
-deceased_out = layers.TimeDistributed(output)(hidden_lstm)
-recovered_out = layers.TimeDistributed(output)(hidden_lstm)
+confimed_out = layers.TimeDistributed(layers.Dense(1))(hidden_lstm)
+deceased_out = layers.TimeDistributed(layers.Dense(1))(hidden_lstm)
+recovered_out = layers.TimeDistributed(layers.Dense(1))(hidden_lstm)
 
 model = keras.Model(inputs=inputs, outputs=[confimed_out, deceased_out, recovered_out])
 
@@ -374,12 +381,31 @@ model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss=tf.keras.losses.Me
 print(model.summary())
 
 history = model.fit(train_x, [multi_train_y[0], multi_train_y[1], multi_train_y[2]], epochs=300, verbose=0)
-#scores = model.evaluate(x=test_x, y={multi_train_y[0], multi_train_y[1], multi_train_y[2]})
+print("Performance on wekly data.")
+scores = model.evaluate(test_x, y=[multi_test_y[0], multi_test_y[1], multi_test_y[2]])
+print("Performance on moving window data.")
+wind_scores = model.evaluate(wind_test_x, y=[multi_wind_test_y[0], multi_wind_test_y[1], multi_wind_test_y[2]])
 
 plot_training_history(history)
 
-print(model.metrics_names)
-print(scores, wind_scores)
+predictions = model.predict(test_x)
+wind_predictions = model.predict(wind_test_x)
+predictions = np.stack(predictions)
+wind_predictions = np.stack(wind_predictions)
+print(predictions.shape)
+print(wind_predictions.shape)
+predictions = predictions.reshape(3, 21)
+
+print(predictions.T)
+print(predictions.T.shape)
+fig, ax = plt.subplots(1, 3)
+ax[0].plot(predictions.T[:,0])
+ax[0].set_title('Original')
+ax[1].plot(predictions.T[:,1])
+ax[1].set_title('Weekly')
+ax[2].plot(predictions.T[:,2])
+ax[2].set_title('Windowed')
+fig.tight_layout()
 
 # # 7. Experiments <a name="7"></a>
 # # 8. Analysing the results <a name="8"></a>
