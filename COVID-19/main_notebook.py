@@ -381,7 +381,7 @@ model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss=tf.keras.losses.Me
 print(model.summary())
 
 history = model.fit(train_x, [multi_train_y[0], multi_train_y[1], multi_train_y[2]], epochs=300, verbose=0)
-print("Performance on wekly data.")
+print("Performance on weekly data.")
 scores = model.evaluate(test_x, y=[multi_test_y[0], multi_test_y[1], multi_test_y[2]])
 print("Performance on moving window data.")
 wind_scores = model.evaluate(wind_test_x, y=[multi_wind_test_y[0], multi_wind_test_y[1], multi_wind_test_y[2]])
@@ -394,17 +394,26 @@ predictions = np.stack(predictions)
 wind_predictions = np.stack(wind_predictions)
 print(predictions.shape)
 print(wind_predictions.shape)
-predictions = predictions.reshape(3, 21)
+predictions = predictions.reshape(3, 21).T # Format the weekly predictions to fit the plot.
+# Extract only the relevant weeks from the windowed predictions.
+temp = []
+for feature in wind_predictions:
+    temp.append(np.stack([feature[0], feature[7], feature[14]]))
+# Now that the windowed predictions have the same shape as the weekly ones the same formatting can be applied.
+wind_predictions = np.stack(temp).reshape(3, 21).T
+print(wind_predictions.shape)
 
-print(predictions.T)
-print(predictions.T.shape)
-fig, ax = plt.subplots(1, 3)
-ax[0].plot(predictions.T[:,0])
+print(predictions.shape)
+fig, ax = plt.subplots(1, 3, figsize=(10, 4))
+ax[0].plot(scaled_test)
 ax[0].set_title('Original')
-ax[1].plot(predictions.T[:,1])
+ax[0].legend(("Confirmed", "Deceased", "Recovered"))
+ax[1].plot(predictions)
 ax[1].set_title('Weekly')
-ax[2].plot(predictions.T[:,2])
+ax[1].legend(("Confirmed", "Deceased", "Recovered"))
+ax[2].plot(wind_predictions)
 ax[2].set_title('Windowed')
+ax[2].legend(("Confirmed", "Deceased", "Recovered"))
 fig.tight_layout()
 
 # # 7. Experiments <a name="7"></a>
