@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import warnings
+from sklearn.preprocessing import StandardScaler
 
 
 class Country:
@@ -121,6 +122,16 @@ class Country:
         temp_data = self.data.values[:, [0,1,2]]
 
         self.train, self.test = temp_data[:-test_size], temp_data[-test_size:]
+
+    def standarize(self):
+        """
+        Standarize the train and test data.
+        """
+        self.train_scaler = StandardScaler()
+        self.test_scaler = StandardScaler()
+
+        self.scaled_train = self.train_scaler.fit_transform(self.train)
+        self.scaled_test = self.test_scaler.fit_transform(self.test)
 
     # TODO unsused.
     def supervise_data2(self, horizon):
