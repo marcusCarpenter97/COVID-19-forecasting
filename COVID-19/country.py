@@ -7,6 +7,16 @@ class Country:
     """ Represents a country with COVID-19 """
 
     def __init__(self, n, p, c, d, r, i, h):
+        """
+            Params:
+                n - string - The country's name.
+                p - int - The country's population.
+                c - pandas Series - Time series of the confirmed cases.
+                d - pandas Series - Time series of the deseased cases.
+                r - pandas Series - Time series of the recovered cases.
+                i - pandas Series - Time series of the infected cases.
+                h - pandas Series - Time series of the healthy cases.
+        """
         self.name = n
         self.encoded_name = None
         self.population = p
@@ -24,9 +34,9 @@ class Country:
                 ax.axvline(bar, color="red", linestyle="--")
 
     def print_country(self):
-        print(self.name)
-        print(self.encoded_name)
-        print(self.population)
+        print(f"Name: {self.name}")
+        print(f"Encoded name: {self.encoded_name}")
+        print(f"Population: {self.population}")
         print(self.data)
 
     def diff_data(self):
@@ -82,9 +92,10 @@ class Country:
                 print(f"RuntimeWarning: {runw}")
                 print("The numbers given to exp where too big and caused an error. The data wasn't affected.")
 
+    # TODO ?
     def find_divisor_offset(self, num, div):
         """
-        Calculates an offset to make the data divisible by the horizon. 
+        Calculates an offset to make the data divisible by the horizon.
         By finding the greatest divisor of div that is smaller than num.
 
         Example: If splitting the data into weeks.
@@ -99,17 +110,13 @@ class Country:
         """
         return num - ((num//div)*div)
 
-    def split_data(self, test_size, horizon):
-
-        # Calculate the offset as the data will not always be divisible by the horizon.
-        #offset = self.find_divisor_offset(len(self.data), horizon)
-
-        # Split the data. The horizon produces an overlap between the train and test set.
-        self.train, self.test = self.data.values[:-test_size], self.data.values[-(test_size+horizon):]
-
-        # Reshape it so that it is split into horizon sized chunks.
-        #self.train = self.train.reshape(self.train.shape[0]//horizon, horizon, self.train.shape[1])
-        #self.test = self.test.reshape(self.test.shape[0]//horizon, horizon, self.test.shape[1])
+    def split_data(self, test_size):
+        """
+            Split the data into training and testing sets for the model.
+            Params:
+                test_size - int - size of the test data to be used a an index for the split.
+        """
+        self.train, self.test = self.data.values[:-test_size], self.data.values[-test_size:]
 
     # TODO unsused.
     def supervise_data2(self, horizon):
@@ -128,6 +135,7 @@ class Country:
         self.train_y = np.stack(y)
         self.train_y = self.train_y.reshape(self.train_y.shape[0], 1, self.train_y.shape[1])
 
+    # TODO !
     def supervise_data(self, horizon):
         """
         Convert the training data into a supervised set.
