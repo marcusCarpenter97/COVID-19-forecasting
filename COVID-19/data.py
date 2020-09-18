@@ -139,6 +139,21 @@ class Data:
         for country in self.countries:
             country.split_data(test_size)
 
+    def standarize_data(self):
+        """
+        Standarize the train and test data for all countries.
+        """
+        for country in self.countries:
+            country.standarize()
+
+    def apply_sliding_window(self, time_steps, horizon):
+        """
+        Apply the sliding window to preprocess the data for all countries.
+        """
+        for country in self.countries:
+            country.apply_sliding_window(country.train, time_steps, horizon)
+            country.apply_sliding_window(country.test, time_steps, horizon)
+
     # TODO !
     def supervise_data(self, horizon):
         """
