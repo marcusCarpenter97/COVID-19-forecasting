@@ -369,9 +369,9 @@ print(multi_wind_test_y.shape)
 
 inputs = keras.Input(shape=(7, 3))
 hidden_lstm = layers.LSTM(100, activation='relu', return_sequences=True)(inputs)
-confimed_out = layers.TimeDistributed(layers.Dense(1))(hidden_lstm)
-deceased_out = layers.TimeDistributed(layers.Dense(1))(hidden_lstm)
-recovered_out = layers.TimeDistributed(layers.Dense(1))(hidden_lstm)
+confimed_out = layers.TimeDistributed(layers.Dense(1), name="confirmed")(hidden_lstm)
+deceased_out = layers.TimeDistributed(layers.Dense(1), name="deceased")(hidden_lstm)
+recovered_out = layers.TimeDistributed(layers.Dense(1), name="recovered")(hidden_lstm)
 
 multi_o_lstm_model = keras.Model(inputs=inputs, outputs=[confimed_out, deceased_out, recovered_out])
 
@@ -420,9 +420,9 @@ fig.tight_layout()
 
 inputs = keras.Input(shape=(7, 3))
 hidden_lstm = layers.GRU(100, activation='relu', return_sequences=True)(inputs)
-confimed_out = layers.TimeDistributed(layers.Dense(1))(hidden_lstm)
-deceased_out = layers.TimeDistributed(layers.Dense(1))(hidden_lstm)
-recovered_out = layers.TimeDistributed(layers.Dense(1))(hidden_lstm)
+confimed_out = layers.TimeDistributed(layers.Dense(1), name="confirmed")(hidden_lstm)
+deceased_out = layers.TimeDistributed(layers.Dense(1), name="deceased")(hidden_lstm)
+recovered_out = layers.TimeDistributed(layers.Dense(1), name="recovered")(hidden_lstm)
 
 multi_o_gru_model = keras.Model(inputs=inputs, outputs=[confimed_out, deceased_out, recovered_out])
 
@@ -468,7 +468,22 @@ ax[2].legend(("Confirmed", "Deceased", "Recovered"))
 fig.tight_layout()
 
 # # 7. Experiments <a name="7"></a>
+
 # # 8. Analysing the results <a name="8"></a>
 
+# | Metrics | LSTM Weekly | LSTM Windowed | GRU Weekly | GRU Windowed |
+# | --- | --- | --- | --- | --- |
+# | Loss | 2.2714 | 2.0155 | 1.9591 | 1.8281 |
+# | Confirmed loss | 0.6823 | 0.6381 | 0.6404 | 0.6040 |
+# | Deceased loss | 0.9894 | 0.7144 | 0.7427 | 0.5822 |
+# | Recovered loss | 0.5997 | 0.6630 | 0.5761 | 0.6419 |
+# | Confirmed MSE | 0.6823 | 0.6381 | 0.6404 | 0.6040 |
+# | Confirmed RMSE | 0.8260 | 0.7988 | 0.8002 | 0.7772 |
+# | Deceased MSE | 0.9894 | 0.7144 | 0.7427 | 0.5822 |
+# | Deceased RMSE | 0.9947 | 0.8452 | 0.8618 | 0.7630 |
+# | Recovered MSE | 0.5997 | 0.6630 | 0.5761 | 0.6419 |
+# | Recovered RMSE | 0.7744 | 0.8142 | 0.7590 | 0.8012 |
+
 # # 9. Comparison with previous experiments <a name="9"></a>
+
 # # 10. Conclusion <a name="10"></a>
