@@ -133,6 +133,29 @@ class Country:
         self.scaled_train = self.train_scaler.fit_transform(self.train)
         self.scaled_test = self.test_scaler.fit_transform(self.test)
 
+    def apply_sliding_window(self, data, time_steps, horizon):
+        """
+        Implementation of the sliding window method that when applyed on
+        multivariate time series data produces a multi step output.
+        Params:
+        data - numpy array - data to be windowed.
+        time_steps - int - number of time steps
+        horizon - int - size of output produced by time steps
+        """
+        x, y = [], []
+        for row_idx, _ in enumerate(data):
+            end_x = row_idx + time_steps
+            end_y = end_x + horizon
+
+            if end_y > len(data):
+                break
+
+            x.append(data[row_idx:end_x])
+            y.append(data[end_x:end_y])
+
+        self.windowed_x = np.array(x)
+        self.windowed_y = np.array(y)
+
     # TODO unsused.
     def supervise_data2(self, horizon):
         """
