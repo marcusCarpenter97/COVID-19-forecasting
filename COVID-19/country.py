@@ -113,10 +113,14 @@ class Country:
     def split_data(self, test_size):
         """
             Split the data into training and testing sets for the model.
+            Both train and test become numpy arrays.
             Params:
                 test_size - int - size of the test data to be used a an index for the split.
         """
-        self.train, self.test = self.data.values[:-test_size], self.data.values[-test_size:]
+        # Remove the last two columns of data (Infected and Healthy) as they will not be needed in the model.
+        temp_data = self.data.values[:, [0,1,2]]
+
+        self.train, self.test = temp_data[:-test_size], temp_data[-test_size:]
 
     # TODO unsused.
     def supervise_data2(self, horizon):
