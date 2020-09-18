@@ -306,31 +306,31 @@ n_steps_in = 7
 n_steps_out = 7
 n_features = 3
 
-model = keras.Sequential()
-model.add(layers.LSTM(100, activation='relu', input_shape=(n_steps_in, n_features)))
-model.add(layers.RepeatVector(n_steps_out))
-model.add(layers.LSTM(100, activation='relu', return_sequences=True))
-model.add(layers.TimeDistributed(layers.Dense(n_features)))
-model.compile(optimizer='adam', loss='mse')
+ed_lstm_model = keras.Sequential()
+ed_lstm_model.add(layers.LSTM(100, activation='relu', input_shape=(n_steps_in, n_features)))
+ed_lstm_model.add(layers.RepeatVector(n_steps_out))
+ed_lstm_model.add(layers.LSTM(100, activation='relu', return_sequences=True))
+ed_lstm_model.add(layers.TimeDistributed(layers.Dense(n_features)))
+ed_lstm_model.compile(optimizer='adam', loss='mse')
 
-history = model.fit(train_x, train_y, epochs=300, verbose=0)
-scores = model.evaluate(test_x, test_y)
-wind_scores = model.evaluate(wind_test_x, wind_test_y)
+ed_lstm_history = ed_lstm_model.fit(train_x, train_y, epochs=300, verbose=0)
+ed_lstm_scores = ed_lstm_model.evaluate(test_x, test_y)
+ed_lstm_wind_scores = ed_lstm_model.evaluate(wind_test_x, wind_test_y)
 
-plot_training_history(history)
+plot_training_history(ed_lstm_history)
 
-predictions = model.predict(test_x)
-wind_predictions = model.predict(wind_test_x)
-wind_predictions = np.stack([wind_predictions[0], wind_predictions[7], wind_predictions[14]])
-predictions = predictions.reshape(21, 3)
-wind_predictions = wind_predictions.reshape(21, 3)
+ed_lstm_predictions = ed_lstm_model.predict(test_x)
+ed_lstm_wind_predictions = ed_lstm_model.predict(wind_test_x)
+ed_lstm_wind_predictions = np.stack([ed_lstm_wind_predictions[0], ed_lstm_wind_predictions[7], ed_lstm_wind_predictions[14]])
+ed_lstm_predictions = ed_lstm_predictions.reshape(21, 3)
+ed_lstm_wind_predictions = ed_lstm_wind_predictions.reshape(21, 3)
 
 fig, ax = plt.subplots(1, 3)
 ax[0].plot(scaled_test)
 ax[0].set_title('Original')
-ax[1].plot(predictions)
+ax[1].plot(ed_lstm_predictions)
 ax[1].set_title('Weekly')
-ax[2].plot(wind_predictions)
+ax[2].plot(ed_lstm_wind_predictions)
 ax[2].set_title('Windowed')
 fig.tight_layout()
 
@@ -341,7 +341,7 @@ fig.tight_layout()
 
 def make_multi_output_data(data):
     """
-    Takes a dataset with shape (sample, timestep, feature) and 
+    Takes a dataset with shape (sample, timestep, feature) and
     reshapes it to (feature, sample, timestep)
     """
     confirmed, deceased, recovered = [], [], []
@@ -373,50 +373,102 @@ confimed_out = layers.TimeDistributed(layers.Dense(1))(hidden_lstm)
 deceased_out = layers.TimeDistributed(layers.Dense(1))(hidden_lstm)
 recovered_out = layers.TimeDistributed(layers.Dense(1))(hidden_lstm)
 
-model = keras.Model(inputs=inputs, outputs=[confimed_out, deceased_out, recovered_out])
+multi_o_lstm_model = keras.Model(inputs=inputs, outputs=[confimed_out, deceased_out, recovered_out])
 
-model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss=tf.keras.losses.MeanSquaredError(),
+multi_o_lstm_model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss=tf.keras.losses.MeanSquaredError(),
         metrics=[tf.keras.metrics.MeanSquaredError(), tf.keras.metrics.RootMeanSquaredError()])
 
-print(model.summary())
+print(multi_o_lstm_model.summary())
 
-history = model.fit(train_x, [multi_train_y[0], multi_train_y[1], multi_train_y[2]], epochs=300, verbose=0)
+multi_o_lstm_history = multi_o_lstm_model.fit(train_x, [multi_train_y[0], multi_train_y[1], multi_train_y[2]], epochs=300, verbose=0)
 print("Performance on weekly data.")
-scores = model.evaluate(test_x, y=[multi_test_y[0], multi_test_y[1], multi_test_y[2]])
+multi_o_lstm_scores = multi_o_lstm_model.evaluate(test_x, y=[multi_test_y[0], multi_test_y[1], multi_test_y[2]])
 print("Performance on moving window data.")
-wind_scores = model.evaluate(wind_test_x, y=[multi_wind_test_y[0], multi_wind_test_y[1], multi_wind_test_y[2]])
+multi_o_lstm_wind_scores = multi_o_lstm_model.evaluate(wind_test_x, y=[multi_wind_test_y[0], multi_wind_test_y[1], multi_wind_test_y[2]])
 
-plot_training_history(history)
+plot_training_history(multi_o_lstm_history)
 
-predictions = model.predict(test_x)
-wind_predictions = model.predict(wind_test_x)
-predictions = np.stack(predictions)
-wind_predictions = np.stack(wind_predictions)
-print(predictions.shape)
-print(wind_predictions.shape)
-predictions = predictions.reshape(3, 21).T # Format the weekly predictions to fit the plot.
+multi_o_lstm_predictions = multi_o_lstm_model.predict(test_x)
+multi_o_lstm_wind_predictions = multi_o_lstm_model.predict(wind_test_x)
+multi_o_lstm_predictions = np.stack(multi_o_lstm_predictions)
+multi_o_lstm_wind_predictions = np.stack(multi_o_lstm_wind_predictions)
+print(multi_o_lstm_predictions.shape)
+print(multi_o_lstm_wind_predictions.shape)
+multi_o_lstm_predictions = multi_o_lstm_predictions.reshape(3, 21).T # Format the weekly predictions to fit the plot.
 # Extract only the relevant weeks from the windowed predictions.
 temp = []
-for feature in wind_predictions:
+for feature in multi_o_lstm_wind_predictions:
     temp.append(np.stack([feature[0], feature[7], feature[14]]))
 # Now that the windowed predictions have the same shape as the weekly ones the same formatting can be applied.
-wind_predictions = np.stack(temp).reshape(3, 21).T
-print(wind_predictions.shape)
+multi_o_lstm_wind_predictions = np.stack(temp).reshape(3, 21).T
+print(multi_o_lstm_wind_predictions.shape)
 
-print(predictions.shape)
+print(multi_o_lstm_predictions.shape)
 fig, ax = plt.subplots(1, 3, figsize=(10, 4))
 ax[0].plot(scaled_test)
 ax[0].set_title('Original')
 ax[0].legend(("Confirmed", "Deceased", "Recovered"))
-ax[1].plot(predictions)
+ax[1].plot(multi_o_lstm_predictions)
 ax[1].set_title('Weekly')
 ax[1].legend(("Confirmed", "Deceased", "Recovered"))
-ax[2].plot(wind_predictions)
+ax[2].plot(multi_o_lstm_wind_predictions)
+ax[2].set_title('Windowed')
+ax[2].legend(("Confirmed", "Deceased", "Recovered"))
+fig.tight_layout()
+
+# ## 6.3 Multivariate Multi-output Iterative GRU
+
+inputs = keras.Input(shape=(7, 3))
+hidden_lstm = layers.GRU(100, activation='relu', return_sequences=True)(inputs)
+confimed_out = layers.TimeDistributed(layers.Dense(1))(hidden_lstm)
+deceased_out = layers.TimeDistributed(layers.Dense(1))(hidden_lstm)
+recovered_out = layers.TimeDistributed(layers.Dense(1))(hidden_lstm)
+
+multi_o_gru_model = keras.Model(inputs=inputs, outputs=[confimed_out, deceased_out, recovered_out])
+
+multi_o_gru_model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss=tf.keras.losses.MeanSquaredError(),
+        metrics=[tf.keras.metrics.MeanSquaredError(), tf.keras.metrics.RootMeanSquaredError()])
+
+print(multi_o_gru_model.summary())
+
+multi_o_gru_history = multi_o_gru_model.fit(train_x, [multi_train_y[0], multi_train_y[1], multi_train_y[2]], epochs=300, verbose=0)
+print("Performance on weekly data.")
+multi_o_gru_scores = multi_o_gru_model.evaluate(test_x, y=[multi_test_y[0], multi_test_y[1], multi_test_y[2]])
+print("Performance on moving window data.")
+multi_o_gru_wind_scores = multi_o_gru_model.evaluate(wind_test_x, y=[multi_wind_test_y[0], multi_wind_test_y[1], multi_wind_test_y[2]])
+
+plot_training_history(multi_o_gru_history)
+
+multi_o_gru_predictions = multi_o_gru_model.predict(test_x)
+multi_o_gru_wind_predictions = multi_o_gru_model.predict(wind_test_x)
+multi_o_gru_predictions = np.stack(multi_o_gru_predictions)
+multi_o_gru_wind_predictions = np.stack(multi_o_gru_wind_predictions)
+print(multi_o_gru_predictions.shape)
+print(multi_o_gru_wind_predictions.shape)
+multi_o_gru_predictions = multi_o_gru_predictions.reshape(3, 21).T # Format the weekly predictions to fit the plot.
+# Extract only the relevant weeks from the windowed predictions.
+temp = []
+for feature in multi_o_gru_wind_predictions:
+    temp.append(np.stack([feature[0], feature[7], feature[14]]))
+# Now that the windowed predictions have the same shape as the weekly ones the same formatting can be applied.
+multi_o_gru_wind_predictions = np.stack(temp).reshape(3, 21).T
+print(multi_o_gru_wind_predictions.shape)
+
+print(multi_o_gru_predictions.shape)
+fig, ax = plt.subplots(1, 3, figsize=(10, 4))
+ax[0].plot(scaled_test)
+ax[0].set_title('Original')
+ax[0].legend(("Confirmed", "Deceased", "Recovered"))
+ax[1].plot(multi_o_gru_predictions)
+ax[1].set_title('Weekly')
+ax[1].legend(("Confirmed", "Deceased", "Recovered"))
+ax[2].plot(multi_o_gru_wind_predictions)
 ax[2].set_title('Windowed')
 ax[2].legend(("Confirmed", "Deceased", "Recovered"))
 fig.tight_layout()
 
 # # 7. Experiments <a name="7"></a>
 # # 8. Analysing the results <a name="8"></a>
+
 # # 9. Comparison with previous experiments <a name="9"></a>
 # # 10. Conclusion <a name="10"></a>
