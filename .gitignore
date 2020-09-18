@@ -1,3 +1,4 @@
+*.ipynb
 *.png
 population/
 LSTMWithPython-textbook/
