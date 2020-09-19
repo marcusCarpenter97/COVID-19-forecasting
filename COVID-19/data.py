@@ -146,13 +146,14 @@ class Data:
         for country in self.countries:
             country.standarize()
 
+    # TODO ?
     def apply_sliding_window(self, time_steps, horizon):
         """
         Apply the sliding window to preprocess the data for all countries.
         """
         for country in self.countries:
             country.apply_sliding_window(country.train, time_steps, horizon)
-            country.apply_sliding_window(country.test, time_steps, horizon)
+            country.apply_sliding_window(country.test, time_steps, horizon, is_test_data=True)
 
     # TODO !
     def supervise_data(self, horizon):
