@@ -146,6 +146,18 @@ class Data:
         for country in self.countries:
             country.standarize()
 
+    def retreive_data(self):
+        """
+        Compile the datasets used by a machine learning model from the data of all countries.
+        """
+        train_x, train_y, test_x, test_y = [], [], [], []
+        for country in self.countries:
+            train_x.append(country.scaled_train_x)
+            train_y.append(country.scaled_train_y)
+            test_x.append(country.scaled_test_x)
+            test_y.append(country.scaled_test_y)
+        return np.stack(train_x), np.stack(train_y), np.stack(test_x), np.stack(test_y)
+
     # TODO ?
     def apply_sliding_window(self, time_steps, horizon):
         """
