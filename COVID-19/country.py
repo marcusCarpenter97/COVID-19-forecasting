@@ -128,11 +128,15 @@ class Country:
         """
         Standarize the train and test data.
         """
-        self.train_scaler = StandardScaler()
-        self.test_scaler = StandardScaler()
+        self.train_x_scaler = StandardScaler()
+        self.train_y_scaler = StandardScaler()
+        self.test_x_scaler = StandardScaler()
+        self.test_y_scaler = StandardScaler()
 
-        self.scaled_train = self.train_scaler.fit_transform(self.train)
-        self.scaled_test = self.test_scaler.fit_transform(self.test)
+        self.scaled_train_x = self.train_x_scaler.fit_transform(self.train_x)
+        self.scaled_train_y = self.train_y_scaler.fit_transform(self.train_y)
+        self.scaled_test_x = self.test_x_scaler.fit_transform(self.test_x)
+        self.scaled_test_y = self.test_y_scaler.fit_transform(self.test_y)
 
     # TODO ?
     def apply_sliding_window(self, data, time_steps, horizon, is_test_data=False):
