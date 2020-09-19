@@ -121,7 +121,8 @@ class Country:
         # Remove the last two columns of data (Infected and Healthy) as they will not be needed in the model.
         temp_data = self.data.values[:, [0,1,2]]
 
-        self.train, self.test = temp_data[:-test_size], temp_data[-test_size:]
+        self.train_x, self.train_y = temp_data[:-test_size*2], temp_data[-test_size*2:-test_size]
+        self.test_x, self.test_y = temp_data[test_size:-test_size], temp_data[-test_size:]
 
     def standarize(self):
         """
