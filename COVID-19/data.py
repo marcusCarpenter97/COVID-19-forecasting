@@ -61,15 +61,15 @@ class Data:
         res = [country for country in self.countries if country.name == name]
         return None if len(res) == 0 else res[0]
 
-    # TODO ?
     def encode_names(self, extra_size=1.25):
         """
         Creates encoded versions of the country names.
         These will be used in the Embedding layer of the network.
         Param: extra_size float - extra space to guarantee uniqueness.
         Returns:
-        vocab_size - int - number of unique words plus some extra space
+        vocab_size - int - number of unique words plus some extra space.
         max_length - int - size of biggest word.
+        padded - 2D numpy array - an array containing all the encoded names for the countries.
         """
         # Idealy this should use the number of words not the country names.
         vocab_size = np.ceil(len(self.countries) * extra_size)
@@ -82,7 +82,7 @@ class Data:
         for country, enc_name in zip(self.countries, padded):
             country.encoded_name = enc_name
 
-        return vocab_size, max_length
+        return vocab_size, max_length, padded
 
     def calculate_current_infected(self, c, d, r):
         """
