@@ -158,6 +158,22 @@ class Data:
             test_y.append(country.scaled_test_y)
         return np.stack(train_x), np.stack(train_y), np.stack(test_x), np.stack(test_y)
 
+    def make_multi_output_data(self, data):
+        """
+        Takes a dataset with shape (sample, timestep, feature) and
+        reshapes it to (feature, sample, timestep)
+        Returns: 3D numpy array
+        """
+        confirmed, deceased, recovered = [], [], []
+        for sample in data:
+            confirmed.append(sample[:,0])
+            deceased.append(sample[:,1])
+            recovered.append(sample[:,2])
+        confirmed = np.stack(confirmed)
+        deceased = np.stack(deceased)
+        recovered = np.stack(recovered)
+        return np.stack([confirmed, deceased, recovered])
+
     # TODO ?
     def apply_sliding_window(self, time_steps, horizon):
         """
