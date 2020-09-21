@@ -1,0 +1,118 @@
+import data
+import models
+import time
+from tensorflow.keras.callbacks import CSVLogger, TerminateOnNaN
+
+d = data.Data()
+
+d.split_train_test(28)
+
+d.standarize_data()
+
+vocab_size, max_len, enc_names = d.encode_names()
+
+train_x, train_y, test_x, test_y = d.retreive_data()
+
+multi_train_y = d.make_multi_output_data(train_y)
+multi_test_y = d.make_multi_output_data(test_y)
+
+print("Data structure")
+print(f"Number of countries: {len(d.countries)}")
+# Check if all countries have the same data shape.
+for c in d.countries:
+    if c.data.shape != d.countries[0].data.shape:
+        print(f"{c.name} has shape of {c.data.shape} instead of {d.countries[0].data.shape}")
+
+print(f"Shape for country data: {d.countries[0].data.shape}")
+print(f"train_x: {train_x.shape}\ntrain_y: {train_y.shape}\ntest_x: {test_x.shape}\ntest_y: {test_y.shape}")
+print(f"Shape for multi train y: {multi_train_y.shape} and multi test y: {multi_test_y.shape}")
+print(f"Vocab size: {vocab_size} and Max length: {max_len}")
+print(f"Enc names: {enc_names.shape} and type: {type(enc_names)}")
+
+temporal_shape = train_x[0].shape
+word_shape = enc_names[0].shape
+units = 100
+output_size = 28
+
+# Create models.
+multi_out_lstm = models.LSTMMultiOutput(temporal_shape, word_shape, units, output_size)
+multi_out_gru = models.GRUMultiOutput(temporal_shape, word_shape, units, output_size)
+
+multi_out_lstm_V2 = models.LSTMMultiOutput_V2(temporal_shape, word_shape, units, output_size)
+multi_out_gru_V2 = models.GRUMultiOutput_V2(temporal_shape, word_shape, units, output_size)
+
+single_out_lstm = models.LSTMSingleOutput(temporal_shape, word_shape, units, output_size)
+single_out_gru = models.GRUSingleOutput(temporal_shape, word_shape, units, output_size)
+
+# Print model architecture.
+print(multi_out_lstm.summary())
+print(multi_out_gru.summary())
+print(multi_out_lstm_V2.summary())
+print(multi_out_gru_V2.summary())
+print(single_out_lstm.summary())
+print(single_out_gru.summary())
+
+# Create logger callbacks.
+multi_out_lstm_logger = CSVLogger('multi_out_lstm.csv', separator=',')
+multi_out_gru_logger = CSVLogger('multi_out_gru.csv', separator=',')
+multi_out_lstm_V2_logger = CSVLogger('multi_out_lstm_V2.csv', separator=',')
+multi_out_gru_V2_logger = CSVLogger('multi_out_gru_V2.csv', separator=',')
+single_out_lstm_logger = CSVLogger('single_out_lstm.csv', separator=',')
+single_out_gru_logger = CSVLogger('single_out_gru.csv', separator=',')
+
+ton_back = TerminateOnNaN()
+
+epochs = 300
+verbose=1
+
+# Train models.
+multi_out_lstm_hist = multi_out_lstm.fit([train_x, enc_names], [multi_train_y[0], multi_train_y[1], multi_train_y[2]],
+                                         epochs=epochs, verbose=verbose, callbacks=[multi_out_lstm_logger, ton_back])
+
+multi_out_gru_hist = multi_out_gru.fit([train_x, enc_names], [multi_train_y[0], multi_train_y[1], multi_train_y[2]],
+                                       epochs=epochs, verbose=verbose, callbacks=[multi_out_gru_logger, ton_back])
+
+multi_out_lstm_V2_hist = multi_out_lstm_V2.fit([train_x, enc_names], [multi_train_y[0], multi_train_y[1], multi_train_y[2]],
+                                               epochs=epochs, verbose=verbose, callbacks=[multi_out_lstm_V2_logger,
+                                                                                          ton_back])
+
+multi_out_gru_V2_hist = multi_out_gru_V2.fit([train_x, enc_names], [multi_train_y[0], multi_train_y[1], multi_train_y[2]],
+                                             epochs=epochs, verbose=verbose, callbacks=[multi_out_gru_V2_logger, ton_back])
+
+single_out_lstm_hist = single_out_lstm.fit([train_x, enc_names], train_y,
+                                           epochs=epochs, verbose=verbose, callbacks=[single_out_lstm_logger, ton_back])
+
+single_out_gru_hist = single_out_gru.fit([train_x, enc_names], train_y,
+                                         epochs=epochs, verbose=verbose, callbacks=[single_out_gru_logger, ton_back])
+
+# Evaluate models.
+multi_out_lstm_eval = multi_out_lstm.evaluate([test_x, enc_names], [multi_test_y[0], multi_test_y[1], multi_test_y[2]],
+                                              return_dict=True)
+
+multi_out_gru_eval = multi_out_gru.evaluate([test_x, enc_names], [multi_test_y[0], multi_test_y[1], multi_test_y[2]],
+                                            return_dict=True)
+
+multi_out_lstm_V2_eval = multi_out_lstm_V2.evaluate([test_x, enc_names], [multi_test_y[0], multi_test_y[1], multi_test_y[2]],
+                                                    return_dict=True)
+
+multi_out_gru_V2_eval = multi_out_gru_V2.evaluate([test_x, enc_names], [multi_test_y[0], multi_test_y[1], multi_test_y[2]],
+                                                  return_dict=True)
+
+single_out_lstm_eval = single_out_lstm.evaluate([test_x, enc_names], test_y, return_dict=True)
+single_out_gru_eval = single_out_gru.evaluate([test_x, enc_names], test_y, return_dict=True)
+
+# Does multi output affect performance? In theory the models should be the same.
+# Shared parameters use the TimeDistributed function while using the Dense size will create individual parameters for each day.
+# To have the model output three quantiles use multi output with each output node optimized on a pinball loss with a different
+# quantile value.
+
+# Callbacks: TerminateOnNAN
+# Models (one LSTM and one GRU):
+# Multi output individual. (OK)
+# Multi output shared. (OK)
+# Single output shared. (OK)
+# Multi output quantile.
+
+# Test tanh on multi output LSTM models.
+# Test regularization L1 and/or L2.
+# Apply gradient clipping.
