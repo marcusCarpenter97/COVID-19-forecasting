@@ -41,7 +41,7 @@ multi_out_gru = models.GRUMultiOutput(temporal_shape, word_shape, units, output_
 multi_out_lstm_V2 = models.LSTMMultiOutput_V2(temporal_shape, word_shape, units, output_size, activation='tanh')
 multi_out_gru_V2 = models.GRUMultiOutput_V2(temporal_shape, word_shape, units, output_size)
 
-single_out_lstm = models.LSTMSingleOutput(temporal_shape, word_shape, units, output_size)
+single_out_lstm = models.LSTMSingleOutput(temporal_shape, word_shape, units, output_size, activation='tanh')
 single_out_gru = models.GRUSingleOutput(temporal_shape, word_shape, units, output_size)
 
 # Print model architecture.
@@ -116,3 +116,78 @@ single_out_gru_eval = single_out_gru.evaluate([test_x, enc_names], test_y, retur
 # Test tanh on multi output LSTM models.
 # Test regularization L1 and/or L2.
 # Apply gradient clipping.
+import matplotlib.pyplot as plt
+
+def plot_training_history(hist, title):
+    fig, ax = plt.subplots()
+    ax.plot(hist.history['loss'])
+    ax.plot(hist.history['confirmed_loss'])
+    ax.plot(hist.history['deceased_loss'])
+    ax.plot(hist.history['recovered_loss'])
+    ax.set_title(f'model loss on train data: {title}')
+    ax.set_ylabel('loss')
+    ax.set_xlabel('epoch')
+    ax.legend(['loss', 'confirmed_loss', 'deceased_loss', 'recovered_loss'], loc='best')
+
+def plot_training_history_single(hist, title):
+    fig, ax = plt.subplots()
+    ax.plot(hist.history['loss'])
+    ax.set_title(f'model loss on train data: {title}')
+    ax.set_ylabel('loss')
+    ax.set_xlabel('epoch')
+    ax.legend(['loss'], loc='best')
+
+def plot_training_metrics(hist, title):
+    fig, ax = plt.subplots()
+    ax.plot(hist.history['confirmed_mean_squared_error'])
+    ax.plot(hist.history['confirmed_root_mean_squared_error'])
+    ax.plot(hist.history['deceased_mean_squared_error'])
+    ax.plot(hist.history['deceased_root_mean_squared_error'])
+    ax.plot(hist.history['recovered_mean_squared_error'])
+    ax.plot(hist.history['recovered_root_mean_squared_error'])
+    ax.set_title(f'model error metrics on train data: {title}')
+    ax.set_ylabel('error')
+    ax.set_xlabel('epoch')
+    ax.legend(['confirmed_mean_squared_error', 'confirmed_root_mean_squared_error', 'deceased_mean_squared_error', 'deceased_root_mean_squared_error', 'recovered_mean_squared_error', 'recovered_root_mean_squared_error'], loc='best')
+
+def plot_training_metrics_single(hist, title):
+    fig, ax = plt.subplots()
+    ax.plot(hist.history['root_mean_squared_error'])
+    ax.plot(hist.history['mean_squared_error'])
+    ax.set_title(f'model error metrics on train data: {title}')
+    ax.set_ylabel('error')
+    ax.set_xlabel('epoch')
+    ax.legend(['root_mean_squared_error', 'mean_squared_error'], loc='best')
+
+plot_training_history(multi_out_lstm_hist, "multi_out_lstm_hist")
+plot_training_history(multi_out_gru_hist, "multi_out_gru_hist")
+plot_training_history(multi_out_lstm_V2_hist, "multi_out_lstm_V2_hist")
+plot_training_history(multi_out_gru_V2_hist, "multi_out_gru_V2_hist")
+plot_training_history_single(single_out_lstm_hist, "single_out_lstm_hist")
+plot_training_history_single(single_out_gru_hist, "single_out_gru_hist")
+
+plot_training_metrics(multi_out_lstm_hist, "multi_out_lstm_hist")
+plot_training_metrics(multi_out_gru_hist, "multi_out_gru_hist")
+plot_training_metrics(multi_out_lstm_V2_hist, "multi_out_lstm_V2_hist")
+plot_training_metrics(multi_out_gru_V2_hist, "multi_out_gru_V2_hist")
+plot_training_metrics_single(single_out_lstm_hist, "single_out_lstm_hist")
+plot_training_metrics_single(single_out_gru_hist, "single_out_gru_hist")
+
+from pprint import pprint
+print("multi_out_lstm_eval")
+pprint(multi_out_lstm_eval)
+print()
+print("multi_out_gru_eval")
+pprint(multi_out_gru_eval)
+print()
+print("multi_out_lstm_V2_eval")
+pprint(multi_out_lstm_V2_eval)
+print()
+print("multi_out_gru_V2_eval")
+pprint(multi_out_gru_V2_eval)
+print()
+print("single_out_lstm_eval")
+pprint(single_out_lstm_eval)
+print()
+print("single_out_gru_eval")
+pprint(single_out_gru_eval)
