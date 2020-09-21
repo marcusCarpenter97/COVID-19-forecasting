@@ -35,10 +35,10 @@ units = 100
 output_size = 28
 
 # Create models.
-multi_out_lstm = models.LSTMMultiOutput(temporal_shape, word_shape, units, output_size)
+multi_out_lstm = models.LSTMMultiOutput(temporal_shape, word_shape, units, output_size, activation='tanh')
 multi_out_gru = models.GRUMultiOutput(temporal_shape, word_shape, units, output_size)
 
-multi_out_lstm_V2 = models.LSTMMultiOutput_V2(temporal_shape, word_shape, units, output_size)
+multi_out_lstm_V2 = models.LSTMMultiOutput_V2(temporal_shape, word_shape, units, output_size, activation='tanh')
 multi_out_gru_V2 = models.GRUMultiOutput_V2(temporal_shape, word_shape, units, output_size)
 
 single_out_lstm = models.LSTMSingleOutput(temporal_shape, word_shape, units, output_size)
