@@ -95,21 +95,28 @@ single_out_lstm_hist = single_out_lstm.fit([train_x, enc_names], train_y,
 single_out_gru_hist = single_out_gru.fit([train_x, enc_names], train_y,
                                          epochs=epochs, verbose=verbose, callbacks=[single_out_gru_logger, ton_back])
 
-multi_lstm_hist = multi_lstm_quant.fit([train_x, enc_names], [multi_train_y[0], multi_train_y[0], multi_train_y[0],
-                                                              multi_train_y[1], multi_train_y[1], multi_train_y[1],
-                                                              multi_train_y[2], multi_train_y[2], multi_train_y[2]],
-                                       epochs=epochs, verbose=verbose, callbacks=[ton_back])
+y_multi = {"confirmed_q1": multi_train_y[0],
+     "confirmed_q2": multi_train_y[0],
+     "confirmed_q3": multi_train_y[0],
+     "deceased_q1": multi_train_y[1],
+     "deceased_q2": multi_train_y[1],
+     "deceased_q3": multi_train_y[1],
+     "recovered_q1": multi_train_y[2],
+     "recovered_q2": multi_train_y[2],
+     "recovered_q3": multi_train_y[2]}
 
-multi_gru_hist = multi_gru_quant.fit([train_x, enc_names], [multi_train_y[0], multi_train_y[0], multi_train_y[0],
-                                                            multi_train_y[1], multi_train_y[1], multi_train_y[1],
-                                                            multi_train_y[2], multi_train_y[2], multi_train_y[2]],
-                                     epochs=epochs, verbose=verbose, callbacks=[ton_back])
 
-single_lstm_hist = single_lstm_quant.fit([train_x, enc_names], [train_y, train_y, train_y], epochs=epochs, verbose=verbose,
-                                         callbacks=[ton_back])
+multi_lstm_hist = multi_lstm_quant.fit([train_x, enc_names], y=y_multi, epochs=epochs, verbose=verbose, callbacks=[ton_back])
 
-single_gru_hist = single_gru_quant.fit([train_x, enc_names], [train_y, train_y, train_y], epochs=epochs, verbose=verbose,
-                                       callbacks=[ton_back])
+multi_gru_hist = multi_gru_quant.fit([train_x, enc_names], y=y_multi, epochs=epochs, verbose=verbose, callbacks=[ton_back])
+
+y_single = {"output_q1": train_y,
+            "output_q2": train_y,
+            "output_q3": train_y}
+
+single_lstm_hist = single_lstm_quant.fit([train_x, enc_names], y=y_single, epochs=epochs, verbose=verbose, callbacks=[ton_back])
+
+single_gru_hist = single_gru_quant.fit([train_x, enc_names], y=y_single, epochs=epochs, verbose=verbose, callbacks=[ton_back])
 
 # Evaluate models.
 multi_out_lstm_eval = multi_out_lstm.evaluate([test_x, enc_names], [multi_test_y[0], multi_test_y[1], multi_test_y[2]],
