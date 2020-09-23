@@ -44,6 +44,12 @@ multi_out_gru_V2 = models.GRUMultiOutput_V2(temporal_shape, word_shape, units, o
 single_out_lstm = models.LSTMSingleOutput(temporal_shape, word_shape, units, output_size, activation='tanh')
 single_out_gru = models.GRUSingleOutput(temporal_shape, word_shape, units, output_size)
 
+multi_lstm_quant = models.LSTMMultiOutputQuantile(temporal_shape, word_shape, units, output_size, activation='tanh')
+multi_gru_quant = models.GRUMultiOutputQuantile(temporal_shape, word_shape, units, output_size)
+
+single_lstm_quant = models.LSTMSingleOutputQuantile(temporal_shape, word_shape, units, output_size, activation='tanh')
+single_gru_quant = models.GRUSingleOutputQuantile(temporal_shape, word_shape, units, output_size)
+
 # Print model architecture.
 print(multi_out_lstm.summary())
 print(multi_out_gru.summary())
@@ -51,6 +57,10 @@ print(multi_out_lstm_V2.summary())
 print(multi_out_gru_V2.summary())
 print(single_out_lstm.summary())
 print(single_out_gru.summary())
+print(multi_lstm_quant.summary())
+print(multi_gru_quant.summary())
+print(single_lstm_quant.summary())
+print(single_gru_quant.summary())
 
 # Create logger callbacks.
 multi_out_lstm_logger = CSVLogger('multi_out_lstm.csv', separator=',')
@@ -85,6 +95,22 @@ single_out_lstm_hist = single_out_lstm.fit([train_x, enc_names], train_y,
 single_out_gru_hist = single_out_gru.fit([train_x, enc_names], train_y,
                                          epochs=epochs, verbose=verbose, callbacks=[single_out_gru_logger, ton_back])
 
+multi_lstm_hist = multi_lstm_quant.fit([train_x, enc_names], [multi_train_y[0], multi_train_y[0], multi_train_y[0],
+                                                              multi_train_y[1], multi_train_y[1], multi_train_y[1],
+                                                              multi_train_y[2], multi_train_y[2], multi_train_y[2]],
+                                       epochs=epochs, verbose=verbose, callbacks=[ton_back])
+
+multi_gru_hist = multi_gru_quant.fit([train_x, enc_names], [multi_train_y[0], multi_train_y[0], multi_train_y[0],
+                                                            multi_train_y[1], multi_train_y[1], multi_train_y[1],
+                                                            multi_train_y[2], multi_train_y[2], multi_train_y[2]],
+                                     epochs=epochs, verbose=verbose, callbacks=[ton_back])
+
+single_lstm_hist = single_lstm_quant.fit([train_x, enc_names], [train_y, train_y, train_y], epochs=epochs, verbose=verbose,
+                                         callbacks=[ton_back])
+
+single_gru_hist = single_gru_quant.fit([train_x, enc_names], [train_y, train_y, train_y], epochs=epochs, verbose=verbose,
+                                       callbacks=[ton_back])
+
 # Evaluate models.
 multi_out_lstm_eval = multi_out_lstm.evaluate([test_x, enc_names], [multi_test_y[0], multi_test_y[1], multi_test_y[2]],
                                               return_dict=True)
@@ -99,7 +125,22 @@ multi_out_gru_V2_eval = multi_out_gru_V2.evaluate([test_x, enc_names], [multi_te
                                                   return_dict=True)
 
 single_out_lstm_eval = single_out_lstm.evaluate([test_x, enc_names], test_y, return_dict=True)
+
 single_out_gru_eval = single_out_gru.evaluate([test_x, enc_names], test_y, return_dict=True)
+
+multi_lstm_eval = multi_lstm_quant.evaluate([test_x, enc_names], [multi_train_y[0], multi_train_y[0], multi_train_y[0],
+                                                                  multi_train_y[1], multi_train_y[1], multi_train_y[1],
+                                                                  multi_train_y[2], multi_train_y[2], multi_train_y[2]],
+                                            return_dict=True)
+
+multi_gru_eval = multi_gru_quant.evaluate([test_x, enc_names], [multi_train_y[0], multi_train_y[0], multi_train_y[0],
+                                                                multi_train_y[1], multi_train_y[1], multi_train_y[1],
+                                                                multi_train_y[2], multi_train_y[2], multi_train_y[2]],
+                                          return_dict=True)
+
+single_lstm_eval = single_lstm_quant.evaluate([test_x, enc_names], [test_y, test_y, test_y], return_dict=True)
+
+single_gru_eval = single_gru_quant.evaluate([test_x, enc_names], [test_y, test_y, test_y], return_dict=True)
 
 # Does multi output affect performance? In theory the models should be the same.
 # Shared parameters use the TimeDistributed function while using the Dense size will create individual parameters for each day.
