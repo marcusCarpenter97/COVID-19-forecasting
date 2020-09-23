@@ -82,17 +82,22 @@ def RNNSingleOutputQuantile(temporal_input_shape, word_input_shape, recurrent_un
     context = layers.concatenate([hidden_rnn, hidden_dense], name="context")
     context = layers.RepeatVector(output_size)(context)
 
-    output_dense_q1 = layers.TimeDistributed(layers.Dense(3))(context)
-    output_dense_q2 = layers.TimeDistributed(layers.Dense(3))(context)
-    output_dense_q3 = layers.TimeDistributed(layers.Dense(3))(context)
+    output_dense_q1 = layers.TimeDistributed(layers.Dense(3), name="output_q1")(context)
+    output_dense_q2 = layers.TimeDistributed(layers.Dense(3), name="output_q2")(context)
+    output_dense_q3 = layers.TimeDistributed(layers.Dense(3), name="output_q3")(context)
 
     model = keras.Model(inputs=[temporal_inputs, word_inputs], outputs=[output_dense_q1, output_dense_q2, output_dense_q3], name
                         = f"{name}SingleOutputQuantile")
 
-    model.compile(optimizer=tf.keras.optimizers.Adam(), loss=[tfa.losses.PinballLoss(tau=0.05), tfa.losses.PinballLoss(tau=0.5),
-                                                              tfa.losses.PinballLoss(tau=0.95)],
-                  metrics=[tf.keras.metrics.MeanSquaredError(), tf.keras.metrics.RootMeanSquaredError(),
-                           tfa.losses.PinballLoss(tau=0.05), tfa.losses.PinballLoss(tau=0.5), tfa.losses.PinballLoss(tau=0.95)])
+    losses = {"output_q1": tfa.losses.PinballLoss(tau=0.05),
+              "output_q2": tfa.losses.PinballLoss(tau=0.5),
+              "output_q3": tfa.losses.PinballLoss(tau=0.95)}
+
+    model.compile(optimizer=tf.keras.optimizers.Adam(), loss=losses, metrics=[tf.keras.metrics.MeanSquaredError(),
+                                                                              tf.keras.metrics.RootMeanSquaredError(),
+                                                                              tfa.losses.PinballLoss(tau=0.05),
+                                                                              tfa.losses.PinballLoss(tau=0.5),
+                                                                              tfa.losses.PinballLoss(tau=0.95)])
     return model
 
 def RNNMultiOutputQuantile(temporal_input_shape, word_input_shape, recurrent_units, output_size, name, layer, activation):
@@ -125,14 +130,21 @@ def RNNMultiOutputQuantile(temporal_input_shape, word_input_shape, recurrent_uni
                                                                         recovered_out_q1, recovered_out_q2, recovered_out_q3],
                         name = f"{name}MultiOutputQuantile")
 
-    model.compile(optimizer=tf.keras.optimizers.Adam(), loss=[tfa.losses.PinballLoss(tau=0.05), tfa.losses.PinballLoss(tau=0.5),
-                                                              tfa.losses.PinballLoss(tau=0.95),
-                                                              tfa.losses.PinballLoss(tau=0.05), tfa.losses.PinballLoss(tau=0.5),
-                                                              tfa.losses.PinballLoss(tau=0.95),
-                                                              tfa.losses.PinballLoss(tau=0.05), tfa.losses.PinballLoss(tau=0.5),
-                                                              tfa.losses.PinballLoss(tau=0.95)],
-                  metrics=[tf.keras.metrics.MeanSquaredError(), tf.keras.metrics.RootMeanSquaredError(),
-                           tfa.losses.PinballLoss(tau=0.05), tfa.losses.PinballLoss(tau=0.5), tfa.losses.PinballLoss(tau=0.95)])
+    losses = {"confirmed_q1": tfa.losses.PinballLoss(tau=0.05),
+              "confirmed_q2": tfa.losses.PinballLoss(tau=0.5),
+              "confirmed_q3": tfa.losses.PinballLoss(tau=0.95),
+              "deceased_q1": tfa.losses.PinballLoss(tau=0.05),
+              "deceased_q2": tfa.losses.PinballLoss(tau=0.5),
+              "deceased_q3": tfa.losses.PinballLoss(tau=0.95),
+              "recovered_q1": tfa.losses.PinballLoss(tau=0.05),
+              "recovered_q2": tfa.losses.PinballLoss(tau=0.5),
+              "recovered_q3": tfa.losses.PinballLoss(tau=0.95)}
+
+    model.compile(optimizer=tf.keras.optimizers.Adam(), loss=losses, metrics=[tf.keras.metrics.MeanSquaredError(),
+                                                                              tf.keras.metrics.RootMeanSquaredError(),
+                                                                              tfa.losses.PinballLoss(tau=0.05),
+                                                                              tfa.losses.PinballLoss(tau=0.5),
+                                                                              tfa.losses.PinballLoss(tau=0.95)])
     return model
 
 def LSTMMultiOutput(temporal_input_shape, word_input_shape, recurrent_units, output_size, activation='relu'):
