@@ -15,11 +15,11 @@ def RNNMultiOutput(temporal_input_shape, word_input_shape, recurrent_units, outp
 
     context = layers.concatenate([hidden_rnn, hidden_dense], name="context")
 
-    confimed_out = layers.Dense(output_size, name="confirmed")(context)
+    confirmed_out = layers.Dense(output_size, name="confirmed")(context)
     deceased_out = layers.Dense(output_size, name="deceased")(context)
     recovered_out = layers.Dense(output_size, name="recovered")(context)
 
-    model = keras.Model(inputs=[temporal_inputs, word_inputs], outputs=[confimed_out, deceased_out, recovered_out], name =
+    model = keras.Model(inputs=[temporal_inputs, word_inputs], outputs=[confirmed_out, deceased_out, recovered_out], name =
                         f"{name}MultiOutput")
 
     model.compile(optimizer=tf.keras.optimizers.Adam(), loss=tf.keras.losses.MeanSquaredError(),
@@ -39,11 +39,11 @@ def RNNMultiOutput_V2(temporal_input_shape, word_input_shape, recurrent_units, o
     context = layers.concatenate([hidden_rnn, hidden_dense], name="context")
     context = layers.RepeatVector(output_size)(context)
 
-    confimed_out = layers.TimeDistributed(layers.Dense(1), name="confirmed")(context)
+    confirmed_out = layers.TimeDistributed(layers.Dense(1), name="confirmed")(context)
     deceased_out = layers.TimeDistributed(layers.Dense(1), name="deceased")(context)
     recovered_out = layers.TimeDistributed(layers.Dense(1), name="recovered")(context)
 
-    model = keras.Model(inputs=[temporal_inputs, word_inputs], outputs=[confimed_out, deceased_out, recovered_out], name =
+    model = keras.Model(inputs=[temporal_inputs, word_inputs], outputs=[confirmed_out, deceased_out, recovered_out], name =
                         f"{name}MultiOutput_V2")
 
     model.compile(optimizer=tf.keras.optimizers.Adam(), loss=tf.keras.losses.MeanSquaredError(),
@@ -90,7 +90,7 @@ def RNNSingleOutputQuantile(temporal_input_shape, word_input_shape, recurrent_un
                         = f"{name}SingleOutputQuantile")
 
     model.compile(optimizer=tf.keras.optimizers.Adam(), loss=[tfa.losses.PinballLoss(tau=0.05), tfa.losses.PinballLoss(tau=0.5),
-                  tfa.losses.PinballLoss(tau=0.95)]
+                                                              tfa.losses.PinballLoss(tau=0.95)],
                   metrics=[tf.keras.metrics.MeanSquaredError(), tf.keras.metrics.RootMeanSquaredError(),
                            tfa.losses.PinballLoss(tau=0.05), tfa.losses.PinballLoss(tau=0.5), tfa.losses.PinballLoss(tau=0.95)])
     return model
@@ -108,9 +108,9 @@ def RNNMultiOutputQuantile(temporal_input_shape, word_input_shape, recurrent_uni
 
     context = layers.concatenate([hidden_rnn, hidden_dense], name="context")
 
-    confimed_out_q1 = layers.Dense(output_size, name="confirmed_q1")(context)
-    confimed_out_q2 = layers.Dense(output_size, name="confirmed_q2")(context)
-    confimed_out_q3 = layers.Dense(output_size, name="confirmed_q3")(context)
+    confirmed_out_q1 = layers.Dense(output_size, name="confirmed_q1")(context)
+    confirmed_out_q2 = layers.Dense(output_size, name="confirmed_q2")(context)
+    confirmed_out_q3 = layers.Dense(output_size, name="confirmed_q3")(context)
 
     deceased_out_q1 = layers.Dense(output_size, name="deceased_q1")(context)
     deceased_out_q2 = layers.Dense(output_size, name="deceased_q2")(context)
@@ -130,7 +130,7 @@ def RNNMultiOutputQuantile(temporal_input_shape, word_input_shape, recurrent_uni
                                                               tfa.losses.PinballLoss(tau=0.05), tfa.losses.PinballLoss(tau=0.5),
                                                               tfa.losses.PinballLoss(tau=0.95),
                                                               tfa.losses.PinballLoss(tau=0.05), tfa.losses.PinballLoss(tau=0.5),
-                                                              tfa.losses.PinballLoss(tau=0.95)]
+                                                              tfa.losses.PinballLoss(tau=0.95)],
                   metrics=[tf.keras.metrics.MeanSquaredError(), tf.keras.metrics.RootMeanSquaredError(),
                            tfa.losses.PinballLoss(tau=0.05), tfa.losses.PinballLoss(tau=0.5), tfa.losses.PinballLoss(tau=0.95)])
     return model
@@ -150,6 +150,16 @@ def LSTMMultiOutput_V2(temporal_input_shape, word_input_shape, recurrent_units, 
     layer = layers.LSTM
     return RNNMultiOutput_V2(temporal_input_shape, word_input_shape, recurrent_units, output_size, name, layer, activation)
 
+def LSTMMultiOutputQuantile(temporal_input_shape, word_input_shape, recurrent_units, output_size, activation='relu'):
+    name = "LSTM"
+    layer = layers.LSTM
+    return RNNMultiOutputQuantile(temporal_input_shape, word_input_shape, recurrent_units, output_size, name, layer, activation)
+
+def LSTMSingleOutputQuantile(temporal_input_shape, word_input_shape, recurrent_units, output_size, activation='relu'):
+    name = "LSTM"
+    layer = layers.LSTM
+    return RNNSingleOutputQuantile(temporal_input_shape, word_input_shape, recurrent_units, output_size, name, layer, activation)
+
 def GRUMultiOutput(temporal_input_shape, word_input_shape, recurrent_units, output_size, activation='relu'):
     name = "GRU"
     layer = layers.GRU
@@ -164,3 +174,13 @@ def GRUMultiOutput_V2(temporal_input_shape, word_input_shape, recurrent_units, o
     name = "GRU"
     layer = layers.GRU
     return RNNMultiOutput_V2(temporal_input_shape, word_input_shape, recurrent_units, output_size, name, layer, activation)
+
+def GRUMultiOutputQuantile(temporal_input_shape, word_input_shape, recurrent_units, output_size, activation='relu'):
+    name = "GRU"
+    layer = layers.GRU
+    return RNNMultiOutputQuantile(temporal_input_shape, word_input_shape, recurrent_units, output_size, name, layer, activation)
+
+def GRUSingleOutputQuantile(temporal_input_shape, word_input_shape, recurrent_units, output_size, activation='relu'):
+    name = "GRU"
+    layer = layers.GRU
+    return RNNSingleOutputQuantile(temporal_input_shape, word_input_shape, recurrent_units, output_size, name, layer, activation)
