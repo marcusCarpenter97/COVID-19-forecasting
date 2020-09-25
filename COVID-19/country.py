@@ -138,6 +138,12 @@ class Country:
         self.scaled_test_x = self.test_x_scaler.fit_transform(self.test_x)
         self.scaled_test_y = self.test_y_scaler.fit_transform(self.test_y)
 
+    def destandarize(self, scaled_data):
+        """
+        Destandarizes a dataset using the test_y scaler.
+        """
+        return self.test_y_scaler.inverse_transform(scaled_data)
+
     # TODO ?
     def apply_sliding_window(self, data, time_steps, horizon, is_test_data=False):
         """
