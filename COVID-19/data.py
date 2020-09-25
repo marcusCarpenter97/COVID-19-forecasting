@@ -146,6 +146,12 @@ class Data:
         for country in self.countries:
             country.standarize()
 
+    def destandarize_data(self, predictions):
+        """
+        Destandarize the predictions for all countries.
+        """
+        return np.stack([country.destandarize(prediction) for country, prediction in zip(self.countries, predictions)])
+
     def retreive_data(self):
         """
         Compile the datasets used by a machine learning model from the data of all countries.
