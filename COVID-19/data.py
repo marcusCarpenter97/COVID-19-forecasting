@@ -61,7 +61,7 @@ class Data:
         res = [country for country in self.countries if country.name == name]
         return None if len(res) == 0 else res[0]
 
-    def encode_names(self, extra_size=1.25):
+    def encode_names(self, extra_size=1.5):
         """
         Creates encoded versions of the country names.
         These will be used in the Embedding layer of the network.
@@ -71,8 +71,8 @@ class Data:
         max_length - int - size of biggest word.
         padded - 2D numpy array - an array containing all the encoded names for the countries.
         """
-        # Idealy this should use the number of words not the country names.
-        vocab_size = np.ceil(len(self.countries) * extra_size)
+        word_count = 236  # Number of words that make up all country names.
+        vocab_size = np.ceil(word_count * extra_size)
 
         encoded = [one_hot(country.name, vocab_size) for country in self.countries]
         max_length = len(max(encoded, key=lambda x: len(x)))
