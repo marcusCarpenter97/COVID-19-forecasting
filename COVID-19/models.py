@@ -15,22 +15,21 @@ class EncoderBlock(layers.Layer):
 
         return layers.concatenate([h_rnn, h_dense], name="context")
 
-def RNNMultiOutput(output_size, temporal_input_shape, word_input_shape, rnn_units, rnn_layer, rnn_activation):
+class RNNMultiOutputIndividual(keras.Model):
     """
-    Individual weights.
+    Multi output RNN model with individual weights on the output nodes.
     """
-    context = EncoderBlock(temporal_input_shape, word_input_shape, rnn_units, rnn_layer, rnn_activation)
+    def __init__(self, output_size, rnn_units, rnn_layer, rnn_activation):
+        super(RNNMultiOutputIndividual, self).__init__()
+        self.encoder = EncoderBlock(rnn_units, rnn_layer, rnn_activation)
 
-    c_out = layers.Dense(output_size, name="confirmed")(context)
-    d_out = layers.Dense(output_size, name="deceased")(context)
-    r_out = layers.Dense(output_size, name="recovered")(context)
+        self.c_out = layers.Dense(output_size, name="confirmed")
+        self.d_out = layers.Dense(output_size, name="deceased")
+        self.r_out = layers.Dense(output_size, name="recovered")
 
-    model = keras.Model(inputs=[temporal_inputs, word_inputs], outputs=[confirmed_out, deceased_out, recovered_out], name =
-                        f"{name}MultiOutput")
-
-    model.compile(optimizer=tf.keras.optimizers.Adam(), loss=tf.keras.losses.MeanSquaredError(),
-                  metrics=[tf.keras.metrics.MeanSquaredError(), tf.keras.metrics.RootMeanSquaredError()])
-    return model
+    def call(self, inputs):
+        context = self.encoder(inputs)
+        return self.c_out(context), self.d_out(context), self.r_out(context)
 
 def RNNMultiOutput_V2(temporal_input_shape, word_input_shape, recurrent_units, output_size, name, layer, activation):
     """
