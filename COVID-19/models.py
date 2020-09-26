@@ -3,6 +3,23 @@ import tensorflow_addons as tfa
 from tensorflow import keras
 from tensorflow.keras import layers
 
+class EncoderBlock(layers.Layer):
+    def __init__(self, temporal_input_shape, word_input_shape, rnn_units, rnn_layer, rnn_activation, name):
+        super(EncoderBlock, self).__init__()
+        self.temporal_inputs = keras.Input(shape=temporal_input_shape, name="time_series_input")
+        self.word_inputs = keras.Input(shape=word_input_shape, name="country_name_input")
+        self.hidden_rnn = rnn_layer(rnn_units, activation=rnn_activation, name=f"{name}_encoder")
+        self.hidden_dense = layers.Dense(1, name="country_name")
+
+    def call(self, inputs):
+        ti = self.temporal_inputs(inputs[0])
+        wi = self.word_inputs(inputs[1])
+
+        h_rnn = self.hidden_rnn(ti)
+        h_dense = self.hidden_dense(wi)
+
+        return layers.concatenate([h_rnn, h_dense], name="context")
+
 def RNNMultiOutput(temporal_input_shape, word_input_shape, recurrent_units, output_size, name, layer, activation):
     """
     Individual weights.
