@@ -27,7 +27,7 @@ class Data:
             r = self.raw_recovered.sum(numeric_only=True)
             i = self.calculate_current_infected(c, d, r)
             h = self.calculate_healthy(p, d, r, i)
-            return country.Country("World", p, c, d, r, i, h)
+            self.world = country.Country("World", p, c, d, r, i, h)
 
         def generate_countries():
             """
@@ -49,7 +49,7 @@ class Data:
                 countries.append(country.Country(name, p, c, d, r, i, h))
             return countries
 
-        self.countries.append(generate_world_data())
+        generate_world_data()
         self.countries.extend(generate_countries())
 
     def find_country(self, name):
