@@ -1,7 +1,6 @@
-from keras.preprocessing.sequence import pad_sequences
-from keras.preprocessing.text import one_hot
 import numpy as np
 import pandas as pd
+import hashlib
 import data_loader
 import country
 
@@ -61,28 +60,21 @@ class Data:
         res = [country for country in self.countries if country.name == name]
         return None if len(res) == 0 else res[0]
 
-    def encode_names(self, extra_size=1.5):
+    def encode_names(self, output_space=6):
         """
-        Creates encoded versions of the country names.
+        Creates hashed versions of the country names.
         These will be used in the Embedding layer of the network.
-        Param: extra_size float - extra space to guarantee uniqueness.
+        Param: output_space - int - size of the poutput produced by the hash functions to guarantee uniqueness.
         Returns:
-        vocab_size - int - number of unique words plus some extra space.
-        max_length - int - size of biggest word.
-        padded - 2D numpy array - an array containing all the encoded names for the countries.
+        hashed_names - list - a list containing all the hashed names for the countries.
         """
-        word_count = 236  # Number of words that make up all country names.
-        vocab_size = np.ceil(word_count * extra_size)
+        hashed_names = [int(hashlib.sha256(country.encode('utf-8')).hexdigest(), 16) % 10**output_space for country in
+                        self.population]
 
-        encoded = [one_hot(country.name, vocab_size) for country in self.countries]
-        max_length = len(max(encoded, key=lambda x: len(x)))
+        for country, hashed_name in zip(self.countries, hashed_names):
+            country.encoded_name = hashed_name
 
-        padded = pad_sequences(encoded, maxlen=max_length, padding='post')
-
-        for country, enc_name in zip(self.countries, padded):
-            country.encoded_name = enc_name
-
-        return vocab_size, max_length, padded
+        return hashed_names
 
     def calculate_current_infected(self, c, d, r):
         """
