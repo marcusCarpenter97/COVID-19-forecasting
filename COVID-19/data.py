@@ -69,12 +69,12 @@ class Data:
         hashed_names - list - a list containing all the hashed names for the countries.
         """
         hashed_names = [int(hashlib.sha256(country.encode('utf-8')).hexdigest(), 16) % 10**output_space for country in
-                        self.population]
+                        self.population.index]
 
         for country, hashed_name in zip(self.countries, hashed_names):
             country.encoded_name = hashed_name
 
-        return hashed_names
+        return np.array(hashed_names)
 
     def calculate_current_infected(self, c, d, r):
         """
