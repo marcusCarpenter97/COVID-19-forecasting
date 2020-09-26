@@ -232,7 +232,7 @@ rescaled_predictions = COVID_DATA.destandarize_data(predictions)
 # Plot predictions vs data...
 def prepare_country_data_for_plots(name, enc_names, prediction_data):
     country = COVID_DATA.find_country(name)
-    country_idx = (enc_names == country.encoded_name).nonzero()
+    country_idx = (enc_names == country.encoded_name).all(axis=1).nonzero()
     country_predictions = prediction_data[country_idx]
     country_predictions = country_predictions.reshape(country_predictions.shape[1], country_predictions.shape[2]).T
     return country_predictions, country.test_y.T
