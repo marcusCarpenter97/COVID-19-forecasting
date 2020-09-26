@@ -4,37 +4,26 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 class EncoderBlock(layers.Layer):
-    def __init__(self, temporal_input_shape, word_input_shape, rnn_units, rnn_layer, rnn_activation, name):
+    def __init__(self, rnn_units, rnn_layer, rnn_activation):
         super(EncoderBlock, self).__init__()
-        self.temporal_inputs = keras.Input(shape=temporal_input_shape, name="time_series_input")
-        self.word_inputs = keras.Input(shape=word_input_shape, name="country_name_input")
-        self.hidden_rnn = rnn_layer(rnn_units, activation=rnn_activation, name=f"{name}_encoder")
-        self.hidden_dense = layers.Dense(1, name="country_name")
+        self.hidden_rnn = rnn_layer(rnn_units, activation=rnn_activation, name="rnn_encoder")
+        self.hidden_dense = layers.Dense(1, name="name_encoder")
 
     def call(self, inputs):
-        ti = self.temporal_inputs(inputs[0])
-        wi = self.word_inputs(inputs[1])
-
-        h_rnn = self.hidden_rnn(ti)
-        h_dense = self.hidden_dense(wi)
+        h_rnn = self.hidden_rnn(inputs[0])
+        h_dense = self.hidden_dense(inputs[1])
 
         return layers.concatenate([h_rnn, h_dense], name="context")
 
-def RNNMultiOutput(temporal_input_shape, word_input_shape, recurrent_units, output_size, name, layer, activation):
+def RNNMultiOutput(output_size, temporal_input_shape, word_input_shape, rnn_units, rnn_layer, rnn_activation):
     """
     Individual weights.
     """
-    temporal_inputs = keras.Input(shape=temporal_input_shape, name="time_series_input")
-    word_inputs = keras.Input(shape=word_input_shape, name="country_name_input")
+    context = EncoderBlock(temporal_input_shape, word_input_shape, rnn_units, rnn_layer, rnn_activation)
 
-    hidden_rnn = layer(recurrent_units, activation=activation, name=f"{name}_encoder")(temporal_inputs)
-    hidden_dense = layers.Dense(1, name="country_name")(word_inputs)
-
-    context = layers.concatenate([hidden_rnn, hidden_dense], name="context")
-
-    confirmed_out = layers.Dense(output_size, name="confirmed")(context)
-    deceased_out = layers.Dense(output_size, name="deceased")(context)
-    recovered_out = layers.Dense(output_size, name="recovered")(context)
+    c_out = layers.Dense(output_size, name="confirmed")(context)
+    d_out = layers.Dense(output_size, name="deceased")(context)
+    r_out = layers.Dense(output_size, name="recovered")(context)
 
     model = keras.Model(inputs=[temporal_inputs, word_inputs], outputs=[confirmed_out, deceased_out, recovered_out], name =
                         f"{name}MultiOutput")
