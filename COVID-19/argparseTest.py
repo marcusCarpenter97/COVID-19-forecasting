@@ -65,29 +65,28 @@ Y_SINGLE = {"output_q1": train_y,
 
 # These variables define the size of the time series and word encoding used for the input.
 TEMPORAL_SHAPE = train_x[0].shape
-WORD_SHAPE = enc_names[0].shape
 
 # Build models
 
 # Multi output individual weights.
-multi_out_lstm = models.LSTMMultiOutput(TEMPORAL_SHAPE, WORD_SHAPE, UNITS, OUTPUT_SIZE, LSTM_ACTIVATION)
-multi_out_gru = models.GRUMultiOutput(TEMPORAL_SHAPE, WORD_SHAPE, UNITS, OUTPUT_SIZE)
+multi_out_lstm = models.LSTMMultiOutput(TEMPORAL_SHAPE, UNITS, OUTPUT_SIZE, LSTM_ACTIVATION)
+multi_out_gru = models.GRUMultiOutput(TEMPORAL_SHAPE, UNITS, OUTPUT_SIZE)
 
 # Multi output shared weights.
-multi_out_lstm_V2 = models.LSTMMultiOutput_V2(TEMPORAL_SHAPE, WORD_SHAPE, UNITS, OUTPUT_SIZE, LSTM_ACTIVATION)
-multi_out_gru_V2 = models.GRUMultiOutput_V2(TEMPORAL_SHAPE, WORD_SHAPE, UNITS, OUTPUT_SIZE)
+multi_out_lstm_V2 = models.LSTMMultiOutput_V2(TEMPORAL_SHAPE, UNITS, OUTPUT_SIZE, LSTM_ACTIVATION)
+multi_out_gru_V2 = models.GRUMultiOutput_V2(TEMPORAL_SHAPE, UNITS, OUTPUT_SIZE)
 
 # Single output shared weights.
-single_out_lstm = models.LSTMSingleOutput(TEMPORAL_SHAPE, WORD_SHAPE, UNITS, OUTPUT_SIZE, LSTM_ACTIVATION)
-single_out_gru = models.GRUSingleOutput(TEMPORAL_SHAPE, WORD_SHAPE, UNITS, OUTPUT_SIZE)
+single_out_lstm = models.LSTMSingleOutput(TEMPORAL_SHAPE, UNITS, OUTPUT_SIZE, LSTM_ACTIVATION)
+single_out_gru = models.GRUSingleOutput(TEMPORAL_SHAPE, UNITS, OUTPUT_SIZE)
 
 # Multi output quantile forecasts.
-multi_lstm_quant = models.LSTMMultiOutputQuantile(TEMPORAL_SHAPE, WORD_SHAPE, UNITS, OUTPUT_SIZE, LSTM_ACTIVATION)
-multi_gru_quant = models.GRUMultiOutputQuantile(TEMPORAL_SHAPE, WORD_SHAPE, UNITS, OUTPUT_SIZE)
+multi_lstm_quant = models.LSTMMultiOutputQuantile(TEMPORAL_SHAPE, UNITS, OUTPUT_SIZE, LSTM_ACTIVATION)
+multi_gru_quant = models.GRUMultiOutputQuantile(TEMPORAL_SHAPE, UNITS, OUTPUT_SIZE)
 
 # Single output quantile forecasts.
-single_lstm_quant = models.LSTMSingleOutputQuantile(TEMPORAL_SHAPE, WORD_SHAPE, UNITS, OUTPUT_SIZE, LSTM_ACTIVATION)
-single_gru_quant = models.GRUSingleOutputQuantile(TEMPORAL_SHAPE, WORD_SHAPE, UNITS, OUTPUT_SIZE)
+single_lstm_quant = models.LSTMSingleOutputQuantile(TEMPORAL_SHAPE, UNITS, OUTPUT_SIZE, LSTM_ACTIVATION)
+single_gru_quant = models.GRUSingleOutputQuantile(TEMPORAL_SHAPE, UNITS, OUTPUT_SIZE)
 
 # Load saved models instead of training them.
 if args.load_all:
