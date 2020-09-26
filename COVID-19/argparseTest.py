@@ -2,6 +2,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras.callbacks import ModelCheckpoint
+from pprint import pprint
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Reduces tensorflow messages.
 import data
@@ -181,6 +182,37 @@ single_lstm_eval = single_lstm_quant.evaluate([test_x, enc_names], [test_y, test
 
 single_gru_eval = single_gru_quant.evaluate([test_x, enc_names], [test_y, test_y, test_y], verbose=EVAL_VERBOSE, return_dict=True)
 print("Done.")
+
+# Print results from evaluatin the models.
+print("multi_out_lstm_eval")
+pprint(multi_out_lstm_eval)
+print()
+print("multi_out_gru_eval")
+pprint(multi_out_gru_eval)
+print()
+print("multi_out_lstm_V2_eval")
+pprint(multi_out_lstm_V2_eval)
+print()
+print("multi_out_gru_V2_eval")
+pprint(multi_out_gru_V2_eval)
+print()
+print("single_out_lstm_eval")
+pprint(single_out_lstm_eval)
+print()
+print("single_out_gru_eval")
+pprint(single_out_gru_eval)
+print()
+print("multi_lstm_eval")
+pprint(multi_lstm_eval)
+print()
+print("multi_gru_eval")
+pprint(multi_gru_eval)
+print()
+print("single_lstm_eval")
+pprint(single_lstm_eval)
+print()
+print("single_gru_eval")
+pprint(single_gru_eval)
 
 # Predictions using best model on a selection of countries... (repeat for quantiles)
 mulit_out_pred = multi_out_gru.predict([test_x, enc_names])
