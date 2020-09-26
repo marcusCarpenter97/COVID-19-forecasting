@@ -49,6 +49,12 @@ train_x, train_y, test_x, test_y = COVID_DATA.retreive_data()
 multi_train_y = COVID_DATA.make_multi_output_data(train_y)
 multi_test_y = COVID_DATA.make_multi_output_data(test_y)
 
+print("Data shapes")
+print(f"enc_names: {enc_names.shape}")
+print(f"train_x: {train_x.shape}, train_y: {train_y.shape}, test_x {test_x.shape}, test_y {test_y.shape}")
+print(f"multi_train_y: {multi_train_y.shape}")
+print(f"multi_test_y: {multi_test_y.shape}")
+
 Y_MULTI = {"confirmed_q1": multi_train_y[0],
            "confirmed_q2": multi_train_y[0],
            "confirmed_q3": multi_train_y[0],
@@ -67,7 +73,7 @@ Y_SINGLE = {"output_q1": train_y,
 TEMPORAL_SHAPE = train_x[0].shape
 
 # Build models
-
+print("Creating models...")
 # Multi output individual weights.
 multi_out_lstm = models.LSTMMultiOutput(TEMPORAL_SHAPE, UNITS, OUTPUT_SIZE, LSTM_ACTIVATION)
 multi_out_gru = models.GRUMultiOutput(TEMPORAL_SHAPE, UNITS, OUTPUT_SIZE)
