@@ -68,13 +68,18 @@ class Data:
         Returns:
         hashed_names - list - a list containing all the hashed names for the countries.
         """
-        hashed_names = [int(hashlib.sha256(country.encode('utf-8')).hexdigest(), 16) % 10**output_space for country in
+        # Hash all country names using SHA-256 then convert the hex output to int slice of the first digits by converting it to
+        # a string and save it as an int in a list.
+        hashed_names = [int(str(int(hashlib.sha256(country.encode('utf-8')).hexdigest(), 16))[:output_space]) for country in
                         self.population.index]
+
+        # Convert the integers into an array of digits.
+        hashed_names = np.stack([np.array(list(map(int,str(x)))) for x in hashed_names])
 
         for country, hashed_name in zip(self.countries, hashed_names):
             country.encoded_name = hashed_name
 
-        return np.array(hashed_names)
+        return hashed_names
 
     def calculate_current_infected(self, c, d, r):
         """
