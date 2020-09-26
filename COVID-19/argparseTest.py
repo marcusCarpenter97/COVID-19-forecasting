@@ -199,11 +199,8 @@ rescaled_predictions = COVID_DATA.destandarize_data(predictions)
 # Plot predictions vs data...
 def prepare_country_data_for_plots(name, enc_names, prediction_data):
     country = COVID_DATA.find_country(name)
-    country_idx = np.where(np.all(enc_names == country.encoded_name, axis=1))
-    #country_idx = (enc_names == country.encoded_name).all(axis=1).nonzero()
-    print(country_idx)
+    country_idx = (enc_names == country.encoded_name).nonzero()
     country_predictions = prediction_data[country_idx]
-    print(country_predictions.shape)
     country_predictions = country_predictions.reshape(country_predictions.shape[1], country_predictions.shape[2]).T
     return country_predictions, country.test_y.T
 
@@ -220,13 +217,7 @@ def plot_pred_v_data(pred, data, country_name):
         ax.legend(["Model predictions", "Real data"], loc="best")
 
 for country_name in EXAMPLE_COUTRIES:
-    print(country_name)
     predictions, test_y = prepare_country_data_for_plots(country_name, enc_names, rescaled_predictions)
     plot_pred_v_data(predictions, test_y, country_name)
-
-#uk_name = "United Kingdom"
-#uk_predictions, uk_test_y = prepare_country_data_for_plots(uk_name, enc_names, rescaled_predictions)
-#
-#plot_pred_v_data(uk_predictions, uk_test_y, uk_name)
 
 plt.show()
