@@ -50,23 +50,22 @@ class RNNMultiOutputShared(keras.Model):
         context = self.rep_vec(context)
         return self.c_out(context), self.d_out(context), self.r_out(context)
 
-def RNNSingleOutput(temporal_input_shape, word_input_shape, recurrent_units, output_size, name, layer, activation):
-    temporal_inputs = keras.Input(shape=temporal_input_shape, name="time_series_input")
-    word_inputs = keras.Input(shape=word_input_shape, name="country_name_input")
+class RNNSingleOutput(keras.Model):
+    """
+    Single output RNN model with shared weights on the output node.
+    """
+    def __init__(self, output_size, rnn_units, rnn_layer, rnn_activation):
+        super(RNNSingleOutput, self).__init__()
+        self.encoder = EncoderBlock(rnn_units, rnn_layer, rnn_activation)
 
-    hidden_rnn = layer(recurrent_units, activation=activation, name=f"{name}_encoder")(temporal_inputs)
-    hidden_dense = layers.Dense(1, name="country_name")(word_inputs)
+        self.rep_vec = layers.RepeatVector(output_size)
 
-    context = layers.concatenate([hidden_rnn, hidden_dense], name="context")
-    context = layers.RepeatVector(output_size)(context)
+        self.output_node = layers.TimeDistributed(layers.Dense(3))  # 3 is the number of features in the data.
 
-    output_dense = layers.TimeDistributed(layers.Dense(3))(context)
-
-    model = keras.Model(inputs=[temporal_inputs, word_inputs], outputs=output_dense, name = f"{name}SingleOutput")
-
-    model.compile(optimizer=tf.keras.optimizers.Adam(), loss=tf.keras.losses.MeanSquaredError(),
-                  metrics=[tf.keras.metrics.MeanSquaredError(), tf.keras.metrics.RootMeanSquaredError()])
-    return model
+    def call(self, inputs):
+        context = self.encoder(inputs)
+        context = self.rep_vec(context)
+        return self.output_node(context)
 
 def RNNSingleOutputQuantile(temporal_input_shape, word_input_shape, recurrent_units, output_size, name, layer, activation):
     """
