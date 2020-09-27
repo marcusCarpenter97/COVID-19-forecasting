@@ -4,6 +4,10 @@ from tensorflow import keras
 from tensorflow.keras import layers
 
 class EncoderBlock(layers.Layer):
+    """
+    Encoder block that takes as input a time series and a numerial representation of a county name
+    and creates a learned representation to be processed further in the model.
+    """
     def __init__(self, rnn_units, rnn_layer, rnn_activation):
         super(EncoderBlock, self).__init__()
         self.hidden_rnn = rnn_layer(rnn_units, activation=rnn_activation, name="rnn_encoder")
@@ -67,37 +71,26 @@ class RNNSingleOutput(keras.Model):
         context = self.rep_vec(context)
         return self.output_node(context)
 
-def RNNSingleOutputQuantile(temporal_input_shape, word_input_shape, recurrent_units, output_size, name, layer, activation):
+class RNNSingleOutputQuantile(keras.Model):
     """
     One output node for each quantile. Each output node produces all features.
     e.g. 3 quantile and 3 features = 3 outputs (each has 3 features), one for each quantile.
     """
-    temporal_inputs = keras.Input(shape=temporal_input_shape, name="time_series_input")
-    word_inputs = keras.Input(shape=word_input_shape, name="country_name_input")
+    def __init__(self, output_size, rnn_units, rnn_layer, rnn_activation):
+        super(RNNSingleOutputQuantile, self).__init__()
+        self.encoder = EncoderBlock(rnn_units, rnn_layer, rnn_activation)
 
-    hidden_rnn = layer(recurrent_units, activation=activation, name=f"{name}_encoder")(temporal_inputs)
-    hidden_dense = layers.Dense(1, name="country_name")(word_inputs)
+        self.rep_vec = layers.RepeatVector(output_size)
 
-    context = layers.concatenate([hidden_rnn, hidden_dense], name="context")
-    context = layers.RepeatVector(output_size)(context)
+        # 3 is the number of features in the data.
+        self.output_node_q1 = layers.TimeDistributed(layers.Dense(3), name="output_q0.05")
+        self.output_node_q2 = layers.TimeDistributed(layers.Dense(3), name="output_q0.5")
+        self.output_node_q3 = layers.TimeDistributed(layers.Dense(3), name="output_q0.95")
 
-    output_dense_q1 = layers.TimeDistributed(layers.Dense(3), name="output_q1")(context)
-    output_dense_q2 = layers.TimeDistributed(layers.Dense(3), name="output_q2")(context)
-    output_dense_q3 = layers.TimeDistributed(layers.Dense(3), name="output_q3")(context)
-
-    model = keras.Model(inputs=[temporal_inputs, word_inputs], outputs=[output_dense_q1, output_dense_q2, output_dense_q3], name
-                        = f"{name}SingleOutputQuantile")
-
-    losses = {"output_q1": tfa.losses.PinballLoss(tau=0.05),
-              "output_q2": tfa.losses.PinballLoss(tau=0.5),
-              "output_q3": tfa.losses.PinballLoss(tau=0.95)}
-
-    metrics = [tf.keras.metrics.MeanSquaredError(), tf.keras.metrics.RootMeanSquaredError(),
-               tfa.losses.PinballLoss(tau=0.05, name="q0.05"), tfa.losses.PinballLoss(tau=0.5, name="q0.5"),
-               tfa.losses.PinballLoss(tau=0.95, name="q0.95")]
-
-    model.compile(optimizer=tf.keras.optimizers.Adam(), loss=losses, metrics=metrics)
-    return model
+    def call(self, inputs):
+        context = self.encoder(inputs)
+        context = self.rep_vec(context)
+        return self.output_node_q1(context), self.output_node_q2(context), self.output_node_q3(context)
 
 def RNNMultiOutputQuantile(temporal_input_shape, word_input_shape, recurrent_units, output_size, name, layer, activation):
     """
