@@ -92,53 +92,32 @@ class RNNSingleOutputQuantile(keras.Model):
         context = self.rep_vec(context)
         return self.output_node_q1(context), self.output_node_q2(context), self.output_node_q3(context)
 
-def RNNMultiOutputQuantile(temporal_input_shape, word_input_shape, recurrent_units, output_size, name, layer, activation):
+class RNNMultiOutputQuantile(keras.Model):
     """
     Each output node produces the values for a featue at a quantile.
     e.g. 3 quantile and 3 features = 9 outputs.
     """
-    temporal_inputs = keras.Input(shape=temporal_input_shape, name="time_series_input")
-    word_inputs = keras.Input(shape=word_input_shape, name="country_name_input")
+    def __init__(self, output_size, rnn_units, rnn_layer, rnn_activation):
+        super(RNNMultiOutputQuantile, self).__init__()
+        self.encoder = EncoderBlock(rnn_units, rnn_layer, rnn_activation)
 
-    hidden_rnn = layer(recurrent_units, activation=activation, name=f"{name}_encoder")(temporal_inputs)
-    hidden_dense = layers.Dense(1, name="country_name")(word_inputs)
+        self.c_out_q1 = layers.Dense(output_size, name="confirmed_q1")
+        self.c_out_q2 = layers.Dense(output_size, name="confirmed_q2")
+        self.c_out_q3 = layers.Dense(output_size, name="confirmed_q3")
 
-    context = layers.concatenate([hidden_rnn, hidden_dense], name="context")
+        self.d_out_q1 = layers.Dense(output_size, name="deceased_q1")
+        self.d_out_q2 = layers.Dense(output_size, name="deceased_q2")
+        self.d_out_q3 = layers.Dense(output_size, name="deceased_q3")
 
-    confirmed_out_q1 = layers.Dense(output_size, name="confirmed_q1")(context)
-    confirmed_out_q2 = layers.Dense(output_size, name="confirmed_q2")(context)
-    confirmed_out_q3 = layers.Dense(output_size, name="confirmed_q3")(context)
+        self.r_out_q1 = layers.Dense(output_size, name="recovered_q1")
+        self.r_out_q2 = layers.Dense(output_size, name="recovered_q2")
+        self.r_out_q3 = layers.Dense(output_size, name="recovered_q3")
 
-    deceased_out_q1 = layers.Dense(output_size, name="deceased_q1")(context)
-    deceased_out_q2 = layers.Dense(output_size, name="deceased_q2")(context)
-    deceased_out_q3 = layers.Dense(output_size, name="deceased_q3")(context)
-
-    recovered_out_q1 = layers.Dense(output_size, name="recovered_q1")(context)
-    recovered_out_q2 = layers.Dense(output_size, name="recovered_q2")(context)
-    recovered_out_q3 = layers.Dense(output_size, name="recovered_q3")(context)
-
-    model = keras.Model(inputs=[temporal_inputs, word_inputs], outputs=[confirmed_out_q1, confirmed_out_q2, confirmed_out_q3,
-                                                                        deceased_out_q1, deceased_out_q2, deceased_out_q3,
-                                                                        recovered_out_q1, recovered_out_q2, recovered_out_q3],
-                        name = f"{name}MultiOutputQuantile")
-
-    losses = {"confirmed_q1": tfa.losses.PinballLoss(tau=0.05),
-              "confirmed_q2": tfa.losses.PinballLoss(tau=0.5),
-              "confirmed_q3": tfa.losses.PinballLoss(tau=0.95),
-              "deceased_q1": tfa.losses.PinballLoss(tau=0.05),
-              "deceased_q2": tfa.losses.PinballLoss(tau=0.5),
-              "deceased_q3": tfa.losses.PinballLoss(tau=0.95),
-              "recovered_q1": tfa.losses.PinballLoss(tau=0.05),
-              "recovered_q2": tfa.losses.PinballLoss(tau=0.5),
-              "recovered_q3": tfa.losses.PinballLoss(tau=0.95)}
-
-    metrics = [tf.keras.metrics.MeanSquaredError(), tf.keras.metrics.RootMeanSquaredError(),
-               tfa.losses.PinballLoss(tau=0.05, name="q0.05"), tfa.losses.PinballLoss(tau=0.5, name="q0.5"),
-               tfa.losses.PinballLoss(tau=0.95, name="q0.95")]
-
-    model.compile(optimizer=tf.keras.optimizers.Adam(), loss=losses, metrics=metrics)
-
-    return model
+    def call(self, inputs):
+        context = self.encoder(inputs)
+        return (self.c_out_q1(context), self.c_out_q2(context), self.c_out_q3(context),
+    self.d_out_q1(context), self.d_out_q2(context), self.d_out_q3(context),
+    self.r_out_q1(context), self.r_out_q2(context), self.r_out_q3(context))
 
 def compileModel(my_model, optimizer, loss, metrics):
     my_model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
