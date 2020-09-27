@@ -159,6 +159,9 @@ def compileModel(my_model, optimizer, loss, metrics):
 def fitModel(my_model, x, y, epochs, verbose=2):
     return my_model.fit(x=x, y=y, epochs=epochs, verbose=verbose)
 
+def evaluateModel(my_model, x, y, verbose=1, return_dict=True):
+    return my_model.evaluate(x=x, y=y, verbose=verbose, return_dict=return_dict)
+
 def LSTMMultiOutput(temporal_input_shape, word_input_shape, recurrent_units, output_size, activation='relu'):
     name = "LSTM"
     layer = layers.LSTM
