@@ -156,6 +156,9 @@ def RNNMultiOutputQuantile(temporal_input_shape, word_input_shape, recurrent_uni
 def compileModel(my_model, optimizer, loss, metrics):
     my_model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
+def fitModel(my_model, x, y, epochs, verbose=2):
+    return my_model.fit(x=x, y=y, epochs=epochs, verbose=verbose)
+
 def LSTMMultiOutput(temporal_input_shape, word_input_shape, recurrent_units, output_size, activation='relu'):
     name = "LSTM"
     layer = layers.LSTM
