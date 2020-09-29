@@ -122,8 +122,8 @@ class RNNMultiOutputQuantile(keras.Model):
 def compileModel(my_model, optimizer, loss, metrics):
     my_model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
-def fitModel(my_model, x, y, epochs, verbose=2):
-    return my_model.fit(x=x, y=y, epochs=epochs, verbose=verbose)
+def fitModel(my_model, x, y, epochs, callbacks, verbose=2):
+    return my_model.fit(x=x, y=y, epochs=epochs, callbacks=callbacks, verbose=verbose)
 
 def evaluateModel(my_model, x, y, verbose=1, return_dict=True):
     return my_model.evaluate(x=x, y=y, verbose=verbose, return_dict=return_dict)
