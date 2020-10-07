@@ -8,9 +8,11 @@ class EncoderBlock(layers.Layer):
     Encoder block that takes as input a time series and a numerial representation of a county name
     and creates a learned representation to be processed further in the model.
     """
-    def __init__(self, rnn_units, rnn_layer, rnn_activation):
+    def __init__(self, rnn_units, rnn_layer, rnn_activation, l1=0, l2=0, dropout=0):
         super(EncoderBlock, self).__init__()
-        self.hidden_rnn = rnn_layer(rnn_units, activation=rnn_activation, name="rnn_encoder")
+        regularizer = tf.keras.regularizers.L1L2(l1=l1, l2=l2)
+        self.hidden_rnn = rnn_layer(rnn_units, activation=rnn_activation, kernel_regularizer=regularizer, dropout=dropout,
+                                    name="rnn_encoder")
         self.hidden_dense = layers.Dense(1, name="name_encoder")
 
     def call(self, inputs):
@@ -23,9 +25,9 @@ class RNNMultiOutputIndividual(keras.Model):
     """
     Multi output RNN model with individual weights on the output nodes.
     """
-    def __init__(self, output_size, rnn_units, rnn_layer, rnn_activation):
+    def __init__(self, output_size, rnn_units, rnn_layer, rnn_activation, l1, l2, dropout):
         super(RNNMultiOutputIndividual, self).__init__()
-        self.encoder = EncoderBlock(rnn_units, rnn_layer, rnn_activation)
+        self.encoder = EncoderBlock(rnn_units, rnn_layer, rnn_activation, l1, l2, dropout)
 
         self.c_out = layers.Dense(output_size, name="confirmed")
         self.d_out = layers.Dense(output_size, name="deceased")

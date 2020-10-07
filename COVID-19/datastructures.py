@@ -13,6 +13,10 @@ EPOCHS = 300
 VERBOSE = 2
 EVAL_VERBOSE = 0
 
+L1 = 0
+L2 = 0
+DROPOUT = 0
+
 EXAMPLE_COUTRIES = ["United Kingdom", "Germany", "France", "Spain", "Italy", "Brazil", "US", "Mexico", "Australia", "Pakistan",
                     "Yemen", "Afghanistan", "China", "India", "Angola", "Nigeria"]
 
@@ -40,7 +44,7 @@ COMPILE_PARAMS = {"optimizer" : tf.keras.optimizers.Adam(),
 QUANTILE_LOSSES = [tfa.losses.PinballLoss(tau=0.05), tfa.losses.PinballLoss(tau=0.5), tfa.losses.PinballLoss(tau=0.95)]
 
 # The multi output quantile model requires a quantile loss for each output node.
-MULTI_QUANTILE_LOSSES = [QUANTILE_LOSSES for _  in range(len(QUANTILE_LOSSES))]  # Make copies.
+MULTI_QUANTILE_LOSSES = [QUANTILE_LOSSES for _ in range(len(QUANTILE_LOSSES))]  # Make copies.
 MULTI_QUANTILE_LOSSES = [item for sublist in MULTI_QUANTILE_LOSSES for item in sublist]  # Flatten list of lists.
 
 QUANTILE_METRICS = [tf.keras.metrics.MeanSquaredError(), tf.keras.metrics.RootMeanSquaredError(),
@@ -49,9 +53,11 @@ QUANTILE_METRICS = [tf.keras.metrics.MeanSquaredError(), tf.keras.metrics.RootMe
                     tfa.losses.PinballLoss(tau=0.95, name="q0.95")]
 
 # Create models.
-MULTI_MODELS = {"multiOutIndvLstm" : models.RNNMultiOutputIndividual(OUTPUT_SIZE, UNITS, RNN_LAYERS["lstm"], ACTIVATIONS["tanh"]),
+MULTI_MODELS = {"multiOutIndvLstm" : models.RNNMultiOutputIndividual(OUTPUT_SIZE, UNITS, RNN_LAYERS["lstm"],
+                                                                     ACTIVATIONS["tanh"], l1=L1, l2=L2, dropout=DROPOUT),
                 "multiOutSharedLstm" : models.RNNMultiOutputShared(OUTPUT_SIZE, UNITS, RNN_LAYERS["lstm"], ACTIVATIONS["tanh"]),
-                "multiOutIndvGru" : models.RNNMultiOutputIndividual(OUTPUT_SIZE, UNITS, RNN_LAYERS["gru"], ACTIVATIONS["tanh"]),
+                "multiOutIndvGru" : models.RNNMultiOutputIndividual(OUTPUT_SIZE, UNITS, RNN_LAYERS["gru"], ACTIVATIONS["tanh"],
+                                                                    l1=L1, l2=L2, dropout=DROPOUT),
                 "multiOutSharedGru" : models.RNNMultiOutputShared(OUTPUT_SIZE, UNITS, RNN_LAYERS["gru"], ACTIVATIONS["tanh"])}
 
 SINGLE_MODELS = {"singleOutSharedLstm" : models.RNNSingleOutput(OUTPUT_SIZE, UNITS, RNN_LAYERS["lstm"], ACTIVATIONS["tanh"]),
