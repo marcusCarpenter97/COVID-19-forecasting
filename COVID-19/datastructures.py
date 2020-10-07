@@ -13,7 +13,8 @@ EPOCHS = 300
 VERBOSE = 2
 EVAL_VERBOSE = 0
 
-EXAMPLE_COUTRIES = ["United Kingdom", "Germany", "France", "Spain", "Italy"]
+EXAMPLE_COUTRIES = ["United Kingdom", "Germany", "France", "Spain", "Italy", "Brazil", "US", "Mexico", "Australia", "Pakistan",
+                    "Yemen", "Afghanistan", "China", "India", "Angola", "Nigeria"]
 
 CHECKPOINT_PATHS = {"multiOutIndvLstm": "checkpoints/multiOutIndvLstm.ckpt",
                     "multiOutSharedLstm": "checkpoints/multiOutSharedLstm.ckpt",
