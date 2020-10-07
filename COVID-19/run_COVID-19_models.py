@@ -69,6 +69,15 @@ lstm_predictions = reshape_predictions(lstm_mulit_out_pred)
 rescaled_gru_predictions = COVID_DATA.destandarize_data(gru_predictions)
 rescaled_lstm_predictions = COVID_DATA.destandarize_data(lstm_predictions)
 
+# Calculate error values for predictions.
+gru_error = COVID_DATA.calculate_error(rescaled_gru_predictions)
+lstm_error = COVID_DATA.calculate_error(rescaled_lstm_predictions)
+
+print("\nGRU errors")
+print_error_scores(gru_error, EXAMPLE_COUTRIES)
+print("\nLSTM errors")
+print_error_scores(lstm_error, EXAMPLE_COUTRIES)
+
 # Plot predictions vs data.
 def prepare_country_data_for_plots(name, enc_names, prediction_data):
     country = COVID_DATA.find_country(name)
