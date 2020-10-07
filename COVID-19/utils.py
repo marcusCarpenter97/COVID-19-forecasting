@@ -83,3 +83,8 @@ def reshape_predictions(mulit_out_pred):
     for c, d, r in zip(mulit_out_pred[0], mulit_out_pred[1], mulit_out_pred[2]):
         predictions.append(np.stack([c, d, r]).T)
     return np.stack(predictions)
+
+def print_error_scores(errors, countries):
+    for country in countries:
+        print(f"Error scores for {country}")
+        pprint(errors[country])
