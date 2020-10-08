@@ -118,7 +118,6 @@ for idx, lstm_error in enumerate(lstm_errors):
 country = COVID_DATA.find_country("United Kingdom")
 country_idx = (enc_names == country.encoded_name).all(axis=1).nonzero()
 
-
 # Get UK predictions from the results.
 gru_preds_to_plot = []
 for gru_pred in gru_predictions:
@@ -131,22 +130,25 @@ for lstm_pred in lstm_predictions:
     lstm_preds_to_plot.append(country_predictions.reshape(country_predictions.shape[1], country_predictions.shape[2]).T)
 
 # Plot all the models with the original data.
-fig, ax = plt.subplots()
-ax.plot(country.test_y.T)
-for pred in gru_preds_to_plot:
-    ax.plot(pred)
-ax.set_title("Effects of regularizing the GRU")
-ax.set_xlabel("Days")
-ax.set_ylabel("People")
-ax.legend(["Original", "No reg", "L1 = 0.01", "L2 = 0.01", "dropout = 0.2", "L1_L2 = 0.01", "All reg"])
+sub_titles = ["Confirmed", "Deceased", "Recovered"]
+fig, axes = plt.subplots(1, 3, constrained_layout=True)
+fig.suptitle("Effects of regularizing the GRU")
+for feature_idx, ax in enumerate(axes):
+    ax.plot(country.test_y.T[feature_idx])
+    for pred in gru_preds_to_plot:
+        ax.plot(pred[feature_idx])
+    ax.set_xlabel("Days")
+    ax.set_ylabel("People")
+    ax.legend(["Original", "No reg", "L1 = 0.01", "L2 = 0.01", "dropout = 0.2", "L1_L2 = 0.01", "All reg"])
 
-fig, ax = plt.subplots()
-ax.plot(country.test_y.T)
-for pred in lstm_preds_to_plot:
-    ax.plot(pred)
-ax.set_title("Effects of regularizing the LSTM")
-ax.set_xlabel("Days")
-ax.set_ylabel("People")
-ax.legend(["Original", "No reg", "L1 = 0.01", "L2 = 0.01", "dropout = 0.2", "L1_L2 = 0.01", "All reg"])
+fig, axes = plt.subplots(1, 3, constrained_layout=True)
+fig.suptitle("Effects of regularizing the LSTM")
+for feature_idx, ax in enumerate(axes):
+    ax.plot(country.test_y.T[feature_idx])
+    for pred in gru_preds_to_plot:
+        ax.plot(pred[feature_idx])
+    ax.set_xlabel("Days")
+    ax.set_ylabel("People")
+    ax.legend(["Original", "No reg", "L1 = 0.01", "L2 = 0.01", "dropout = 0.2", "L1_L2 = 0.01", "All reg"])
 
 plt.show()
