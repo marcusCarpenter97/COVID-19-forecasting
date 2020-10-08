@@ -130,27 +130,56 @@ for lstm_pred in lstm_predictions:
     lstm_preds_to_plot.append(country_predictions.reshape(country_predictions.shape[1], country_predictions.shape[2]).T)
 
 # Plot all the models with the original data.
-sub_titles = ["Confirmed", "Deceased", "Recovered"]
-fig, axes = plt.subplots(1, 3, constrained_layout=True)
-fig.suptitle("Effects of regularizing the GRU")
-for feature_idx, ax in enumerate(axes):
-    ax.plot(country.test_y.T[feature_idx])
-    for pred in gru_preds_to_plot:
-        ax.plot(pred[feature_idx])
-    ax.set_title(sub_titles[feature_idx])
-    ax.set_xlabel("Days")
-    ax.set_ylabel("People")
-    ax.legend(["Original", "No reg", "L1 = 0.01", "L2 = 0.01", "dropout = 0.2", "L1_L2 = 0.01", "All reg"])
+def plot_reg_res(model_type, preds_to_plot):
+    sub_titles = ["Confirmed", "Deceased", "Recovered"]
+    fig, axes = plt.subplots(1, 3, constrained_layout=True)
+    fig.suptitle(f"Effects of regularizing the {model_type}")
+    for feature_idx, ax in enumerate(axes):
+        ax.plot(country.test_y.T[feature_idx])
+        for pred in preds_to_plot:
+            ax.plot(pred[feature_idx])
+        ax.set_title(sub_titles[feature_idx])
+        ax.set_xlabel("Days")
+        ax.set_ylabel("People")
+        ax.legend(["Original", "No reg", "L1 = 0.01", "L2 = 0.01", "dropout = 0.2", "L1_L2 = 0.01", "All reg"])
 
-fig, axes = plt.subplots(1, 3, constrained_layout=True)
-fig.suptitle("Effects of regularizing the LSTM")
-for feature_idx, ax in enumerate(axes):
-    ax.plot(country.test_y.T[feature_idx])
-    for pred in lstm_preds_to_plot:
-        ax.plot(pred[feature_idx])
-    ax.set_title(sub_titles[feature_idx])
-    ax.set_xlabel("Days")
-    ax.set_ylabel("People")
-    ax.legend(["Original", "No reg", "L1 = 0.01", "L2 = 0.01", "dropout = 0.2", "L1_L2 = 0.01", "All reg"])
+plot_reg_res("GRU", gru_preds_to_plot)
+plot_reg_res("LSTM", lstm_preds_to_plot)
+
+def result_generator():
+    for country in EXAMPLE_COUTRIES:
+        gru_res, lstm_res = [], []
+        for gru_experiment, lstm_experiment in zip(gru_errors, lstm_errors):
+            gru_res.append(gru_experiment[country]["RMSE"])
+            lstm_res.append(lstm_experiment[country]["RMSE"])
+        yield np.stack(gru_res).T, np.stack(lstm_res).T
+
+res_gen = result_generator()
+
+exp_num = 6  # six experiments
+bar_idx = np.arange(exp_num)  # Positions for bar on plot.
+width = 0.3  # width for bars in plot.
+
+# Plot histograms of RMSE comparing LSTM and GRU.
+sub_titles = ["Confirmed", "Deceased", "Recovered"]
+fig, axes = plt.subplots(len(EXAMPLE_COUTRIES), 3, constrained_layout=True)
+#fig.suptitle("Comparison of RMSE for LSTM (blue) and GRU (orange) models with different regularization methods")
+for row_idx, row in enumerate(axes):
+    gru_res, lstm_res = next(res_gen)
+    for column_idx, column in enumerate(row):
+        column.bar(bar_idx, gru_res[column_idx], width, color="orange")
+        column.bar(bar_idx+width, lstm_res[column_idx], width, color="b")
+        column.set_xticks([0, 1, 2, 3, 4, 5])
+        column.set_xticklabels(["No reg", "L1", "L2", "Dropout", "L1L2", "All reg"])
+        # Only add title for columns on the first row
+        if row_idx == 0:
+            column.set_title(sub_titles[column_idx])
+        # Add the country's name to the y axis on the first column
+        if column_idx == 0:
+            if EXAMPLE_COUTRIES[row_idx] == "United Kingdom":
+                column.set_ylabel("UK")
+            else:
+                column.set_ylabel(EXAMPLE_COUTRIES[row_idx])
+fig.align_ylabels()
 
 plt.show()
