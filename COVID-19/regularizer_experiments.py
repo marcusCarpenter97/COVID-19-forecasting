@@ -137,6 +137,7 @@ for feature_idx, ax in enumerate(axes):
     ax.plot(country.test_y.T[feature_idx])
     for pred in gru_preds_to_plot:
         ax.plot(pred[feature_idx])
+    ax.set_title(sub_titles[feature_idx])
     ax.set_xlabel("Days")
     ax.set_ylabel("People")
     ax.legend(["Original", "No reg", "L1 = 0.01", "L2 = 0.01", "dropout = 0.2", "L1_L2 = 0.01", "All reg"])
@@ -145,8 +146,9 @@ fig, axes = plt.subplots(1, 3, constrained_layout=True)
 fig.suptitle("Effects of regularizing the LSTM")
 for feature_idx, ax in enumerate(axes):
     ax.plot(country.test_y.T[feature_idx])
-    for pred in gru_preds_to_plot:
+    for pred in lstm_preds_to_plot:
         ax.plot(pred[feature_idx])
+    ax.set_title(sub_titles[feature_idx])
     ax.set_xlabel("Days")
     ax.set_ylabel("People")
     ax.legend(["Original", "No reg", "L1 = 0.01", "L2 = 0.01", "dropout = 0.2", "L1_L2 = 0.01", "All reg"])
