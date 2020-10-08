@@ -17,8 +17,7 @@ L1 = 0
 L2 = 0
 DROPOUT = 0
 
-EXAMPLE_COUTRIES = ["United Kingdom", "Germany", "France", "Spain", "Italy", "Brazil", "US", "Mexico", "Australia", "Pakistan",
-                    "Yemen", "Afghanistan", "China", "India", "Angola", "Nigeria"]
+EXAMPLE_COUTRIES = ["United Kingdom", "Spain", "Brazil", "US", "Mexico", "Australia", "Pakistan", "China", "India"]
 
 CHECKPOINT_PATHS = {"multiOutIndvLstm": "checkpoints/multiOutIndvLstm.ckpt",
                     "multiOutSharedLstm": "checkpoints/multiOutSharedLstm.ckpt",
