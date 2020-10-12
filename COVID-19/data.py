@@ -144,6 +144,17 @@ class Data:
         for country in self.countries:
             country.standarize()
 
+    def cross_validate(self, train_size, horizon):
+        """
+        Cross validate data for all countries.
+        """
+        train, val, test_x, test_y = [], [], [], []
+        for country in self.countries:
+            tr, v, te_x, te_y = country.split_k_fold(train_size, horizon)
+            train.append(tr), val.append(v), test_x.append(te_x), test_y.append(te_y)
+
+        return np.stack(train), np.stack(val), np.stack(test_x), np.stack(test_y)
+
     def destandarize_data(self, predictions):
         """
         Destandarize the predictions for all countries.
