@@ -93,11 +93,13 @@ class Country:
                 print(f"RuntimeWarning: {runw}")
                 print("The numbers given to exp where too big and caused an error. The data wasn't affected.")
 
-    # TODO ?
-    def find_divisor_offset(self, num, div):
+    def find_divisor_offset(self, div):
         """
         Calculates an offset to make the data divisible by the horizon.
         By finding the greatest divisor of div that is smaller than num.
+
+        div  - int - horizon
+        returns offset - int
 
         Example: If splitting the data into weeks.
         num = 137
@@ -109,7 +111,34 @@ class Country:
         137 - 4 = 133
         133/7 = 19 (Divisible)
         """
-        return num - ((num//div)*div)
+        # Find how many days have to be cut of the start to make the data divisible by the horizon.
+        # This is required as the cross validation folds must the the same size.
+        time_steps = len(self.data)
+        return time_steps - ((time_steps//div)*div)
+
+    def split_k_fold(self, train_size, horizon):
+        """
+        train_size - int - number of time steps in the train data.
+        horizon - int - number of time steps to be forecasted.
+        """
+
+        # Remove the last two columns of data (Infected and Healthy) as they will not be needed in the model.
+        temp_data = self.data.values[:, [0,1,2]]
+
+        # Make = the data divisible by the horizon to guarantee all k folds have the same size.
+        # Cuts out the old data instead of the new time steps.
+        offset = self.find_divisor_offset(horizon)
+        temp_data = temp_data[offset:]
+
+        val_end = train_size + horizon
+        test_end = train_size + horizon * 2
+
+        train = temp_data[:train_size]
+        val = temp_data[train_size:val_end]
+        test_x = temp_data[:val_end]
+        test_y = temp_data[val_end:test_end]
+
+        return train, val, test_x, test_y
 
     def split_data(self, test_size):
         """
