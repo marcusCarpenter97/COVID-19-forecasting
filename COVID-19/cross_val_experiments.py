@@ -8,8 +8,8 @@ H = 28
 F = 3
 PADDING = np.full((H, F), PAD_VAL)
 
-d = data.Data()
-cv = cross_validation.CrossValidate(d, H)
+D = data.Data()
+cv = cross_validation.CrossValidate(D, H)
 train, val, test_x, test_y = cv.split_data()
 
 def standardize_data(data):
@@ -56,6 +56,15 @@ def pad_data(data, offset=0):
         padded_scaled_data.append(np.stack(padded_fold))
     return padded_scaled_data
 
+def prepare_output_data(data):
+    """
+    data - list
+    """
+    multi_out_data = []
+    for fold in data:
+        multi_out_data.append(D.make_multi_output_data(fold))
+    return multi_out_data
+
 idx = 1
 for tr, v, te_x, te_y in zip(train, val, test_x, test_y):
     print(f"{idx}")
@@ -75,15 +84,6 @@ scaled_test_y, test_y_scalers = standardize_data(test_y)
 
 print(scaled_test_y[2][0])
 
-idx = 1
-for tr, v, te_x, te_y in zip(scaled_train, scaled_val, scaled_test_x, scaled_test_y):
-    print(f"{idx}")
-    idx += 1
-    print(f"train fold {tr.shape}")
-    print(f"val fold {v.shape}")
-    print(f"test input fold {te_x.shape}")
-    print(f"test output fold {te_y.shape}")
-
 rescaled_test_y = destandardize_data(scaled_test_y, test_y_scalers)
 print(rescaled_test_y[2][0])
 
@@ -98,7 +98,19 @@ print(f"padded scaled test x: {len(padded_scaled_test_x)}")
 for fold in padded_scaled_test_x:
     print(f"padded scaled test x: {fold.shape}")
 
-# make data multi output.
+
+print(f"Scaled val len: {len(scaled_val)}")
+print(f"Scaled val shape: {scaled_val[0].shape}")
+multi_out_scaled_val = prepare_output_data(scaled_val)
+print(f"Multi out scaled val len: {len(multi_out_scaled_val)}")
+print(f"Multi out scaled val shape: {multi_out_scaled_val[0].shape}")
+
+print(f"Scaled test_y len: {len(scaled_test_y)}")
+print(f"Scaled test_y shape: {scaled_test_y[0].shape}")
+multi_out_scaled_test_y = prepare_output_data(scaled_test_y)
+print(f"Multi out scaled test_y len: {len(multi_out_scaled_test_y)}")
+print(f"Multi out scaled test_y shape: {multi_out_scaled_test_y[0].shape}")
+
 # make input use the names.
 # make model use masking.
 # train model on each validation fold repreat for each regularizer experiment.
