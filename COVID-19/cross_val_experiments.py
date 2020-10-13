@@ -1,11 +1,15 @@
 import numpy as np
+from sklearn.preprocessing import StandardScaler
 import data
 import cross_validation
-from sklearn.preprocessing import StandardScaler
 
-h = 28
+PAD_VAL = -10000
+H = 28
+F = 3
+PADDING = np.full((H, F), PAD_VAL)
+
 d = data.Data()
-cv = cross_validation.CrossValidate(d, h)
+cv = cross_validation.CrossValidate(d, H)
 train, val, test_x, test_y = cv.split_data()
 
 def standardize_data(data):
@@ -29,13 +33,28 @@ def destandardize_data(data, scalers):
     """
     data - list
     """
-    rescaled_data =[]
+    rescaled_data = []
     for fold, scaler_fold in zip(data, scalers):
         rescaled_fold = []
         for country, scaler in zip(fold, scaler_fold):
-           rescaled_fold.append(scaler.inverse_transform(country))
+            rescaled_fold.append(scaler.inverse_transform(country))
         rescaled_data.append(np.stack(rescaled_fold))
     return rescaled_data
+
+def pad_data(data, offset=0):
+    """
+    data - list
+    """
+    padded_scaled_data = []
+    folds = len(data) - offset
+    for fold in data:
+        padded_fold = []
+        fold_padding = np.repeat(PADDING, folds).reshape(H*folds, F)
+        for row in fold:
+            padded_fold.append(np.insert(row, 0, fold_padding, axis=0))
+        folds -= 1
+        padded_scaled_data.append(np.stack(padded_fold))
+    return padded_scaled_data
 
 idx = 1
 for tr, v, te_x, te_y in zip(train, val, test_x, test_y):
@@ -68,5 +87,19 @@ for tr, v, te_x, te_y in zip(scaled_train, scaled_val, scaled_test_x, scaled_tes
 rescaled_test_y = destandardize_data(scaled_test_y, test_y_scalers)
 print(rescaled_test_y[2][0])
 
-#TODO: split, standardire and rescale done.
-#TODO: pad and mask models.
+padded_scaled_train = pad_data(scaled_train)
+padded_scaled_test_x = pad_data(scaled_test_x, offset=1)
+
+print(f"padded scaled train : {len(padded_scaled_train)}")
+for fold in padded_scaled_train:
+    print(f"padded scaled train : {fold.shape}")
+
+print(f"padded scaled test x: {len(padded_scaled_test_x)}")
+for fold in padded_scaled_test_x:
+    print(f"padded scaled test x: {fold.shape}")
+
+# make data multi output.
+# make input use the names.
+# make model use masking.
+# train model on each validation fold repreat for each regularizer experiment.
+# save results.
