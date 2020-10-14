@@ -1,3 +1,6 @@
+import os
+import pickle
+import pandas as pd
 import tensorflow as tf
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -6,6 +9,7 @@ import models
 from utils import reshape_predictions
 
 # Global variables
+SAVE_DIR = "cross_val_results"
 PAD_VAL = -10000
 H = 28
 F = 3
@@ -106,6 +110,21 @@ def prepare_predictions(data):
     data = reshape_predictions(data)
     return D.destandarize_data(data)
 
+def pickle_data(data, file_name):
+    file_path = os.path.join(SAVE_DIR, file_name)
+    with open(file_path, "wb") as new_file:
+        pickle.dump(data, new_file, protocol=pickle.DEFAULT_PROTOCOL)
+
+def save_to_csv(data, file_name):
+    file_path = os.path.join(SAVE_DIR, file_name)
+    temp_df = pd.DataFrame(data)
+    temp_df.to_csv(file_path, index=False)
+
+def save_to_npz(data, file_name):
+    file_path = os.path.join(SAVE_DIR, file_name)
+    with open(file_path, "wb") as new_file:
+        np.savez(new_file, data)
+
 if __name__ == "__main__":
 
     D = data.Data()  # This loads the data.
@@ -164,12 +183,11 @@ if __name__ == "__main__":
     print(f"Multi out scaled test_y len: {len(multi_out_scaled_test_y)}")
     print(f"Multi out scaled test_y shape: {multi_out_scaled_test_y[0].shape}")
 
-    raise SystemExit
-
     # Validation loop.
+    fold_idx = 1
     data = zip(padded_scaled_train, padded_scaled_test_x, multi_out_scaled_val, multi_out_scaled_test_y)
     for tr, te_x, v, te_y in data:
-        for reg_val in REG_VALS:
+        for reg_idx, reg_val in enumerate(REG_VALS):
             # create models
             lstm_model = models.RNNMultiOutputIndividual(OUTPUT_SIZE, UNITS, RNN_LAYERS["lstm"], ACTIVATIONS["tanh"], PAD_VAL,
                                                          l1=reg_val[0], l2=reg_val[1], dropout=reg_val[2])
@@ -181,8 +199,8 @@ if __name__ == "__main__":
             models.compileModel(gru_model, COMPILE_PARAMS["optimizer"], COMPILE_PARAMS["loss"], COMPILE_PARAMS["metrics"])
 
             # train models
-            models.fitModel(lstm_model, [tr, enc_names], [v[0], v[1], v[2]], EPOCHS, verbose=0)
-            models.fitModel(gru_model, [tr, enc_names], [v[0], v[1], v[2]], EPOCHS, verbose=0)
+            lstm_hist = models.fitModel(lstm_model, [tr, enc_names], [v[0], v[1], v[2]], EPOCHS, verbose=0)
+            gru_hist = models.fitModel(gru_model, [tr, enc_names], [v[0], v[1], v[2]], EPOCHS, verbose=0)
 
             # evaluate models
             lstm_eval = models.evaluateModel(lstm_model, x=[te_x, enc_names], y=[te_y[0], te_y[1], te_y[2]])
@@ -200,4 +218,34 @@ if __name__ == "__main__":
             lstm_errors = D.calculate_error(lstm_pred)
             gru_errors = D.calculate_error(gru_pred)
 
-    # save results.
+            # make file names for saving results
+            lstm_name = f"lstm_reg{reg_idx}_fold{fold_idx}"
+            gru_name = f"gru_reg{reg_idx}_fold{fold_idx}"
+
+            # save model's training history
+            pickle_data(lstm_hist, lstm_name)
+            pickle_data(gru_hist, gru_name)
+
+            # save model's evaluation results
+            save_to_csv(lstm_eval, lstm_name)
+            save_to_csv(gru_eval, gru_name)
+
+            # save model's predictions
+            save_to_npz(lstm_pred, lstm_name)
+            save_to_npz(gru_pred, gru_name)
+
+            # save model's error scores
+            save_to_csv(lstm_errors, lstm_name)
+            save_to_csv(gru_errors, gru_name)
+
+            fold_idx += 1
+
+    # save original data
+    orig_data = {"train": padded_scaled_train,
+                 "test_x": padded_scaled_test_x,
+                 "validation": multi_out_scaled_val,
+                 "test_y": multi_out_scaled_test_y}
+
+    file_path = os.path.join(SAVE_DIR, "original_data")
+    orig_df = pd.DataFrame(orig_data)
+    orig_df.to_csv(file_path, index=False)
