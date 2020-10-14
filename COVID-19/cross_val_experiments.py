@@ -32,7 +32,6 @@ REG_VALS = [[0, 0, 0],  # No regularization
             ]
 
 PADDING = np.full((H, F), PAD_VAL)
-D = data.Data()  # This loads the data.
 
 def split_data(data, horizon):
     train, val, test_x, test_y = [], [], [], []
@@ -109,6 +108,10 @@ def prepare_predictions(data):
 
 if __name__ == "__main__":
 
+    D = data.Data()  # This loads the data.
+
+    enc_names = D.encode_names()  # Encode the countrie's names.
+
     # Prepare all the k-foldas fot the cross validation.
     train, val, test_x, test_y = split_data(D, H)
 
@@ -168,9 +171,9 @@ if __name__ == "__main__":
     for tr, te_x, v, te_y in data:
         for reg_val in REG_VALS:
             # create models
-            lstm_model = models.RNNMultiOutputIndividual(OUTPUT_SIZE, UNITS, RNN_LAYERS["lstm"], ACTIVATIONS["tanh"],
+            lstm_model = models.RNNMultiOutputIndividual(OUTPUT_SIZE, UNITS, RNN_LAYERS["lstm"], ACTIVATIONS["tanh"], PAD_VAL,
                                                          l1=reg_val[0], l2=reg_val[1], dropout=reg_val[2])
-            gru_model = models.RNNMultiOutputIndividual(OUTPUT_SIZE, UNITS, RNN_LAYERS["gru"], ACTIVATIONS["tanh"],
+            gru_model = models.RNNMultiOutputIndividual(OUTPUT_SIZE, UNITS, RNN_LAYERS["gru"], ACTIVATIONS["tanh"], PAD_VAL,
                                                         l1=reg_val[0], l2=reg_val[1], dropout=reg_val[2])
 
             # compile models
@@ -178,16 +181,16 @@ if __name__ == "__main__":
             models.compileModel(gru_model, COMPILE_PARAMS["optimizer"], COMPILE_PARAMS["loss"], COMPILE_PARAMS["metrics"])
 
             # train models
-            models.fitModel(lstm_model, tr, [v[0], v[1], v[2]], EPOCHS, callbacks=[], verbose=0)
-            models.fitModel(gru_model, tr, [v[0], v[1], v[2]], EPOCHS, callbacks=[], verbose=0)
+            models.fitModel(lstm_model, [tr, enc_names], [v[0], v[1], v[2]], EPOCHS, verbose=0)
+            models.fitModel(gru_model, [tr, enc_names], [v[0], v[1], v[2]], EPOCHS, verbose=0)
 
             # evaluate models
-            lstm_eval = models.evaluateModel(lstm_model, x=te_x, y=[te_y[0], te_y[1], te_y[2]])
-            gru_eval = models.evaluateModel(gru_model, x=te_x, y=[te_y[0], te_y[1], te_y[2]])
+            lstm_eval = models.evaluateModel(lstm_model, x=[te_x, enc_names], y=[te_y[0], te_y[1], te_y[2]])
+            gru_eval = models.evaluateModel(gru_model, x=[te_x, enc_names], y=[te_y[0], te_y[1], te_y[2]])
 
             # make predictions
-            lstm_pred = lstm_model.predict(te_x)
-            gru_pred = gru_model.predict(te_x)
+            lstm_pred = lstm_model.predict([te_x, enc_names])
+            gru_pred = gru_model.predict([te_x, enc_names])
 
             # rescale predictions
             lstm_pred = prepare_predictions(lstm_pred)
@@ -197,7 +200,4 @@ if __name__ == "__main__":
             lstm_errors = D.calculate_error(lstm_pred)
             gru_errors = D.calculate_error(gru_pred)
 
-    # make input use the names.
-    # make model use masking.
-    # train model on each validation fold repreat for each regularizer experiment.
     # save results.
