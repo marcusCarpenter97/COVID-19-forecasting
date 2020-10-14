@@ -102,13 +102,13 @@ def prepare_output_data(data):
         multi_out_data.append(D.make_multi_output_data(fold))
     return multi_out_data
 
-def prepare_predictions(data):
+def prepare_predictions(data, test_y_scalers):
     """
     data - list
     """
     data = np.stack(data)
     data = reshape_predictions(data)
-    return D.destandarize_data(data)
+    return destandardize_data(data, test_y_scalers)
 
 def pickle_data(data, file_name):
     file_path = os.path.join(SAVE_DIR, file_name)
@@ -140,8 +140,6 @@ if __name__ == "__main__":
     scaled_test_x, _ = standardize_data(test_x)
     scaled_test_y, test_y_scalers = standardize_data(test_y)
 
-    rescaled_test_y = destandardize_data(scaled_test_y, test_y_scalers)
-
     # Pad the input data as they all must be in the same shape.
     # The cross validation makes each sample a different size.
     padded_scaled_train = pad_data(scaled_train)
@@ -169,20 +167,22 @@ if __name__ == "__main__":
             models.compileModel(gru_model, COMPILE_PARAMS["optimizer"], COMPILE_PARAMS["loss"], COMPILE_PARAMS["metrics"])
 
             # train models
+            print("Training LSTM")
             lstm_hist = models.fitModel(lstm_model, [tr, enc_names], [v[0], v[1], v[2]], EPOCHS, verbose=0)
+            print("Training GRU")
             gru_hist = models.fitModel(gru_model, [tr, enc_names], [v[0], v[1], v[2]], EPOCHS, verbose=0)
 
             # evaluate models
-            lstm_eval = models.evaluateModel(lstm_model, x=[te_x, enc_names], y=[te_y[0], te_y[1], te_y[2]])
-            gru_eval = models.evaluateModel(gru_model, x=[te_x, enc_names], y=[te_y[0], te_y[1], te_y[2]])
+            lstm_eval = models.evaluateModel(lstm_model, x=[te_x, enc_names], y=[te_y[0], te_y[1], te_y[2]], verbose=0)
+            gru_eval = models.evaluateModel(gru_model, x=[te_x, enc_names], y=[te_y[0], te_y[1], te_y[2]], verbose=0)
 
             # make predictions
             lstm_pred = lstm_model.predict([te_x, enc_names])
             gru_pred = gru_model.predict([te_x, enc_names])
 
             # rescale predictions
-            lstm_pred = prepare_predictions(lstm_pred)
-            gru_pred = prepare_predictions(gru_pred)
+            lstm_pred = prepare_predictions(lstm_pred, test_y_scalers)
+            gru_pred = prepare_predictions(gru_pred, test_y_scalers)
 
             # calculate RMSE
             lstm_errors = D.calculate_error(lstm_pred)
