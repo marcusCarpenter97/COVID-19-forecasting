@@ -1,12 +1,38 @@
+import tensorflow as tf
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 import data
+import models
+from utils import reshape_predictions
 
+# Global variables
 PAD_VAL = -10000
 H = 28
 F = 3
+UNITS = 100
+OUTPUT_SIZE = 28
+EPOCHS = 300
+
+ACTIVATIONS = {"tanh" : tf.keras.activations.tanh,
+               "relu" : tf.keras.activations.relu}
+
+RNN_LAYERS = {"lstm" : tf.keras.layers.LSTM,
+              "gru" : tf.keras.layers.GRU}
+
+COMPILE_PARAMS = {"optimizer" : tf.keras.optimizers.Adam(),
+                  "loss" : tf.keras.losses.MeanSquaredError(),
+                  "metrics" : [tf.keras.metrics.MeanSquaredError(), tf.keras.metrics.RootMeanSquaredError()]}
+
+REG_VALS = [[0, 0, 0],  # No regularization
+            [0.01, 0, 0],  # Default L1 only.
+            [0, 0.01, 0],  # Default L2 only.
+            [0, 0, 0.2],  # Small dropout only.
+            [0.01, 0.01, 0],  # Default L1 and L2, no dropout.
+            [0.01, 0.01, 0.2]  # All regularizers.
+            ]
+
 PADDING = np.full((H, F), PAD_VAL)
-D = data.Data()
+D = data.Data()  # This loads the data.
 
 def split_data(data, horizon):
     train, val, test_x, test_y = [], [], [], []
@@ -59,7 +85,7 @@ def pad_data(data, offset=0):
         padded_fold = []
         fold_padding = np.repeat(PADDING, folds).reshape(H*folds, F)
         for row in fold:
-            padded_fold.append(np.insert(row, 0, fold_padding, axis=0))
+            padded_fold.append(np.append(row, fold_padding, axis=0))
         folds -= 1
         padded_scaled_data.append(np.stack(padded_fold))
     return padded_scaled_data
@@ -73,9 +99,17 @@ def prepare_output_data(data):
         multi_out_data.append(D.make_multi_output_data(fold))
     return multi_out_data
 
+def prepare_predictions(data):
+    """
+    data - list
+    """
+    data = np.stack(data)
+    data = reshape_predictions(data)
+    return D.destandarize_data(data)
 
 if __name__ == "__main__":
 
+    # Prepare all the k-foldas fot the cross validation.
     train, val, test_x, test_y = split_data(D, H)
 
     idx = 1
@@ -90,6 +124,7 @@ if __name__ == "__main__":
     print("Pre scale example")
     print(test_y[2][0])
 
+    # Standardize all the data to make it easier to train the model.
     scaled_train, _ = standardize_data(train)
     scaled_val, _ = standardize_data(val)
     scaled_test_x, _ = standardize_data(test_x)
@@ -100,6 +135,8 @@ if __name__ == "__main__":
     rescaled_test_y = destandardize_data(scaled_test_y, test_y_scalers)
     print(rescaled_test_y[2][0])
 
+    # Pad the input data as they all must be in the same shape.
+    # The cross validation makes each sample a different size.
     padded_scaled_train = pad_data(scaled_train)
     padded_scaled_test_x = pad_data(scaled_test_x, offset=1)
 
@@ -111,18 +148,54 @@ if __name__ == "__main__":
     for fold in padded_scaled_test_x:
         print(f"padded scaled test x: {fold.shape}")
 
-
+    # The output data must be split by features as the model used a separate branch for each of them.
+    multi_out_scaled_val = prepare_output_data(scaled_val)
+    multi_out_scaled_test_y = prepare_output_data(scaled_test_y)
     print(f"Scaled val len: {len(scaled_val)}")
     print(f"Scaled val shape: {scaled_val[0].shape}")
-    multi_out_scaled_val = prepare_output_data(scaled_val)
     print(f"Multi out scaled val len: {len(multi_out_scaled_val)}")
     print(f"Multi out scaled val shape: {multi_out_scaled_val[0].shape}")
 
     print(f"Scaled test_y len: {len(scaled_test_y)}")
     print(f"Scaled test_y shape: {scaled_test_y[0].shape}")
-    multi_out_scaled_test_y = prepare_output_data(scaled_test_y)
     print(f"Multi out scaled test_y len: {len(multi_out_scaled_test_y)}")
     print(f"Multi out scaled test_y shape: {multi_out_scaled_test_y[0].shape}")
+
+    raise SystemExit
+
+    # Validation loop.
+    data = zip(padded_scaled_train, padded_scaled_test_x, multi_out_scaled_val, multi_out_scaled_test_y)
+    for tr, te_x, v, te_y in data:
+        for reg_val in REG_VALS:
+            # create models
+            lstm_model = models.RNNMultiOutputIndividual(OUTPUT_SIZE, UNITS, RNN_LAYERS["lstm"], ACTIVATIONS["tanh"],
+                                                         l1=reg_val[0], l2=reg_val[1], dropout=reg_val[2])
+            gru_model = models.RNNMultiOutputIndividual(OUTPUT_SIZE, UNITS, RNN_LAYERS["gru"], ACTIVATIONS["tanh"],
+                                                        l1=reg_val[0], l2=reg_val[1], dropout=reg_val[2])
+
+            # compile models
+            models.compileModel(lstm_model, COMPILE_PARAMS["optimizer"], COMPILE_PARAMS["loss"], COMPILE_PARAMS["metrics"])
+            models.compileModel(gru_model, COMPILE_PARAMS["optimizer"], COMPILE_PARAMS["loss"], COMPILE_PARAMS["metrics"])
+
+            # train models
+            models.fitModel(lstm_model, tr, [v[0], v[1], v[2]], EPOCHS, callbacks=[], verbose=0)
+            models.fitModel(gru_model, tr, [v[0], v[1], v[2]], EPOCHS, callbacks=[], verbose=0)
+
+            # evaluate models
+            lstm_eval = models.evaluateModel(lstm_model, x=te_x, y=[te_y[0], te_y[1], te_y[2]])
+            gru_eval = models.evaluateModel(gru_model, x=te_x, y=[te_y[0], te_y[1], te_y[2]])
+
+            # make predictions
+            lstm_pred = lstm_model.predict(te_x)
+            gru_pred = gru_model.predict(te_x)
+
+            # rescale predictions
+            lstm_pred = prepare_predictions(lstm_pred)
+            gru_pred = prepare_predictions(gru_pred)
+
+            # calculate RMSE
+            lstm_errors = D.calculate_error(lstm_pred)
+            gru_errors = D.calculate_error(gru_pred)
 
     # make input use the names.
     # make model use masking.
