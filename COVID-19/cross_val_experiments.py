@@ -134,65 +134,35 @@ if __name__ == "__main__":
     # Prepare all the k-foldas fot the cross validation.
     train, val, test_x, test_y = split_data(D, H)
 
-    idx = 1
-    for tr, v, te_x, te_y in zip(train, val, test_x, test_y):
-        print(f"{idx}")
-        idx += 1
-        print(f"train fold {tr.shape}")
-        print(f"val fold {v.shape}")
-        print(f"test input fold {te_x.shape}")
-        print(f"test output fold {te_y.shape}")
-
-    print("Pre scale example")
-    print(test_y[2][0])
-
     # Standardize all the data to make it easier to train the model.
     scaled_train, _ = standardize_data(train)
     scaled_val, _ = standardize_data(val)
     scaled_test_x, _ = standardize_data(test_x)
     scaled_test_y, test_y_scalers = standardize_data(test_y)
 
-    print(scaled_test_y[2][0])
-
     rescaled_test_y = destandardize_data(scaled_test_y, test_y_scalers)
-    print(rescaled_test_y[2][0])
 
     # Pad the input data as they all must be in the same shape.
     # The cross validation makes each sample a different size.
     padded_scaled_train = pad_data(scaled_train)
     padded_scaled_test_x = pad_data(scaled_test_x, offset=1)
 
-    print(f"padded scaled train : {len(padded_scaled_train)}")
-    for fold in padded_scaled_train:
-        print(f"padded scaled train : {fold.shape}")
-
-    print(f"padded scaled test x: {len(padded_scaled_test_x)}")
-    for fold in padded_scaled_test_x:
-        print(f"padded scaled test x: {fold.shape}")
-
     # The output data must be split by features as the model used a separate branch for each of them.
     multi_out_scaled_val = prepare_output_data(scaled_val)
     multi_out_scaled_test_y = prepare_output_data(scaled_test_y)
-    print(f"Scaled val len: {len(scaled_val)}")
-    print(f"Scaled val shape: {scaled_val[0].shape}")
-    print(f"Multi out scaled val len: {len(multi_out_scaled_val)}")
-    print(f"Multi out scaled val shape: {multi_out_scaled_val[0].shape}")
-
-    print(f"Scaled test_y len: {len(scaled_test_y)}")
-    print(f"Scaled test_y shape: {scaled_test_y[0].shape}")
-    print(f"Multi out scaled test_y len: {len(multi_out_scaled_test_y)}")
-    print(f"Multi out scaled test_y shape: {multi_out_scaled_test_y[0].shape}")
 
     # Validation loop.
     fold_idx = 1
     data = zip(padded_scaled_train, padded_scaled_test_x, multi_out_scaled_val, multi_out_scaled_test_y)
     for tr, te_x, v, te_y in data:
+        print(f"Validation loop {fold_idx}")
         for reg_idx, reg_val in enumerate(REG_VALS):
+            print(f"Regularizer loop {reg_idx}")
             # create models
-            lstm_model = models.RNNMultiOutputIndividual(OUTPUT_SIZE, UNITS, RNN_LAYERS["lstm"], ACTIVATIONS["tanh"], PAD_VAL,
-                                                         l1=reg_val[0], l2=reg_val[1], dropout=reg_val[2])
-            gru_model = models.RNNMultiOutputIndividual(OUTPUT_SIZE, UNITS, RNN_LAYERS["gru"], ACTIVATIONS["tanh"], PAD_VAL,
-                                                        l1=reg_val[0], l2=reg_val[1], dropout=reg_val[2])
+            lstm_model = models.RNNMultiOutputIndividual(OUTPUT_SIZE, UNITS, RNN_LAYERS["lstm"], ACTIVATIONS["tanh"],
+                                                         l1=reg_val[0], l2=reg_val[1], dropout=reg_val[2], pad_val=PAD_VAL)
+            gru_model = models.RNNMultiOutputIndividual(OUTPUT_SIZE, UNITS, RNN_LAYERS["gru"], ACTIVATIONS["tanh"],
+                                                        l1=reg_val[0], l2=reg_val[1], dropout=reg_val[2], pad_val=PAD_VAL)
 
             # compile models
             models.compileModel(lstm_model, COMPILE_PARAMS["optimizer"], COMPILE_PARAMS["loss"], COMPILE_PARAMS["metrics"])
