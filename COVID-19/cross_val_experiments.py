@@ -4,6 +4,7 @@ import pandas as pd
 import tensorflow as tf
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error
 import data
 import models
 from utils import reshape_predictions
@@ -110,6 +111,15 @@ def prepare_predictions(data, test_y_scalers):
     data = reshape_predictions(data)
     return destandardize_data(data, test_y_scalers)
 
+def calculate_error(orig, pred):
+    """
+    Returns the RMSE
+    """
+    results = []
+    for o, p in zip(orig, pred):
+        results.append(mean_squared_error(orig, pred, multioutput='raw_values', squared=False))
+    return np.stack(results)
+
 def pickle_data(data, file_name):
     file_path = os.path.join(SAVE_DIR, file_name)
     with open(file_path, "wb") as new_file:
@@ -185,8 +195,8 @@ if __name__ == "__main__":
             gru_pred = prepare_predictions(gru_pred, test_y_scalers)
 
             # calculate RMSE
-            lstm_errors = D.calculate_error(lstm_pred)
-            gru_errors = D.calculate_error(gru_pred)
+            lstm_errors = calculate_error(te_y, lstm_pred)
+            gru_errors = calculate_error(te_y, gru_pred)
 
             # make file names for saving results
             lstm_name = f"lstm_reg{reg_idx}_fold{fold_idx}"
@@ -205,8 +215,8 @@ if __name__ == "__main__":
             save_to_npz(gru_pred, gru_name)
 
             # save model's error scores
-            save_to_csv(lstm_errors, lstm_name)
-            save_to_csv(gru_errors, gru_name)
+            save_to_npz(lstm_errors, lstm_name)
+            save_to_npz(gru_errors, gru_name)
 
             fold_idx += 1
 
