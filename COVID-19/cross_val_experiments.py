@@ -7,7 +7,6 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error
 import data
 import models
-from utils import reshape_predictions
 
 # Global variables
 SAVE_DIR = "cross_val_results"
@@ -69,15 +68,13 @@ def standardize_data(data):
 
 def destandardize_data(data, scalers):
     """
-    data - list
+    data - numpy array of shape (countries, horizon, features)
+    returns numpy array of shape shape as data
     """
     rescaled_data = []
-    for fold, scaler_fold in zip(data, scalers):
-        rescaled_fold = []
-        for country, scaler in zip(fold, scaler_fold):
-            rescaled_fold.append(scaler.inverse_transform(country))
-        rescaled_data.append(np.stack(rescaled_fold))
-    return rescaled_data
+    for country_pred, scaler in zip(data, scalers):
+        rescaled_data.append(scaler.inverse_transform(country_pred))
+    return np.stack(rescaled_data)
 
 def pad_data(data, offset=0):
     """
@@ -105,33 +102,41 @@ def prepare_output_data(data):
 
 def prepare_predictions(data, test_y_scalers):
     """
-    data - list
+    data - list - contains one numpy array of shape (countries, horizon) for each feature.
+    returns numpy array of shape (countries, horizon, features) with rescaled data.
     """
-    data = np.stack(data)
-    data = reshape_predictions(data)
-    return destandardize_data(data, test_y_scalers)
+    # First reshape the data.
+    reshaped_preds = []
+    # Unpack all sub lists into the three variables.
+    for c, d, r in zip(*data):
+        reshaped_preds.append(np.stack([c, d, r]).T)
+    reshaped_preds = np.stack(reshaped_preds)
+
+    return destandardize_data(reshaped_preds, test_y_scalers)
 
 def calculate_error(orig, pred):
     """
-    Returns the RMSE
+    orig - numpy array of shape (countries, horizon, features)
+    pred - numpy array of shape (countries, horizon, features)
+    Returns numpy array of shape (countries, features) containing the RMSE of all predictions
     """
     results = []
     for o, p in zip(orig, pred):
-        results.append(mean_squared_error(orig, pred, multioutput='raw_values', squared=False))
+        results.append(mean_squared_error(o, p, multioutput='raw_values', squared=False))
     return np.stack(results)
 
-def pickle_data(data, file_name):
-    file_path = os.path.join(SAVE_DIR, file_name)
+def pickle_data(data, file_name, exp_name):
+    file_path = os.path.join(SAVE_DIR, file_name%exp_name)
     with open(file_path, "wb") as new_file:
         pickle.dump(data, new_file, protocol=pickle.DEFAULT_PROTOCOL)
 
-def save_to_csv(data, file_name):
-    file_path = os.path.join(SAVE_DIR, file_name)
+def save_to_csv(data, file_name, exp_name):
+    file_path = os.path.join(SAVE_DIR, file_name%exp_name)
     temp_df = pd.DataFrame(data)
     temp_df.to_csv(file_path, index=False)
 
-def save_to_npz(data, file_name):
-    file_path = os.path.join(SAVE_DIR, file_name)
+def save_to_npz(data, file_name, exp_name):
+    file_path = os.path.join(SAVE_DIR, file_name%exp_name)
     with open(file_path, "wb") as new_file:
         np.savez(new_file, data)
 
@@ -195,28 +200,28 @@ if __name__ == "__main__":
             gru_pred = prepare_predictions(gru_pred, test_y_scalers)
 
             # calculate RMSE
-            lstm_errors = calculate_error(te_y, lstm_pred)
-            gru_errors = calculate_error(te_y, gru_pred)
+            lstm_errors = calculate_error(scaled_test_y[fold_idx], lstm_pred)
+            gru_errors = calculate_error(scaled_test_y[fold_idx], gru_pred)
 
             # make file names for saving results
-            lstm_name = f"lstm_reg{reg_idx}_fold{fold_idx}"
-            gru_name = f"gru_reg{reg_idx}_fold{fold_idx}"
+            lstm_name = f"lstm_reg{reg_idx}_fold{fold_idx}_%s"
+            gru_name = f"gru_reg{reg_idx}_fold{fold_idx}_%s"
 
             # save model's training history
-            pickle_data(lstm_hist, lstm_name)
-            pickle_data(gru_hist, gru_name)
+            pickle_data(lstm_hist, lstm_name, "hist")
+            pickle_data(gru_hist, gru_name, "hist")
 
             # save model's evaluation results
-            save_to_csv(lstm_eval, lstm_name)
-            save_to_csv(gru_eval, gru_name)
+            save_to_csv(lstm_eval, lstm_name, "eval")
+            save_to_csv(gru_eval, gru_name, "eval")
 
             # save model's predictions
-            save_to_npz(lstm_pred, lstm_name)
-            save_to_npz(gru_pred, gru_name)
+            save_to_npz(lstm_pred, lstm_name, "pred")
+            save_to_npz(gru_pred, gru_name, "pred")
 
             # save model's error scores
-            save_to_npz(lstm_errors, lstm_name)
-            save_to_npz(gru_errors, gru_name)
+            save_to_npz(lstm_errors, lstm_name, "error")
+            save_to_npz(gru_errors, gru_name, "errors")
 
             fold_idx += 1
 
