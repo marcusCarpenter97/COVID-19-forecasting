@@ -1,4 +1,5 @@
 import os
+import json
 import pickle
 import pandas as pd
 import tensorflow as tf
@@ -125,10 +126,10 @@ def calculate_error(orig, pred):
         results.append(mean_squared_error(o, p, multioutput='raw_values', squared=False))
     return np.stack(results)
 
-def pickle_data(data, file_name, exp_name):
+def save_to_json(data, file_name, exp_name):
     file_path = os.path.join(SAVE_DIR, file_name%exp_name)
-    with open(file_path, "wb") as new_file:
-        pickle.dump(data, new_file, protocol=pickle.DEFAULT_PROTOCOL)
+    with open(file_path, "w+") as new_file:
+        json.dump(data, new_file)
 
 def save_to_csv(data, file_name, exp_name):
     file_path = os.path.join(SAVE_DIR, file_name%exp_name)
@@ -137,7 +138,7 @@ def save_to_csv(data, file_name, exp_name):
 
 def save_to_npz(data, file_name, exp_name):
     file_path = os.path.join(SAVE_DIR, file_name%exp_name)
-    with open(file_path, "wb") as new_file:
+    with open(file_path, "w+b") as new_file:
         np.savez(new_file, data)
 
 if __name__ == "__main__":
@@ -208,12 +209,12 @@ if __name__ == "__main__":
             gru_name = f"gru_reg{reg_idx}_fold{fold_idx}_%s"
 
             # save model's training history
-            pickle_data(lstm_hist, lstm_name, "hist")
-            pickle_data(gru_hist, gru_name, "hist")
+            save_to_csv(lstm_hist.history, lstm_name, "hist")
+            save_to_csv(gru_hist.history, gru_name, "hist")
 
             # save model's evaluation results
-            save_to_csv(lstm_eval, lstm_name, "eval")
-            save_to_csv(gru_eval, gru_name, "eval")
+            save_to_json(lstm_eval, lstm_name, "eval")
+            save_to_json(gru_eval, gru_name, "eval")
 
             # save model's predictions
             save_to_npz(lstm_pred, lstm_name, "pred")
