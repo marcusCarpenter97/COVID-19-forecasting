@@ -11,9 +11,11 @@ class EncoderBlock(layers.Layer):
     def __init__(self, rnn_units, rnn_layer, rnn_activation, pad_val, l1=0, l2=0, dropout=0):
         super(EncoderBlock, self).__init__()
         regularizer = tf.keras.regularizers.L1L2(l1=l1, l2=l2)
+
         self.mask_layer = None
         if pad_val:
             self.mask_layer = layers.Masking(mask_value=pad_val)
+
         self.hidden_rnn = rnn_layer(rnn_units, activation=rnn_activation, kernel_regularizer=regularizer, dropout=dropout,
                                     name="rnn_encoder")
         self.hidden_dense = layers.Dense(1, name="name_encoder")
@@ -21,8 +23,9 @@ class EncoderBlock(layers.Layer):
     def call(self, inputs):
         mask = None
         if self.mask_layer:
-            mask = self.mask_layer(inputs[0])
-        h_rnn = self.hidden_rnn(inputs[0], mask=mask)
+            masked_inputs = self.mask_layer(inputs[0])
+
+        h_rnn = self.hidden_rnn(masked_inputs)
         h_dense = self.hidden_dense(inputs[1])
 
         return layers.concatenate([h_rnn, h_dense], name="context")
