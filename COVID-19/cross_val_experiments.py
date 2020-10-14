@@ -196,8 +196,8 @@ if __name__ == "__main__":
             gru_pred = gru_model.predict([te_x, enc_names])
 
             # rescale predictions
-            lstm_pred = prepare_predictions(lstm_pred, test_y_scalers)
-            gru_pred = prepare_predictions(gru_pred, test_y_scalers)
+            lstm_pred = prepare_predictions(lstm_pred, test_y_scalers[fold_idx])
+            gru_pred = prepare_predictions(gru_pred, test_y_scalers[fold_idx])
 
             # calculate RMSE
             lstm_errors = calculate_error(scaled_test_y[fold_idx], lstm_pred)
