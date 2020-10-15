@@ -165,6 +165,12 @@ if __name__ == "__main__":
     multi_out_scaled_val = prepare_output_data(scaled_val)
     multi_out_scaled_test_y = prepare_output_data(scaled_test_y)
 
+    # save original data
+    file_path = os.path.join(SAVE_DIR, "original_data")
+    with open(file_path, "w+b") as new_file:
+        np.savez(new_file, train=padded_scaled_train, test_x=padded_scaled_test_x, validation=multi_out_scaled_val,
+                 test_y=multi_out_scaled_test_y)
+
     # Validation loop.
     fold_idx = 0
     data = zip(padded_scaled_train, padded_scaled_test_x, multi_out_scaled_val, multi_out_scaled_test_y)
@@ -226,10 +232,3 @@ if __name__ == "__main__":
 
         fold_idx += 1
 
-    # save original data
-    orig_data = {"train": padded_scaled_train,
-                 "test_x": padded_scaled_test_x,
-                 "validation": multi_out_scaled_val,
-                 "test_y": multi_out_scaled_test_y}
-
-    save_to_json(orig_data, "original_data", "")
