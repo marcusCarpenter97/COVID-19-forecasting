@@ -14,7 +14,7 @@ SAVE_DIR = "cross_val_results"
 PAD_VAL = -10000
 H = 28
 F = 3
-UNITS = 100
+UNITS = 20
 OUTPUT_SIZE = 28
 EPOCHS = 300
 
@@ -166,7 +166,7 @@ if __name__ == "__main__":
     multi_out_scaled_test_y = prepare_output_data(scaled_test_y)
 
     # Validation loop.
-    fold_idx = 1
+    fold_idx = 0
     data = zip(padded_scaled_train, padded_scaled_test_x, multi_out_scaled_val, multi_out_scaled_test_y)
     for tr, te_x, v, te_y in data:
         print(f"Validation loop {fold_idx}")
@@ -224,7 +224,7 @@ if __name__ == "__main__":
             save_to_npz(lstm_errors, lstm_name, "error")
             save_to_npz(gru_errors, gru_name, "errors")
 
-            fold_idx += 1
+        fold_idx += 1
 
     # save original data
     orig_data = {"train": padded_scaled_train,
@@ -232,6 +232,4 @@ if __name__ == "__main__":
                  "validation": multi_out_scaled_val,
                  "test_y": multi_out_scaled_test_y}
 
-    file_path = os.path.join(SAVE_DIR, "original_data")
-    orig_df = pd.DataFrame(orig_data)
-    orig_df.to_csv(file_path, index=False)
+    save_to_json(orig_data, "original_data", "")
