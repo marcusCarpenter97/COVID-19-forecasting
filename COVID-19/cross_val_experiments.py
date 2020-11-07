@@ -39,6 +39,10 @@ REG_VALS = [[0, 0, 0],  # No regularization
 PADDING = np.full((H, F), PAD_VAL)
 
 def split_data(data, horizon):
+    """
+    Returns four lists of numpy arrrays. Each list has the shape (fold, countries, days). The number of days changes over the
+    folds.
+    """
     train, val, test_x, test_y = [], [], [], []
     train_size = horizon
     # This assumes all countries have the same length.
@@ -115,7 +119,7 @@ def prepare_predictions(data, test_y_scalers):
 
     return destandardize_data(reshaped_preds, test_y_scalers)
 
-def calculate_error(orig, pred):
+def calculate_rmse(orig, pred):
     """
     orig - numpy array of shape (countries, horizon, features)
     pred - numpy array of shape (countries, horizon, features)
@@ -141,14 +145,30 @@ def save_to_npz(data, file_name, exp_name):
     with open(file_path, "w+b") as new_file:
         np.savez(new_file, data)
 
+def save_to_npz_folds(data, file_name):
+    """
+    Parameters:
+        data - list containing numpy arrays. len(data) = num_folds (7)
+        file_name - string.
+    """
+    file_path = os.path.join(SAVE_DIR, file_name)
+    with open(file_path, "w+b") as new_file:
+        np.savez(new_file, zero=data[0], one=data[1], two=data[2], three=data[3], four=data[4], five=data[5], six=data[6])
+
 if __name__ == "__main__":
 
     D = data.Data()  # This loads the data.
 
     enc_names = D.encode_names()  # Encode the countrie's names.
 
-    # Prepare all the k-foldas fot the cross validation.
+    # Prepare all the k-folds for the cross validation.
     train, val, test_x, test_y = split_data(D, H)
+
+    # save original data
+    save_to_npz_folds(train, "train")
+    save_to_npz_folds(val, "val")
+    save_to_npz_folds(test_x, "test_x")
+    save_to_npz_folds(test_y, "test_y")
 
     # Standardize all the data to make it easier to train the model.
     scaled_train, _ = standardize_data(train)
@@ -164,12 +184,6 @@ if __name__ == "__main__":
     # The output data must be split by features as the model used a separate branch for each of them.
     multi_out_scaled_val = prepare_output_data(scaled_val)
     multi_out_scaled_test_y = prepare_output_data(scaled_test_y)
-
-    # save original data
-    file_path = os.path.join(SAVE_DIR, "original_data")
-    with open(file_path, "w+b") as new_file:
-        np.savez(new_file, train=padded_scaled_train, test_x=padded_scaled_test_x, validation=multi_out_scaled_val,
-                 test_y=multi_out_scaled_test_y)
 
     # Validation loop.
     fold_idx = 0
@@ -207,8 +221,8 @@ if __name__ == "__main__":
             gru_pred = prepare_predictions(gru_pred, test_y_scalers[fold_idx])
 
             # calculate RMSE
-            lstm_errors = calculate_error(scaled_test_y[fold_idx], lstm_pred)
-            gru_errors = calculate_error(scaled_test_y[fold_idx], gru_pred)
+            lstm_errors = calculate_rmse(scaled_test_y[fold_idx], lstm_pred)
+            gru_errors = calculate_rmse(scaled_test_y[fold_idx], gru_pred)
 
             # make file names for saving results
             lstm_name = f"lstm_reg{reg_idx}_fold{fold_idx}_%s"
