@@ -3,6 +3,7 @@ import pandas as pd
 import hashlib
 import data_loader
 import country
+from sklearn.metrics import mean_squared_error
 
 class Data:
     """ A container that stores the time series COVID-19 data for each country.
@@ -143,11 +144,32 @@ class Data:
         for country in self.countries:
             country.standarize()
 
+    def cross_validate(self, train_size, horizon):
+        """
+        Cross validate data for all countries.
+        """
+        train, val, test_x, test_y = [], [], [], []
+        for country in self.countries:
+            tr, v, te_x, te_y = country.split_k_fold(train_size, horizon)
+            train.append(tr), val.append(v), test_x.append(te_x), test_y.append(te_y)
+
+        return np.stack(train), np.stack(val), np.stack(test_x), np.stack(test_y)
+
     def destandarize_data(self, predictions):
         """
         Destandarize the predictions for all countries.
         """
         return np.stack([country.destandarize(prediction) for country, prediction in zip(self.countries, predictions)])
+
+    def calculate_error(self, predictions):
+        """
+        Calculate the MSE and the RMSE for the predictions for all the countries.
+        """
+        results = {}
+        for country, prediction in zip(self.countries, predictions):
+            results[country.name] = {"MSE": mean_squared_error(country.test_y, prediction, multioutput='raw_values'), "RMSE":
+                                     mean_squared_error(country.test_y, prediction, multioutput='raw_values', squared=False)}
+        return results
 
     def retreive_data(self):
         """
