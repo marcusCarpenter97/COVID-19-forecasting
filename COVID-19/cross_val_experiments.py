@@ -1,6 +1,7 @@
 import os
 import json
 import pickle
+import datetime
 import pandas as pd
 import tensorflow as tf
 import numpy as np
@@ -8,6 +9,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, r2_score
 import data
 import models
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Reduces tensorflow messages.
 
 # Global variables
 SAVE_DIR = "cross_val_results"
@@ -169,6 +172,9 @@ def save_to_npz_folds(data, file_name):
 if __name__ == "__main__":
 
     D = data.Data()  # This loads the data.
+
+    print(f"Number of days in data: {len(D.countries[0].data)}")
+    print(f"Current date and time: {datetime.datetime.now()}")
 
     enc_names = D.encode_names()  # Encode the countrie's names.
 
