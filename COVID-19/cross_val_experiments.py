@@ -5,7 +5,7 @@ import pandas as pd
 import tensorflow as tf
 import numpy as np
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score
 import data
 import models
 
@@ -130,6 +130,17 @@ def calculate_rmse(orig, pred):
         results.append(mean_squared_error(o, p, multioutput='raw_values', squared=False))
     return np.stack(results)
 
+def calculate_rtwo(orig, pred):
+    """
+    orig - numpy array of shape (countries, horizon, features)
+    pred - numpy array of shape (countries, horizon, features)
+    Returns numpy array of shape (countries, features) containing the R^2 of all predictions
+    """
+    results = []
+    for o, p in zip(orig, pred):
+        results.append(r2_score(o, p, multioutput='raw_values'))
+    return np.stack(results)
+
 def save_to_json(data, file_name, exp_name):
     file_path = os.path.join(SAVE_DIR, file_name%exp_name)
     with open(file_path, "w+") as new_file:
@@ -221,8 +232,12 @@ if __name__ == "__main__":
             gru_pred = prepare_predictions(gru_pred, test_y_scalers[fold_idx])
 
             # calculate RMSE
-            lstm_errors = calculate_rmse(scaled_test_y[fold_idx], lstm_pred)
-            gru_errors = calculate_rmse(scaled_test_y[fold_idx], gru_pred)
+            lstm_rmse = calculate_rmse(scaled_test_y[fold_idx], lstm_pred)
+            gru_rmse = calculate_rmse(scaled_test_y[fold_idx], gru_pred)
+
+            # calculate R^2
+            lstm_r2 = calculate_rtwo(scaled_test_y[fold_idx], lstm_pred)
+            gru_r2 = calculate_rtwo(scaled_test_y[fold_idx], gru_pred)
 
             # make file names for saving results
             lstm_name = f"lstm_reg{reg_idx}_fold{fold_idx}_%s"
@@ -241,8 +256,11 @@ if __name__ == "__main__":
             save_to_npz(gru_pred, gru_name, "pred")
 
             # save model's error scores
-            save_to_npz(lstm_errors, lstm_name, "error")
-            save_to_npz(gru_errors, gru_name, "errors")
+            save_to_npz(lstm_rmse, lstm_name, "rmse")
+            save_to_npz(gru_rmse, gru_name, "rmse")
+
+            save_to_npz(lstm_r2, lstm_name, "r2")
+            save_to_npz(gru_r2, gru_name, "r2")
 
         fold_idx += 1
 
