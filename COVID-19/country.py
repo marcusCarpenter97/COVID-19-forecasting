@@ -125,7 +125,7 @@ class Country:
         # Remove the last two columns of data (Infected and Healthy) as they will not be needed in the model.
         temp_data = self.data.values[:, [0,1,2]]
 
-        # Make = the data divisible by the horizon to guarantee all k folds have the same size.
+        # Make the data divisible by the horizon to guarantee all k folds have the same size.
         # Cuts out the old data instead of the new time steps.
         offset = self.find_divisor_offset(horizon)
         temp_data = temp_data[offset:]
