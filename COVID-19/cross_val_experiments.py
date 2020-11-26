@@ -163,12 +163,12 @@ def save_to_npz(data, file_name, exp_name):
 def save_to_npz_folds(data, file_name):
     """
     Parameters:
-        data - list containing numpy arrays. len(data) = num_folds (7)
+        data - list containing numpy arrays with length = folds.
         file_name - string.
     """
     file_path = os.path.join(SAVE_DIR, file_name)
     with open(file_path, "w+b") as new_file:
-        np.savez(new_file, zero=data[0], one=data[1], two=data[2], three=data[3], four=data[4], five=data[5], six=data[6])
+        np.savez(new_file, *data)
 
 if __name__ == "__main__":
 
