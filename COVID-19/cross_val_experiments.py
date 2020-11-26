@@ -5,8 +5,9 @@ import datetime
 import pandas as pd
 import tensorflow as tf
 import numpy as np
+from time import time
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 import data
 import models
 
@@ -133,15 +134,15 @@ def calculate_rmse(orig, pred):
         results.append(mean_squared_error(o, p, multioutput='raw_values', squared=False))
     return np.stack(results)
 
-def calculate_rtwo(orig, pred):
+def calculate_mae(orig, pred):
     """
     orig - numpy array of shape (countries, horizon, features)
     pred - numpy array of shape (countries, horizon, features)
-    Returns numpy array of shape (countries, features) containing the R^2 of all predictions
+    Returns numpy array of shape (countries, features) containing the MAE of all predictions
     """
     results = []
     for o, p in zip(orig, pred):
-        results.append(r2_score(o, p, multioutput='raw_values'))
+        results.append(mean_absolute_error(o, p, multioutput='raw_values'))
     return np.stack(results)
 
 def save_to_json(data, file_name, exp_name):
@@ -189,7 +190,7 @@ if __name__ == "__main__":
 
     # Standardize all the data to make it easier to train the model.
     scaled_train, _ = standardize_data(train)
-    scaled_val, _ = standardize_data(val)
+    scaled_val, val_scalers = standardize_data(val)
     scaled_test_x, _ = standardize_data(test_x)
     scaled_test_y, test_y_scalers = standardize_data(test_y)
 
@@ -205,6 +206,8 @@ if __name__ == "__main__":
     # Validation loop.
     fold_idx = 0
     data = zip(padded_scaled_train, padded_scaled_test_x, multi_out_scaled_val, multi_out_scaled_test_y)
+    # start timer
+    start = time()
     for tr, te_x, v, te_y in data:
         print(f"Validation loop {fold_idx}")
         for reg_idx, reg_val in enumerate(REG_VALS):
@@ -229,21 +232,37 @@ if __name__ == "__main__":
             lstm_eval = models.evaluateModel(lstm_model, x=[te_x, enc_names], y=[te_y[0], te_y[1], te_y[2]], verbose=0)
             gru_eval = models.evaluateModel(gru_model, x=[te_x, enc_names], y=[te_y[0], te_y[1], te_y[2]], verbose=0)
 
-            # make predictions
-            lstm_pred = lstm_model.predict([te_x, enc_names])
-            gru_pred = gru_model.predict([te_x, enc_names])
+            # make predictions on validation data
+            lstm_pred_val = lstm_model.predict([tr, enc_names])
+            gru_pred_val = gru_model.predict([tr, enc_names])
 
-            # rescale predictions
-            lstm_pred = prepare_predictions(lstm_pred, test_y_scalers[fold_idx])
-            gru_pred = prepare_predictions(gru_pred, test_y_scalers[fold_idx])
+            # make predictions on test data
+            lstm_pred_test = lstm_model.predict([te_x, enc_names])
+            gru_pred_test = gru_model.predict([te_x, enc_names])
 
-            # calculate RMSE
-            lstm_rmse = calculate_rmse(scaled_test_y[fold_idx], lstm_pred)
-            gru_rmse = calculate_rmse(scaled_test_y[fold_idx], gru_pred)
+            # rescale validation predictions
+            lstm_pred_val = prepare_predictions(lstm_pred_val, val_scalers[fold_idx])
+            gru_pred_val = prepare_predictions(gru_pred_val, val_scalers[fold_idx])
 
-            # calculate R^2
-            lstm_r2 = calculate_rtwo(scaled_test_y[fold_idx], lstm_pred)
-            gru_r2 = calculate_rtwo(scaled_test_y[fold_idx], gru_pred)
+            # rescale test predictions
+            lstm_pred_test = prepare_predictions(lstm_pred_test, test_y_scalers[fold_idx])
+            gru_pred_test = prepare_predictions(gru_pred_test, test_y_scalers[fold_idx])
+
+            # calculate RMSE for validation 
+            lstm_rmse_val = calculate_rmse(scaled_val[fold_idx], lstm_pred_val)
+            gru_rmse_val = calculate_rmse(scaled_val[fold_idx], gru_pred_val)
+
+            # calculate RMSE for test
+            lstm_rmse_test = calculate_rmse(scaled_test_y[fold_idx], lstm_pred_test)
+            gru_rmse_test = calculate_rmse(scaled_test_y[fold_idx], gru_pred_test)
+
+            # calculate MAE for validation 
+            lstm_mae_val = calculate_mae(scaled_val[fold_idx], lstm_pred_val)
+            gru_mae_val = calculate_mae(scaled_val[fold_idx], gru_pred_val)
+
+            # calculate MAE for test
+            lstm_mae_test = calculate_mae(scaled_test_y[fold_idx], lstm_pred_test)
+            gru_mae_test = calculate_mae(scaled_test_y[fold_idx], gru_pred_test)
 
             # make file names for saving results
             lstm_name = f"lstm_reg{reg_idx}_fold{fold_idx}_%s"
@@ -257,16 +276,29 @@ if __name__ == "__main__":
             save_to_json(lstm_eval, lstm_name, "eval")
             save_to_json(gru_eval, gru_name, "eval")
 
-            # save model's predictions
-            save_to_npz(lstm_pred, lstm_name, "pred")
-            save_to_npz(gru_pred, gru_name, "pred")
+            # save model's predictions on validation data
+            save_to_npz(lstm_pred_val, lstm_name, "val_pred")
+            save_to_npz(gru_pred_val, gru_name, "val_pred")
 
-            # save model's error scores
-            save_to_npz(lstm_rmse, lstm_name, "rmse")
-            save_to_npz(gru_rmse, gru_name, "rmse")
+            # save model's predictions on test data
+            save_to_npz(lstm_pred_test, lstm_name, "test_pred")
+            save_to_npz(gru_pred_test, gru_name, "test_pred")
 
-            save_to_npz(lstm_r2, lstm_name, "r2")
-            save_to_npz(gru_r2, gru_name, "r2")
+            # save model's error scores for validation
+            save_to_npz(lstm_rmse_val, lstm_name, "rmse_val")
+            save_to_npz(gru_rmse_val, gru_name, "rmse_val")
+
+            save_to_npz(lstm_mae_val, lstm_name, "mae_val")
+            save_to_npz(gru_mae_val, gru_name, "mae_val")
+
+            # save model's error scores for test
+            save_to_npz(lstm_rmse_test, lstm_name, "rmse_test")
+            save_to_npz(gru_rmse_test, gru_name, "rmse_test")
+
+            save_to_npz(lstm_mae_test, lstm_name, "mae_test")
+            save_to_npz(gru_mae_test, gru_name, "mae_test")
 
         fold_idx += 1
+    end = time()
+    print(f"Time taken to run all models: {end - start} seconds")
 
