@@ -98,7 +98,6 @@ class Data:
         """
         return p - (d + r + i)
 
-    # TODO ?
     def log(self):
         """
         Apply the log function on all countries.
@@ -106,7 +105,6 @@ class Data:
         for country in self.countries:
             country.log_data()
 
-    # TODO ?
     def exp(self):
         """
         Apply the exp function on all countries.
@@ -114,7 +112,6 @@ class Data:
         for country in self.countries:
             country.exp_data()
 
-    # TODO ?
     def difference(self):
         """
         Apply the diff function on all countries.
@@ -122,7 +119,6 @@ class Data:
         for country in self.countries:
             country.diff_data()
 
-    # TODO ?
     def integrate(self):
         """
         Integrate the data for all countries.
@@ -199,7 +195,6 @@ class Data:
         recovered = np.stack(recovered)
         return np.stack([confirmed, deceased, recovered])
 
-    # TODO ?
     def apply_sliding_window(self, time_steps, horizon):
         """
         Apply the sliding window to preprocess the data for all countries.
@@ -208,7 +203,6 @@ class Data:
             country.apply_sliding_window(country.train, time_steps, horizon)
             country.apply_sliding_window(country.test, time_steps, horizon, is_test_data=True)
 
-    # TODO !
     def supervise_data(self, horizon):
         """
         Create input and output test sets for all countries.
@@ -233,12 +227,3 @@ class Data:
             country.plot_country(train_date=bars)
         else:
             country.plot_country()
-
-    # TODO unsused.
-    def get_ts_samples(self, start, end):
-        return np.array([np.array(country.get_slice(start, end)) for country in self.countries])
-
-    # TODO unsused.
-    def get_encoded_names(self):
-        names = np.array([country.encoded_name for country in self.countries])
-        return names.reshape(names.shape[0], 1, names.shape[1])
