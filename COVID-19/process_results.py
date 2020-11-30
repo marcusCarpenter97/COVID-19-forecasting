@@ -214,41 +214,4 @@ def find_best_regularizer(model):
 
 if __name__ == "__main__":
 
-    files = os.listdir(TARGET_DIR)
-
-    gru_r2_files = filter_file_names(filter_file_names(files, "gru"), "rmse")
-    print(gru_r2_files)
-    for i in gru_r2_files:
-        print(i)
-        res = open_npz([i])
-        print(res[0])
-        input()
-
-    #reg_names = ["reg0", "reg1", "reg2", "reg3", "reg4", "reg5"]
-
-    #gru_error_regs = setup(files, reg_names, "gru")
-    #lstm_error_regs = setup(files, reg_names, "lstm")
-
-    #best_gru_regs = compare_regularizers(gru_error_regs)
-    #best_lstm_regs = compare_regularizers(lstm_error_regs)
-
-    #print("Regularizer results for the GRU")
-    #evaluate_regularizers(best_gru_regs)
-
-    #print("Regularizer results for the LSTM")
-    #evaluate_regularizers(best_lstm_regs)
-
-    #print()
-    #gru_regs = fill_missing_regs(best_gru_regs)
-    #lstm_regs = fill_missing_regs(best_lstm_regs)
-    #plot_gru_vs_lstm_tally_marks(gru_regs, lstm_regs)
-
-    #plot_gru_vs_lstm("gru_reg3_fold6_errors", "lstm_reg5_fold6_error")
-
-    ##save_country_names()  # Only needed once.
-    #country_names = load_country_names()
-
-    #uk_idx = country_names.index("United Kingdom")
-    #plot_rmse_over_folds(gru_error_regs, uk_idx)
-    #plot_orig_vs_pred(uk_idx)
-    #plt.show()
+    save_country_names()

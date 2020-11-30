@@ -1,18 +1,4 @@
-*.ipynb
-*.png
-population/
-LSTMWithPython-textbook/
-Learning-from-data-Caltech/
-wiki/
-*.csv
-*.txt
-COVID-19/COVID-19/
-taguchi_results/
 __pycache__/
-*.swp
-results/
-LatexFiles/
-Scopus-crawler/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
