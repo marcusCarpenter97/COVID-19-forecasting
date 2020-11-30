@@ -1,3 +1,9 @@
+COVID-19/
+*.csv
+LSTMWithPython-textbook/
+LatexFiles/
+Scopus-crawler/
+wiki/
 __pycache__/
 # Byte-compiled / optimized / DLL files
 __pycache__/
