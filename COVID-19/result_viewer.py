@@ -120,6 +120,7 @@ def compare_models():
         temp_count = np.bincount(hist_data[key].flatten())
         fig, ax = plt.subplots(constrained_layout=True)
         ax.bar(reg_names, temp_count)
+        ax.set_yticks(np.arange(temp_count[np.argmax(temp_count)]+1))
         ax.set_title(key)
     print(hist_data)
 
