@@ -10,7 +10,7 @@ data from the Jonhs Hopkins GitHub repository automatically. This was tested in 
 18.04 WSL and may not work in other systems without modifying the `data_loader.py` module.
 
 ## Interactive result viewer.
-Running the command `python3 result_viewr.py` will load an interactive result viewer that allows the user to select and plot
+Running the command `python3 result_viewer.py` will load an interactive result viewer that allows the user to select and plot
 data from certain result files. There is also an option to visualise a comparison of the real data and a model's predictions for
 each country.
 
