@@ -61,7 +61,7 @@ def load_location_names():
         results = [row for row in reader]
     return results[0]
 
-def plot_pred(predictions, original, rmse_scores, mae_scores, loc_names):
+def plot_pred(original, loc_names, gru, lstm):
     curr_loc = 0
     def key_event_handler(event):
         sub_titles = ["Confirmed", "Deceased", "Recovered"]
@@ -72,19 +72,20 @@ def plot_pred(predictions, original, rmse_scores, mae_scores, loc_names):
             curr_loc -= 1
         else:
             return
-        curr_loc = curr_loc % len(predictions)
+        curr_loc = curr_loc % len(gru["preds"])  # Assumes gru and lstm have same size.
         for idx, ax in enumerate(axes):
             ax.cla()
-            ax.set_title(f"{sub_titles[idx]} / RMSE: {int(rmse_scores[curr_loc][idx])} / MAE: {int(mae_scores[curr_loc][idx])}")
+            ax.set_title(f"{sub_titles[idx]}")
             ax.plot(original[curr_loc].T[idx], color="b")
-            ax.plot(predictions[curr_loc].T[idx], linestyle="--", color="orange")
+            ax.plot(gru["preds"][curr_loc].T[idx], linestyle="--", color="orange")
+            ax.plot(lstm["preds"][curr_loc].T[idx], linestyle="-.", color="r")
         axes[0].set_ylabel("People")
         axes[1].set_xlabel("Days")
-        axes[2].legend(["Original", "Predictions"], loc=0)
+        axes[2].legend(["Original", "GRU predictions", "LSTM predictions"], loc=0)
         fig.suptitle(loc_names[curr_loc])
         fig.canvas.draw()
 
-    fig, axes = plt.subplots(ncols=predictions.shape[2], sharex=True, constrained_layout=True)
+    fig, axes = plt.subplots(ncols=gru["preds"].shape[2], sharex=True, constrained_layout=True)
     fig.suptitle("Press the left or right arrow key to begin.")
     fig.canvas.mpl_connect("key_press_event", key_event_handler)
 
@@ -178,7 +179,7 @@ def plot_val_folds(reg):
 def handle_user_input(files, loc_names):
     try:
         option = int(input("Enter an option by its number:\n1. Compare models and make table.\n2. Plot validation vs test error"
-                           "for a model.\n3. Plot error over validation folds for a model.\n4. Interactive prediction"
+                           "for a model.\n3. Plot error over validation folds for a model.\n4. Interactive prediction "
                            "viewer.\n"))
     except ValueError:
         print("Option must be an integer.")
@@ -195,18 +196,27 @@ def handle_user_input(files, loc_names):
         reg = input("Regularizer index (0 to 5):")
         plot_val_folds(reg)
     elif option == 4:  # interactive prediction viewer.
-        model = input("Model type (gru or lstm):")
-        reg = input("Regularizer index (0 to 5):")
+        gru_reg = input("GRU regularizer index (0 to 5):")
+        lstm_reg = input("LSTM regularizer index (0 to 5):")
         fold = input("Validation fold index (0 to 8):")
         res_type = input("Result type (val or test):")
-        pred_f_name = build_file_name(model, reg, fold, res_type, "pred")
-        rmse_f_name = build_file_name(model, reg, fold, "rmse", res_type)
-        mae_f_name = build_file_name(model, reg, fold, "mae", res_type)
+
+        gru_pred_f_name = build_file_name("gru", gru_reg, fold, res_type, "pred")
+        gru_rmse_f_name = build_file_name("gru", gru_reg, fold, "rmse", res_type)
+        gru_mae_f_name = build_file_name("gru", gru_reg, fold, "mae", res_type)
+
+        lstm_pred_f_name = build_file_name("lstm", lstm_reg, fold, res_type, "pred")
+        lstm_rmse_f_name = build_file_name("lstm", lstm_reg, fold, "rmse", res_type)
+        lstm_mae_f_name = build_file_name("lstm", lstm_reg, fold, "mae", res_type)
 
         # Check if file names exist.
-        assert(pred_f_name in files), f"{pred_f_name} does not exist."
-        assert(rmse_f_name in files), f"{rmse_f_name} does not exist."
-        assert(mae_f_name in files), f"{mae_f_name} does not exist."
+        assert(gru_pred_f_name in files), f"{gru_pred_f_name} does not exist."
+        assert(gru_rmse_f_name in files), f"{gru_rmse_f_name} does not exist."
+        assert(gru_mae_f_name in files), f"{gru_mae_f_name} does not exist."
+
+        assert(lstm_pred_f_name in files), f"{lstm_pred_f_name} does not exist."
+        assert(lstm_rmse_f_name in files), f"{lstm_rmse_f_name} does not exist."
+        assert(lstm_mae_f_name in files), f"{lstm_mae_f_name} does not exist."
 
         if res_type == "val":
             orig_data = open_file(VAL_DATA)
@@ -214,6 +224,7 @@ def handle_user_input(files, loc_names):
             orig_data = open_file(TEST_DATA)
         else:
             print(f"Invalid result type must be val or test was {res_type}")
+            raise SystemExit
 
         try:
             original_fold = orig_data[int(fold)]  # Choose the correct validation fold.
@@ -221,11 +232,17 @@ def handle_user_input(files, loc_names):
             print("Fold index must be an integer.")
             raise SystemExit
 
-        rmse_scores = open_file(rmse_f_name)
-        mae_scores = open_file(mae_f_name)
-        predictions = open_file(pred_f_name)
+        gru = {}
+        gru["rmse"] = open_file(gru_rmse_f_name)
+        gru["mae"] = open_file(gru_mae_f_name)
+        gru["preds"] = open_file(gru_pred_f_name)
 
-        plot_pred(predictions, original_fold, rmse_scores, mae_scores, loc_names)
+        lstm = {}
+        lstm["rmse"] = open_file(lstm_rmse_f_name)
+        lstm["mae"] = open_file(lstm_mae_f_name)
+        lstm["preds"] = open_file(lstm_pred_f_name)
+
+        plot_pred(original_fold, loc_names, gru, lstm)
     else:
         print("Invalid option.")
         raise SystemExit
