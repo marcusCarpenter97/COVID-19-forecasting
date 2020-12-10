@@ -1,6 +1,5 @@
 import os
 import csv
-import argparse
 import itertools
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,16 +7,6 @@ import matplotlib.pyplot as plt
 TARGET_DIR = "cross_val_results"
 TEST_DATA = "test_y"
 VAL_DATA = "val"
-
-def parse_cmd_args():
-    parser = argparse.ArgumentParser(description="Display results  based on comand line arguments.")
-    parser.add_argument("model", type=str, help="The model name (gru or lstm).")
-    parser.add_argument("reg", type=int, help="The regulariser index to be used.")
-    parser.add_argument("fold", type=int, help="The cross-validation fold to be used.")
-    parser.add_argument("f_type", type=str, help="The file type to be used (rmse, hist, etc).")
-    parser.add_argument("o_type", type=str, help="The type to be used (val or pred).")
-    args = parser.parse_args()
-    return args.model, args.reg, args.fold, args.f_type, args.o_type
 
 def build_file_name(model, reg, fold, f_type, o_type):
     """
@@ -84,6 +73,14 @@ def plot_pred(original, loc_names, gru, lstm):
         axes[2].legend(["Original", "GRU predictions", "LSTM predictions"], loc=0)
         fig.suptitle(loc_names[curr_loc])
         fig.canvas.draw()
+
+        print(f"{loc_names[curr_loc]}")
+        print(f"GRU  | C: RMSE {int(gru['rmse'][curr_loc][0])} / MAE {int(gru['mae'][curr_loc][0])} | D: RMSE "
+              f"{int(gru['rmse'][curr_loc][1])} / MAE {int(gru['mae'][curr_loc][1])} | R: RMSE {int(gru['rmse'][curr_loc][2])}"
+              f" / MAE {int(gru['mae'][curr_loc][2])}")
+        print(f"LSTM | C: RMSE {int(gru['rmse'][curr_loc][0])} / MAE {int(gru['mae'][curr_loc][0])} | D: RMSE "
+              f"{int(gru['rmse'][curr_loc][1])} / MAE {int(gru['mae'][curr_loc][1])} | R: RMSE {int(gru['rmse'][curr_loc][2])}"
+              f" / MAE {int(gru['mae'][curr_loc][2])}")
 
     fig, axes = plt.subplots(ncols=gru["preds"].shape[2], sharex=True, constrained_layout=True)
     fig.suptitle("Press the left or right arrow key to begin.")
