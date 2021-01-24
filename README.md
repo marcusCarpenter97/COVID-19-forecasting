@@ -1,6 +1,5 @@
-# The effects of regularization on concise RNN models for time series forecasting
-This repository contains the code for the paper *The effects of regularization on concise RNN models for time series
-forecasting*.
+# The effects of regularization on RNN models for time series forecasting
+This repository contains the code for the paper *The effects of regularization on RNN models for time series forecasting*.
 
 ## How to run the experiments?
 `python3 cross_val_experiments.py`
