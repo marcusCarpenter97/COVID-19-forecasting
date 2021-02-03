@@ -1,4 +1,4 @@
-# The effects of regularization on RNN models for time series forecasting
+# Using regularized autoregressive RNNs to predict the spread of COVID-19 based on multiple multivariate time series data 
 This repository contains the code for the paper *The effects of regularization on RNN models for time series forecasting*.
 
 ## How to run the experiments?
