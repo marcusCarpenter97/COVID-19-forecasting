@@ -22,5 +22,3 @@ command `python3 process_results.py`.
 The population data for the countries is extracted from the data provided by
 [Kaggle](https://www.kaggle.com/c/covid19-global-forecasting-week-5/).
 
-## test_vX.ipynb
-These are old experiments that build up to the current model. Not used in the research paper.
