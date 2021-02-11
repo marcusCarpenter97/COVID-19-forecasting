@@ -78,9 +78,9 @@ def plot_pred(original, loc_names, gru, lstm):
         print(f"GRU  | C: RMSE {int(gru['rmse'][curr_loc][0])} / MAE {int(gru['mae'][curr_loc][0])} | D: RMSE "
               f"{int(gru['rmse'][curr_loc][1])} / MAE {int(gru['mae'][curr_loc][1])} | R: RMSE {int(gru['rmse'][curr_loc][2])}"
               f" / MAE {int(gru['mae'][curr_loc][2])}")
-        print(f"LSTM | C: RMSE {int(gru['rmse'][curr_loc][0])} / MAE {int(gru['mae'][curr_loc][0])} | D: RMSE "
-              f"{int(gru['rmse'][curr_loc][1])} / MAE {int(gru['mae'][curr_loc][1])} | R: RMSE {int(gru['rmse'][curr_loc][2])}"
-              f" / MAE {int(gru['mae'][curr_loc][2])}")
+        print(f"LSTM | C: RMSE {int(lstm['rmse'][curr_loc][0])} / MAE {int(lstm['mae'][curr_loc][0])} | D: RMSE "
+              f"{int(lstm['rmse'][curr_loc][1])} / MAE {int(lstm['mae'][curr_loc][1])} | R: RMSE {int(lstm['rmse'][curr_loc][2])}"
+              f" / MAE {int(lstm['mae'][curr_loc][2])}")
 
     fig, axes = plt.subplots(ncols=gru["preds"].shape[2], sharex=True, constrained_layout=True)
     fig.suptitle("Press the left or right arrow key to begin.")
