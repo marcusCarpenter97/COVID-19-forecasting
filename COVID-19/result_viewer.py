@@ -173,11 +173,33 @@ def plot_val_folds(reg):
     for key in hist_data:
         print(f"{key}: {hist_data[key]}")
 
+def root_mean_squared_scaled_error(orig, pred):
+    # The average squared distance between two points in the data.
+    denominator = (1/(len(orig)-1)) * np.sum(np.diff(orig, axis=1) ** 2, axis=1, keepdims=True)
+    error = (orig - pred) ** 2
+    with np.errstate(divide='ignore', invalid='ignore'):  # Ignore divide by zero warnings
+        scaled_error = (error / denominator)
+        rmsse = np.sqrt(np.mean(scaled_error, axis=1))
+    return rmsse
+
+def make_cross_val_table(model, reg):
+    folds = np.arange(9)
+    orig = open_file(TEST_DATA)
+    res = []
+    for fold in folds:
+        file_name = f"{model}_reg{reg}_fold{fold}_test_pred"
+        pred = open_file(file_name)
+        res.append(root_mean_squared_scaled_error(orig[fold], pred))
+
+    for i in res:
+        print(i.shape)
+        print(i)
+
 def handle_user_input(files, loc_names):
     try:
         option = int(input("Enter an option by its number:\n1. Compare models and make table.\n2. Plot validation vs test error"
-                           "for a model.\n3. Plot error over validation folds for a model.\n4. Interactive prediction "
-                           "viewer.\n"))
+                           "for a model.\n3. Plot error over validation folds for a model.\n4. Make cross-validation table.\n5."
+                           " Interactive prediction viewer.\n"))
     except ValueError:
         print("Option must be an integer.")
         raise SystemExit
@@ -192,7 +214,11 @@ def handle_user_input(files, loc_names):
     elif option == 3:
         reg = input("Regularizer index (0 to 5):")
         plot_val_folds(reg)
-    elif option == 4:  # interactive prediction viewer.
+    elif option == 4:
+        model = input("Model type (gru or lstm):")
+        reg = input("Regularizer index (0 to 5):")
+        make_cross_val_table(model, reg)
+    elif option == 5:  # interactive prediction viewer.
         gru_reg = input("GRU regularizer index (0 to 5):")
         lstm_reg = input("LSTM regularizer index (0 to 5):")
         fold = input("Validation fold index (0 to 8):")
