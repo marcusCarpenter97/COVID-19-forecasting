@@ -3,6 +3,7 @@ import csv
 import itertools
 import numpy as np
 import matplotlib.pyplot as plt
+from tabulate import tabulate
 
 TARGET_DIR = "cross_val_results"
 TEST_DATA = "test_y"
@@ -191,9 +192,12 @@ def make_cross_val_table(model, reg):
         pred = open_file(file_name)
         res.append(root_mean_squared_scaled_error(orig[fold], pred))
 
-    for i in res:
-        print(i.shape)
-        print(i)
+    # TODO plot of errors over validations folds.
+    # TODO one RMSSE table of all validation folds.
+    #for i in res:
+        #print(i.shape)
+        #print(i)
+    print(tabulate(res[0], tablefmt="latex_raw"))
 
 def handle_user_input(files, loc_names):
     try:
