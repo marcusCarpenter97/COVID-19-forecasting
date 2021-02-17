@@ -204,11 +204,19 @@ def merge_names_and_data(names, data):
         table[-1].insert(0, name)
     return table
 
-def make_cross_val_table(res, loc_names):
+def make_cross_val_tables(res, loc_names):
+    """ Make one table for each cross validation fold. """
     for i, fold in enumerate(res):
-        print(f"RMSSE for validation fold: {i}")
         table = merge_names_and_data(loc_names, fold)
+        print(f"RMSSE for validation fold: {i}")
         print(tabulate(table, tablefmt="latex_raw"))
+
+def make_cross_val_table(res, loc_names):
+    """ Make table containing the average RMSSE over all folds. """
+    avg_rmsse = np.mean(res, axis=0)
+    table = merge_names_and_data(loc_names, avg_rmsse)
+    print(f"Average RMSSE over all validation folds")
+    print(tabulate(table, tablefmt="latex_raw"))
 
 def handle_user_input(files, loc_names):
     try:
@@ -233,6 +241,7 @@ def handle_user_input(files, loc_names):
         model = input("Model type (gru or lstm):")
         reg = input("Regularizer index (0 to 5):")
         rmsse_res = calculate_rmsse_corss_val(model, reg)
+        make_cross_val_tables(rmsse_res, loc_names)
         make_cross_val_table(rmsse_res, loc_names)
         make_cross_val_plots(rmsse_res, loc_names)
     elif option == 5:  # interactive prediction viewer.
