@@ -194,8 +194,30 @@ def calculate_rmsse_corss_val(model, reg):
     return res
 
 def make_cross_val_plots(res, loc_names):
-    # TODO plot of errors over validations folds.
-    pass
+    curr_loc = 0
+    def key_event_handler(event):
+        sub_titles = ["Confirmed", "Deceased", "Recovered"]
+        nonlocal curr_loc
+        if event.key == "right":
+            curr_loc += 1
+        elif event.key == "left":
+            curr_loc -= 1
+        else:
+            return
+        curr_loc = curr_loc % len(loc_names)
+        for idx, ax in enumerate(axes):
+            ax.cla()
+            ax.set_title(f"{sub_titles[idx]}")
+            ax.plot(res.T[idx][curr_loc])
+        axes[0].set_ylabel("RMSSE")
+        axes[1].set_xlabel("Validation folds")
+        axes[2].legend(["RMSSE"], loc=0)
+        fig.suptitle(loc_names[curr_loc])
+        fig.canvas.draw()
+
+    fig, axes = plt.subplots(ncols=3, sharex=True, constrained_layout=True)
+    fig.suptitle("Press the left or right arrow key to begin.")
+    fig.canvas.mpl_connect("key_press_event", key_event_handler)
 
 def merge_names_and_data(names, data):
     table = []
@@ -243,7 +265,7 @@ def handle_user_input(files, loc_names):
         rmsse_res = calculate_rmsse_corss_val(model, reg)
         make_cross_val_tables(rmsse_res, loc_names)
         make_cross_val_table(rmsse_res, loc_names)
-        make_cross_val_plots(rmsse_res, loc_names)
+        make_cross_val_plots(np.array(rmsse_res), loc_names)
     elif option == 5:  # interactive prediction viewer.
         gru_reg = input("GRU regularizer index (0 to 5):")
         lstm_reg = input("LSTM regularizer index (0 to 5):")
