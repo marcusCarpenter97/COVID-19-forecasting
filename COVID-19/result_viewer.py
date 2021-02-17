@@ -183,7 +183,7 @@ def root_mean_squared_scaled_error(orig, pred):
         rmsse = np.sqrt(np.mean(scaled_error, axis=1))
     return rmsse
 
-def make_cross_val_table(model, reg):
+def calculate_rmsse_corss_val(model, reg):
     folds = np.arange(9)
     orig = open_file(TEST_DATA)
     res = []
@@ -191,12 +191,14 @@ def make_cross_val_table(model, reg):
         file_name = f"{model}_reg{reg}_fold{fold}_test_pred"
         pred = open_file(file_name)
         res.append(root_mean_squared_scaled_error(orig[fold], pred))
+    return res
 
+def make_cross_val_plots(res, loc_names):
     # TODO plot of errors over validations folds.
+    pass
+
+def make_cross_val_table(res, loc_names):
     # TODO one RMSSE table of all validation folds.
-    #for i in res:
-        #print(i.shape)
-        #print(i)
     print(tabulate(res[0], tablefmt="latex_raw"))
 
 def handle_user_input(files, loc_names):
@@ -221,7 +223,9 @@ def handle_user_input(files, loc_names):
     elif option == 4:
         model = input("Model type (gru or lstm):")
         reg = input("Regularizer index (0 to 5):")
-        make_cross_val_table(model, reg)
+        rmsse_res = calculate_rmsse_corss_val(model, reg)
+        make_cross_val_table(rmsse_res, loc_names)
+        make_cross_val_plots(rmsse_res, loc_names)
     elif option == 5:  # interactive prediction viewer.
         gru_reg = input("GRU regularizer index (0 to 5):")
         lstm_reg = input("LSTM regularizer index (0 to 5):")
