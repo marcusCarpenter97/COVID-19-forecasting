@@ -197,9 +197,18 @@ def make_cross_val_plots(res, loc_names):
     # TODO plot of errors over validations folds.
     pass
 
+def merge_names_and_data(names, data):
+    table = []
+    for name, row in zip(names, data):
+        table.append(list(row))
+        table[-1].insert(0, name)
+    return table
+
 def make_cross_val_table(res, loc_names):
-    # TODO one RMSSE table of all validation folds.
-    print(tabulate(res[0], tablefmt="latex_raw"))
+    for i, fold in enumerate(res):
+        print(f"RMSSE for validation fold: {i}")
+        table = merge_names_and_data(loc_names, fold)
+        print(tabulate(table, tablefmt="latex_raw"))
 
 def handle_user_input(files, loc_names):
     try:
