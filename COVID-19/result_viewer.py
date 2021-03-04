@@ -98,7 +98,7 @@ def compare_models():
     errors = ["rmse", "mae"]
     outputs = ["val", "test"]
     amper = " & "  # For a latex table
-    hist_data = {"lstm_rmse": [], "gru_rmse": [], "lstm_mae": [], "gru_mae": []}
+    hist_data = {"LSTM RMSE": [], "GRU RMSE": [], "LSTM MAE": [], "GRU MAE": []}
 
     permutations = itertools.product(models, folds, errors, outputs)
     for perm in permutations:
@@ -110,7 +110,7 @@ def compare_models():
         reg_comp = reg_comp.T.argmin(axis=2)  # transpose it to compare the regularizers.
         reg_comp = np.apply_along_axis(np.bincount, 1, reg_comp, minlength=regs).argmax(axis=1)  # count the best regularizers.
 
-        hist_data[f"{perm[0]}_{perm[2]}"].append(reg_comp)
+        hist_data[f"{perm[0].upper()} {perm[2].upper()}"].append(reg_comp)
         print(f"Best for {perm}")
         # Translate the reg indicies to their names then convert the list to a string.
         print(f"{amper.join(map(str, [reg_names[i] for i in reg_comp]))}")
@@ -120,6 +120,7 @@ def compare_models():
         fig, ax = plt.subplots(constrained_layout=True)
         ax.bar(reg_names, temp_count)
         ax.set_yticks(np.arange(temp_count[np.argmax(temp_count)]+1))
+        ax.set_ylabel("Rank")
         ax.set_title(key)
     print(hist_data)
 
