@@ -30,7 +30,7 @@ def rank_models(max_fold: int, output: list):
     reg_names = ["No reg", "L1", "L2", "Dropout", "L1L2", "All reg"]
     errors = ["rmse", "mae"]
     regs = range(len(reg_names))
-    folds = range(max_fold)
+    folds = range(max_fold+1)  # Range stops at max-1
     rank_bins = {}
 
     permutations = list(itertools.product(models, folds, errors, output))
@@ -71,6 +71,14 @@ Enter an option by its number:
 4. Check validation folds for a location.
 5. Exit.
 """
+    min_val_fold = 0
+    max_val_fold = 11
+
+    val_res = "val"
+    test_res = "test"
+
+    params = {}
+
     while True:
         try:
             option = int(input(menu_text))
@@ -78,19 +86,31 @@ Enter an option by its number:
             print("Option must be an integer.")
             continue
 
-        if option == 5:
-            raise SystemExit
+        if option == 1:
+            params["option"] = option
 
-        if option in range(1,5):
-            return option
+            val_fold = int(input(f"Validation fold index ({min_val_fold} to {max_val_fold}):"))  # TypeError
+            out_type = input(f"Result type ({val_res} or {test_res}):")
+
+            if val_fold in range(min_val_fold, max_val_fold+1):  # Range stops at max-1
+                params["fold"] = val_fold
+            if out_type in (val_res, test_res):
+                params["out"] = [out_type]
+
+        elif option == 5:
+            raise SystemExit
         else:
             print("Invalid option.")
+            continue
+
+        return params
 
 def main():
-    usr_chiose = handle_user_input()
-    print(usr_chiose)
+    usr_input = handle_user_input()
+    print(usr_input)
+    if usr_input["option"] == 1:
+        rank_models(usr_input["fold"], usr_input["out"])
 
 if __name__ == "__main__":
-    #main()
-    rank_models(12, ["test"])
+    main()
     plt.show()
