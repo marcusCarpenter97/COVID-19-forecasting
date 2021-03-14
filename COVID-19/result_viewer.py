@@ -80,6 +80,59 @@ def merge_names_and_data(names, data):
         table[-1].insert(0, name)
     return table
 
+def make_rmse_table(lstm_reg: str, gru_reg: str, val_folds: int, loc_names: list) -> None:
+
+    latex_tables = "latex_tables"
+
+    gru_rmse = open_file(f"gru_reg{gru_reg}_fold{val_folds}_rmse_test")
+    gru_mae = open_file(f"gru_reg{gru_reg}_fold{val_folds}_mae_test")
+    lstm_rmse = open_file(f"lstm_reg{lstm_reg}_fold{val_folds}_rmse_test")
+    lstm_mae = open_file(f"lstm_reg{lstm_reg}_fold{val_folds}_mae_test")
+
+    assert(gru_rmse.shape == gru_mae.shape), f"gru_rmse and gru_mae should have the same shape. Got {gru_rmse.shape} and "
+    "{gru_mae.shape}"
+    assert(lstm_rmse.shape == lstm_mae.shape), f"lstm_rmse and lstm_mae should have the same shape. Got {lstm_rmse.shape} and "
+    "{lstm_mae.shape}"
+
+    gru_merged = []
+    for col in range(gru_rmse.shape[1]):
+        gru_merged.append(gru_rmse[:, col])
+        gru_merged.append(gru_mae[:, col])
+
+    gru_merged = np.stack(gru_merged).T
+
+    lstm_merged = []
+    for col in range(lstm_rmse.shape[1]):
+        lstm_merged.append(lstm_rmse[:, col])
+        lstm_merged.append(lstm_mae[:, col])
+
+    lstm_merged = np.stack(lstm_merged).T
+
+    table_merged = []
+    for row in range(gru_merged.shape[0]):
+        table_merged.append(gru_merged[row])
+        table_merged.append(lstm_merged[row])
+
+    table_merged = np.stack(table_merged)
+
+    models = []
+    names = []
+    for row in range(table_merged.shape[0]):
+        if row % 2 == 0:
+            models.append("GRU")
+            names.append(loc_names.pop(0))
+        else:
+            models.append("LSTM")
+            names.append("")
+
+    temp_table = merge_names_and_data(models, table_merged)
+    final_table = merge_names_and_data(names, temp_table)
+
+    main_path = os.path.join(latex_tables, f"rmse_lstm_reg{lstm_reg}_gru_reg_{gru_reg}_fold{val_folds}.tex")
+
+    with open(main_path, "w") as mt:
+        mt.write(tabulate(final_table, tablefmt="latex_raw"))
+
 def make_rmsse_tables(lstm_reg: str, gru_reg: str, val_folds: int, test_data: str, loc_names: list) -> None:
 
     latex_tables = "latex_tables"
@@ -123,12 +176,11 @@ def make_rmsse_tables(lstm_reg: str, gru_reg: str, val_folds: int, test_data: st
     avg_table = np.stack(avg_table).T
 
     main_table = merge_names_and_data(loc_names, avg_table)
-    print(main_table)
+
     main_path = os.path.join(latex_tables, f"avg_rmsse_lstm_reg{lstm_reg}_gru_reg_{gru_reg}.tex")
-    temp = tabulate(main_table, tablefmt="latex_raw")
-    print(temp)
+
     with open(main_path, "w") as mt:
-        mt.write(temp)
+        mt.write(tabulate(main_table, tablefmt="latex_raw"))
 
 def inclusive_range(stop, start=0, step=1):
     return range(start, stop+1, step)
@@ -212,6 +264,7 @@ def main():
     if usr_input["option"] == 2:
         loc_names = load_location_names()
         make_rmsse_tables(usr_input["lstm_reg"], usr_input["gru_reg"], usr_input["val_fold"], test_data, loc_names)
+        make_rmse_table(usr_input["lstm_reg"], usr_input["gru_reg"], usr_input["val_fold"], loc_names)
 
 if __name__ == "__main__":
     main()
