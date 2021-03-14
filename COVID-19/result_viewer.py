@@ -181,7 +181,7 @@ def make_rmsse_tables(lstm_reg: str, gru_reg: str, val_folds: int, test_data: st
         mt.write(tabulate(main_table, tablefmt="latex_raw"))
 
 def interactive_viewer(original, gru_preds, lstm_preds, val_fold, loc_names):
-    curr_loc = 0
+    curr_loc = -1
 
     def key_event_handler(event):
         sub_titles = ["Confirmed", "Deceased", "Recovered"]
@@ -210,6 +210,36 @@ def interactive_viewer(original, gru_preds, lstm_preds, val_fold, loc_names):
     fig.suptitle("Press the left or right arrow key to begin.")
     fig.canvas.mpl_connect("key_press_event", key_event_handler)
 
+def view_validation_folds(original, gru_preds, lstm_preds, val_fold, loc_index, loc_name):
+    curr_val_fold = -1
+
+    def key_event_handler(event):
+        sub_titles = ["Confirmed", "Deceased", "Recovered"]
+        nonlocal curr_val_fold
+        if event.key == "right":
+            curr_val_fold += 1
+        elif event.key == "left":
+            curr_val_fold -= 1
+        else:
+            return
+        curr_val_fold = curr_val_fold % (val_fold+1)  # Inclusive
+
+        for idx, axis in enumerate(axes):
+            axis.cla()
+            axis.set_title(f"{sub_titles[idx]}")
+            axis.plot(original[curr_val_fold][loc_index].T[idx], color="b")
+            axis.plot(gru_preds[curr_val_fold][loc_index].T[idx], linestyle="--", color="orange")
+            axis.plot(lstm_preds[curr_val_fold][loc_index].T[idx], linestyle="-.", color="r")
+        axes[0].set_ylabel("People")
+        axes[1].set_xlabel("Days")
+        axes[2].legend(["Original", "GRU predictions", "LSTM predictions"], loc=0)
+        fig.suptitle(f"{loc_name} - validation fold: {curr_val_fold}")
+        fig.canvas.draw()
+
+    fig, axes = plt.subplots(ncols=3, sharex=True, constrained_layout=True)
+    fig.suptitle("Press the left or right arrow key to begin.")
+    fig.canvas.mpl_connect("key_press_event", key_event_handler)
+
 def inclusive_range(stop, start=0, step=1):
     return range(start, stop+1, step)
 
@@ -226,7 +256,7 @@ Enter an option by its number:
 1. Rank models using bar plots.
 2. Create cross-validation tables.
 3. Interactive prediction viewer.
-4. Check validation folds for a location.
+4. Plot validation folds for a location.
 5. Exit.
 """
     min_val_fold = 0
@@ -257,7 +287,7 @@ Enter an option by its number:
             if out_type in (val_res, test_res):
                 params["out"] = [out_type]
 
-        elif option in (2, 3):
+        if option in (2, 3, 4):
             lstm_reg = int(input("Enter the number for the LSTM regularizer:\n0.No reg\n1.L1\n2.L2\n3.Dropout\n4.L1L2"
                                  " (ElasticNet)\n5.All reg\n"))
             gru_reg = int(input("Enter the number for the GRU regularizer:\n0.No reg\n1.L1\n2.L2\n3.Dropout\n4.L1L2"
@@ -270,6 +300,9 @@ Enter an option by its number:
                 params["gru_reg"] = gru_reg
             if val_fold in inclusive_range(max_val_fold, min_val_fold):
                 params["val_fold"] = val_fold
+
+        if option == 4:
+            params["loc_name"] = input("Enter the name of the desired location:")
 
         elif option == 5:
             raise SystemExit
@@ -299,6 +332,20 @@ def main():
         gru_preds = open_file(f"gru_reg{usr_input['gru_reg']}_fold{usr_input['val_fold']}_test_pred")
         lstm_preds = open_file(f"lstm_reg{usr_input['lstm_reg']}_fold{usr_input['val_fold']}_test_pred")
         interactive_viewer(orig[usr_input["val_fold"]], gru_preds, lstm_preds, usr_input["val_fold"], loc_names)
+
+    if usr_input["option"] == 4:
+        try:
+            loc_index = loc_names.index(usr_input["loc_name"])
+        except ValueError:
+            print(f"{usr_input['loc_name']} is not a valid location. Try again.")
+            raise SystemExit
+        orig = open_file(test_data)[:usr_input['val_fold']+1]  # Plus one to make the slice inclusive.
+        gru_preds = []
+        lstm_preds = []
+        for fold in inclusive_range(usr_input['val_fold']):
+            gru_preds.append(open_file(f"gru_reg{usr_input['gru_reg']}_fold{fold}_test_pred"))
+            lstm_preds.append(open_file(f"lstm_reg{usr_input['lstm_reg']}_fold{fold}_test_pred"))
+        view_validation_folds(orig, gru_preds, lstm_preds, usr_input["val_fold"], loc_index, usr_input["loc_name"])
 
 if __name__ == "__main__":
     main()
