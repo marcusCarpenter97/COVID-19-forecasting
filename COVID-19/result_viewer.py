@@ -5,8 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tabulate import tabulate
 
-TARGET_DIR = "cross_val_results"
-
 def build_file_name(model: str, reg: int, fold: int, e_type: str, o_type: str) -> str:
     return f"{model}_reg{reg}_fold{fold}_{e_type}_{o_type}"
 
@@ -16,7 +14,7 @@ def open_file(f_name: str):
     -------
     2D numpy array
     """
-    path = os.path.join(TARGET_DIR, f_name)
+    path = os.path.join("cross_val_results", f_name)
     with np.load(path) as data:
         ret = [data[i] for i in data]  # There can be multiple arrays in a file.
     return np.squeeze(np.array(ret))
@@ -182,11 +180,41 @@ def make_rmsse_tables(lstm_reg: str, gru_reg: str, val_folds: int, test_data: st
     with open(main_path, "w") as mt:
         mt.write(tabulate(main_table, tablefmt="latex_raw"))
 
+def interactive_viewer(original, gru_preds, lstm_preds, val_fold, loc_names):
+    curr_loc = 0
+
+    def key_event_handler(event):
+        sub_titles = ["Confirmed", "Deceased", "Recovered"]
+        nonlocal curr_loc
+        if event.key == "right":
+            curr_loc += 1
+        elif event.key == "left":
+            curr_loc -= 1
+        else:
+            return
+        curr_loc = curr_loc % len(gru_preds)  # Assumes gru and lstm have same size.
+
+        for idx, axis in enumerate(axes):
+            axis.cla()
+            axis.set_title(f"{sub_titles[idx]}")
+            axis.plot(original[curr_loc].T[idx], color="b")
+            axis.plot(gru_preds[curr_loc].T[idx], linestyle="--", color="orange")
+            axis.plot(lstm_preds[curr_loc].T[idx], linestyle="-.", color="r")
+        axes[0].set_ylabel("People")
+        axes[1].set_xlabel("Days")
+        axes[2].legend(["Original", "GRU predictions", "LSTM predictions"], loc=0)
+        fig.suptitle(f"{loc_names[curr_loc]} - validation fold: {val_fold}")
+        fig.canvas.draw()
+
+    fig, axes = plt.subplots(ncols=gru_preds.shape[2], sharex=True, constrained_layout=True)
+    fig.suptitle("Press the left or right arrow key to begin.")
+    fig.canvas.mpl_connect("key_press_event", key_event_handler)
+
 def inclusive_range(stop, start=0, step=1):
     return range(start, stop+1, step)
 
 def load_location_names():
-    path = os.path.join(TARGET_DIR, "country_names.csv")
+    path = os.path.join("cross_val_results", "country_names.csv")
     with open(path, "r", newline="") as csv_file:
         reader = csv.reader(csv_file)
         results = [row for row in reader]
@@ -229,7 +257,7 @@ Enter an option by its number:
             if out_type in (val_res, test_res):
                 params["out"] = [out_type]
 
-        elif option == 2:
+        elif option in (2, 3):
             lstm_reg = int(input("Enter the number for the LSTM regularizer:\n0.No reg\n1.L1\n2.L2\n3.Dropout\n4.L1L2"
                                  " (ElasticNet)\n5.All reg\n"))
             gru_reg = int(input("Enter the number for the GRU regularizer:\n0.No reg\n1.L1\n2.L2\n3.Dropout\n4.L1L2"
@@ -257,14 +285,20 @@ def main():
 
     usr_input = handle_user_input()
     print(usr_input)  # For debugging.
+    loc_names = load_location_names()
 
     if usr_input["option"] == 1:
         rank_models(usr_input["fold"], usr_input["out"])
 
     if usr_input["option"] == 2:
-        loc_names = load_location_names()
         make_rmsse_tables(usr_input["lstm_reg"], usr_input["gru_reg"], usr_input["val_fold"], test_data, loc_names)
         make_rmse_table(usr_input["lstm_reg"], usr_input["gru_reg"], usr_input["val_fold"], loc_names)
+
+    if usr_input["option"] == 3:
+        orig = open_file(test_data)
+        gru_preds = open_file(f"gru_reg{usr_input['gru_reg']}_fold{usr_input['val_fold']}_test_pred")
+        lstm_preds = open_file(f"lstm_reg{usr_input['lstm_reg']}_fold{usr_input['val_fold']}_test_pred")
+        interactive_viewer(orig[usr_input["val_fold"]], gru_preds, lstm_preds, usr_input["val_fold"], loc_names)
 
 if __name__ == "__main__":
     main()
