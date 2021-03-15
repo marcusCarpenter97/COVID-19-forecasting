@@ -32,6 +32,7 @@ def rank_models(max_fold: int, output: list):
     regs = range(len(reg_names))
     folds = range(max_fold+1)  # Range stops at max-1
     rank_bins = {}
+    patterns = ["/", "|", "-", "+", "x", "o"]
 
     permutations = list(itertools.product(models, folds, errors, output))
 
@@ -55,7 +56,8 @@ def rank_models(max_fold: int, output: list):
         rank_bins[key] = np.stack(rank_bins[key])
         reg_count = np.bincount(rank_bins[key].flatten())
 
-        axis.bar(reg_names, reg_count)
+        for i in range(len(reg_names)):
+            axis.bar(reg_names[i], reg_count[i], color="grey", hatch=patterns[i])
         axis.set_yticks(range(max(reg_count)+1))  # Plus one because range stops at max minus one.
         axis.set_ylabel("Rank")
         axis.set_title(key)
