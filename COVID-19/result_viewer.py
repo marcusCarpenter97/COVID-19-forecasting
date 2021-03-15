@@ -181,6 +181,7 @@ def make_rmsse_tables(lstm_reg: str, gru_reg: str, val_folds: int, test_data: st
         mt.write(tabulate(main_table, tablefmt="latex_raw"))
 
 def interactive_viewer(original, gru_preds, lstm_preds, val_fold, loc_names):
+    save_dir = "plots"
     curr_loc = -1
 
     def key_event_handler(event):
@@ -205,12 +206,14 @@ def interactive_viewer(original, gru_preds, lstm_preds, val_fold, loc_names):
         axes[2].legend(["Original", "GRU predictions", "LSTM predictions"], loc=0)
         fig.suptitle(f"{loc_names[curr_loc]} - validation fold: {val_fold}")
         fig.canvas.draw()
+        fig.savefig(os.path.join(save_dir, loc_names[curr_loc]), format='png')
 
     fig, axes = plt.subplots(ncols=gru_preds.shape[2], sharex=True, constrained_layout=True)
     fig.suptitle("Press the left or right arrow key to begin.")
     fig.canvas.mpl_connect("key_press_event", key_event_handler)
 
 def view_validation_folds(original, gru_preds, lstm_preds, val_fold, loc_index, loc_name):
+    save_dir = "plots"
     curr_val_fold = -1
 
     def key_event_handler(event):
@@ -235,6 +238,7 @@ def view_validation_folds(original, gru_preds, lstm_preds, val_fold, loc_index, 
         axes[2].legend(["Original", "GRU predictions", "LSTM predictions"], loc=0)
         fig.suptitle(f"{loc_name} - validation fold: {curr_val_fold}")
         fig.canvas.draw()
+        fig.savefig(os.path.join(save_dir, f"{loc_name}-{curr_val_fold}"), format='png')
 
     fig, axes = plt.subplots(ncols=3, sharex=True, constrained_layout=True)
     fig.suptitle("Press the left or right arrow key to begin.")
