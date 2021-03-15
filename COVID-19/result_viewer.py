@@ -278,6 +278,10 @@ Enter an option by its number:
 
         params["option"] = option
 
+        if option not in (1,2,3,4,5):
+            print("Invalid option.")
+            continue
+
         if option == 1:
             val_fold = int(input(f"Validation fold index ({min_val_fold} to {max_val_fold}):"))  # TypeError
             out_type = input(f"Result type ({val_res} or {test_res}):")
@@ -304,11 +308,8 @@ Enter an option by its number:
         if option == 4:
             params["loc_name"] = input("Enter the name of the desired location:")
 
-        elif option == 5:
+        if option == 5:
             raise SystemExit
-        else:
-            print("Invalid option.")
-            continue
 
         return params
 
