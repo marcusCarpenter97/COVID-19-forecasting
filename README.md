@@ -4,7 +4,7 @@ Covid-19 as an example*.
 
 ## How to run the experiments?
 `python3 cross_val_experiments.py`
-This took approximately 6 hours to run on a laptop with an Intel Core i7-8665U 2GHz CPU and 16GB RAM on Windows 10.
+This took approximately 10 hours to run on a laptop with an Intel Core i7-8665U 2GHz CPU and 16GB RAM on Windows 10.
 All results and data files are saved in the folder `cross_val_results`. When run the programme will download the newest
 data from the Jonhs Hopkins GitHub repository automatically. This was tested in a linux environment especifically the Ubuntu
 18.04 WSL and may not work in other systems without modifying the `data_loader.py` module.
