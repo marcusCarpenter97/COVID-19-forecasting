@@ -1,3 +1,5 @@
 __pycache__/
 *.swp
 COVID-19/COVID-19/
+COVID-19/plots/
+COVID-19/latex_tables/
