@@ -32,7 +32,7 @@ def rank_models(max_fold: int, output: list):
     regs = range(len(reg_names))
     folds = range(max_fold+1)  # Range stops at max-1
     rank_bins = {}
-    patterns = ["/", "|", "-", "+", "x", "o"]
+    save_dir = "plots"
 
     permutations = list(itertools.product(models, folds, errors, output))
 
@@ -57,12 +57,14 @@ def rank_models(max_fold: int, output: list):
         reg_count = np.bincount(rank_bins[key].flatten())
 
         for i in range(len(reg_names)):
-            axis.bar(reg_names[i], reg_count[i], color="grey", hatch=patterns[i])
+            axis.bar(reg_names[i], reg_count[i], color="blue", width=0.5)
         axis.set_yticks(range(max(reg_count)+1))  # Plus one because range stops at max minus one.
         axis.set_ylabel("Rank")
         axis.set_title(key)
 
         print(reg_count)
+    fig.set_size_inches(7, 6)
+    fig.savefig(os.path.join(save_dir, "bar_plots"), format='png')
 
 def root_mean_squared_scaled_error(orig, pred):
     # The average squared distance between two points in the data.
