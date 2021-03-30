@@ -3,3 +3,4 @@ __pycache__/
 COVID-19/COVID-19/
 COVID-19/plots/
 COVID-19/latex_tables/
+*.png
