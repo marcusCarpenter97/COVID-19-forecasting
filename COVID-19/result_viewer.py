@@ -3,6 +3,7 @@ import csv
 import itertools
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import NullFormatter
 from tabulate import tabulate
 
 def build_file_name(model: str, reg: int, fold: int, e_type: str, o_type: str) -> str:
@@ -63,8 +64,57 @@ def rank_models(max_fold: int, output: list):
         axis.set_title(key)
 
         print(reg_count)
-    fig.set_size_inches(7, 6)
+    fig.set_size_inches(7, 4)
     fig.savefig(os.path.join(save_dir, "bar_plots"), format='png')
+
+def compare_with_no_reg(reg_idx, log_y=True):
+    no_reg_idx = 0
+    max_fold = 11
+    gru_no_res = []
+    gru_best_res = []
+    lstm_no_res = []
+    lstm_best_res = []
+    for fold in inclusive_range(max_fold):
+        gru_no_file = build_file_name("gru", no_reg_idx, fold, "rmse", "test")
+        gru_best_file = build_file_name("gru", reg_idx, fold, "rmse", "test")
+        lstm_no_file = build_file_name("lstm", no_reg_idx, fold, "rmse", "test")
+        lstm_best_file = build_file_name("lstm", reg_idx, fold, "rmse", "test")
+
+        gru_no_data = open_file(gru_no_file)
+        gru_best_data = open_file(gru_best_file)
+        lstm_no_data = open_file(lstm_no_file)
+        lstm_best_data = open_file(lstm_best_file)
+
+        gru_no_res.append(np.mean(gru_no_data))
+        gru_best_res.append(np.mean(gru_best_data))
+        lstm_no_res.append(np.mean(lstm_no_data))
+        lstm_best_res.append(np.mean(lstm_best_data))
+
+    print(tabulate([gru_no_res, gru_best_res, lstm_no_res, lstm_best_res], tablefmt="latex_raw"))
+
+    x_axis = np.array(inclusive_range(max_fold))
+    w = 0.3
+    rows = 2
+    cols = 6
+    fold = 0
+    fig, axes = plt.subplots(rows, cols, constrained_layout=True)
+    for row in range(rows):
+        for col in range(cols):
+            axes[row][col].bar(x_axis[fold], gru_no_res[fold], hatch="\\", edgecolor="black", color="white", label="GRU N")
+            axes[row][col].bar(x_axis[fold]+w, gru_best_res[fold], hatch="/", edgecolor="black", color="white", label="GRU B")
+            axes[row][col].bar(x_axis[fold]+w*2, lstm_no_res[fold], hatch="-", edgecolor="black", color="white", label="LSTM N")
+            axes[row][col].bar(x_axis[fold]+w*3, lstm_best_res[fold], hatch=".", edgecolor="black", color="white", label="LSTM B")
+            fold += 1
+            if log_y:
+                axes[row][col].set_yscale("log")
+            axes[row][col].tick_params(axis="both", which="both", bottom=False, left=False, labelbottom=False)
+            #axes[row][col].yaxis.set_major_locator(LogLocator())
+            #axes[row][col].locator_params(axis="y", nbins=3)
+            min_y, max_y = axes[row][col].get_ylim()
+            axes[row][col].set_yticks([min_y, max_y])
+            axes[row][col].yaxis.set_minor_formatter(NullFormatter())
+            handles, labels = axes[row][col].get_legend_handles_labels()
+    fig.legend(handles, labels, loc=(0,0.2))
 
 def root_mean_squared_scaled_error(orig, pred):
     # The average squared distance between two points in the data.
@@ -265,7 +315,8 @@ Enter an option by its number:
 2. Create cross-validation tables.
 3. Interactive prediction viewer.
 4. Plot validation folds for a location.
-5. Exit.
+5. Plot baseline models against regualizer.
+6. Exit.
 """
     min_val_fold = 0
     max_val_fold = 11
@@ -286,7 +337,7 @@ Enter an option by its number:
 
         params["option"] = option
 
-        if option not in (1,2,3,4,5):
+        if option not in (1,2,3,4,5,6):
             print("Invalid option.")
             continue
 
@@ -317,6 +368,11 @@ Enter an option by its number:
             params["loc_name"] = input("Enter the name of the desired location:")
 
         if option == 5:
+            reg = int(input("Choose the regularizer (1 to 5):"))
+            if reg in inclusive_range(max_reg, min_reg):
+                params["reg"] = reg
+
+        if option == 6:
             raise SystemExit
 
         return params
@@ -355,6 +411,9 @@ def main():
             gru_preds.append(open_file(f"gru_reg{usr_input['gru_reg']}_fold{fold}_test_pred"))
             lstm_preds.append(open_file(f"lstm_reg{usr_input['lstm_reg']}_fold{fold}_test_pred"))
         view_validation_folds(orig, gru_preds, lstm_preds, usr_input["val_fold"], loc_index, usr_input["loc_name"])
+
+    if usr_input["option"] == 5:
+        compare_with_no_reg(usr_input["reg"])
 
 if __name__ == "__main__":
     main()
