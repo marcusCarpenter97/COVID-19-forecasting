@@ -1,65 +1,54 @@
-import numpy as np
-import pandas as pd
 import hashlib
+import numpy as np
+from sklearn.preprocessing import StandardScaler
 import data_loader
 import country
-from sklearn.metrics import mean_squared_error
 
 class Data:
     """ A container that stores the time series COVID-19 data for each country.
         The data is loaded from the data_loader module.
     """
     def __init__(self):
-        self.raw_confirmed, self.raw_deceased, self.raw_recovered = data_loader.load_covid_data()
-        self.population = data_loader.load_population_data()
+        self.loader = data_loader.DataLoader()
+        self.raw_confirmed, self.raw_deceased, self.raw_recovered = self.loader.load_covid_data()
+        self.population = self.loader.load_population_data()
         self.countries = []
+        self.pad_val = -10000
+        self.horizon = 28
+        self.features = 3
+        self.padding = np.full((self.horizon, self.features), self.pad_val)
 
-        def generate_world_data():
-            """
-                Creates the World data by summing all the individual
-                time series data for all the countries in the dataset.
+    def prepare_data(self):
+        self.populate_countries()
+        self.encode_names()
+        self.split_data()
 
-                Returns:
-                    A Country object containing the world data.
-            """
-            p = self.population.sum(numeric_only=True)['Population']
-            c = self.raw_confirmed.sum(numeric_only=True)
-            d = self.raw_deceased.sum(numeric_only=True)
-            r = self.raw_recovered.sum(numeric_only=True)
-            i = self.calculate_current_infected(c, d, r)
-            h = self.calculate_healthy(p, d, r, i)
-            self.world = country.Country("World", p, c, d, r, i, h)
+        scaled_train, _ = self.standardize(self.train)
+        scaled_val, self.val_scalers = self.standardize(self.val)
+        scaled_test_x, _ = self.standardize(self.test_x)
+        scaled_test_y, self.test_y_scalers = self.standardize(self.test_y)
 
-        def generate_countries():
-            """
-                Creates a list of Country objects each containing the COVID-19 data for their respective country.
-                Retunrs:
-                    A list of Country objects.
-            """
-            countries = []
-            # For each country in population.
-            for name, pop in self.population.iterrows():
-                p = pop['Population']
-                # Get all relevant time series based on country name.
-                c = self.raw_confirmed.loc[self.raw_confirmed['Country/Region'] == name].sum(numeric_only=True)
-                d = self.raw_deceased.loc[self.raw_deceased['Country/Region'] == name].sum(numeric_only=True)
-                r = self.raw_recovered.loc[self.raw_recovered['Country/Region'] == name].sum(numeric_only=True)
-                i = self.calculate_current_infected(c, d, r)
-                h = self.calculate_healthy(p, d, r, i)
-                # Create new country object.
-                countries.append(country.Country(name, p, c, d, r, i, h))
-            return countries
+        self.padded_scaled_train = self.pad_data(scaled_train)
+        self.padded_scaled_test_x = self.pad_data(scaled_test_x, offset=1)
 
-        generate_world_data()
-        self.countries.extend(generate_countries())
+        self.multi_out_scaled_val = self.prepare_output_data(scaled_val)
+        self.multi_out_scaled_test_y = self.prepare_output_data(scaled_test_y)
 
-    def find_country(self, name):
+    def populate_countries(self):
         """
-        Takes a country's name and returns its country object.
-        Returns None if country is not found.
+            Creates a list of Country objects each containing the COVID-19 data for their respective country.
+            Retunrs:
+                A list of Country objects.
         """
-        res = [country for country in self.countries if country.name == name]
-        return None if len(res) == 0 else res[0]
+        # For each country in population.
+        for name, pop in self.population.iterrows():
+            p = pop['Population']
+            # Get all relevant time series based on country name.
+            c = self.raw_confirmed.loc[self.raw_confirmed['Country/Region'] == name].sum(numeric_only=True)
+            d = self.raw_deceased.loc[self.raw_deceased['Country/Region'] == name].sum(numeric_only=True)
+            r = self.raw_recovered.loc[self.raw_recovered['Country/Region'] == name].sum(numeric_only=True)
+            # Create new country object.
+            self.countries.append(country.Country(name, p, c, d, r))
 
     def encode_names(self, output_space=6):
         """
@@ -82,102 +71,56 @@ class Data:
 
         return hashed_names
 
-    def calculate_current_infected(self, c, d, r):
-        """
-        Infected people = confirmed - (dead + recovered)
-        Params: all Series objects.
-        Returns: Series.
-        """
-        return c - (d + r)
-
-    def calculate_healthy(self, p, d, r, i):
-        """
-        Healthy people = population - (dead + recovered + infected)
-        Params: all Series objects.
-        Returns: Series.
-        """
-        return p - (d + r + i)
-
-    def log(self):
-        """
-        Apply the log function on all countries.
-        """
-        for country in self.countries:
-            country.log_data()
-
-    def exp(self):
-        """
-        Apply the exp function on all countries.
-        """
-        for country in self.countries:
-            country.exp_data()
-
-    def difference(self):
-        """
-        Apply the diff function on all countries.
-        """
-        for country in self.countries:
-            country.diff_data()
-
-    def integrate(self):
-        """
-        Integrate the data for all countries.
-        """
-        for country in self.countries:
-            country.int_data()
-
-    def split_train_test(self, test_size):
-        """
-        Create training and testing datasets for all countries.
-        """
-        for country in self.countries:
-            country.split_data(test_size)
-
-    def standarize_data(self):
-        """
-        Standarize the train and test data for all countries.
-        """
-        for country in self.countries:
-            country.standarize()
-
-    def cross_validate(self, train_size, horizon):
+    def cross_validate(self, train_size):
         """
         Cross validate data for all countries.
         """
         train, val, test_x, test_y = [], [], [], []
         for country in self.countries:
-            tr, v, te_x, te_y = country.split_k_fold(train_size, horizon)
+            tr, v, te_x, te_y = country.split_k_fold(train_size, self.horizon)
             train.append(tr), val.append(v), test_x.append(te_x), test_y.append(te_y)
-
         return np.stack(train), np.stack(val), np.stack(test_x), np.stack(test_y)
 
-    def destandarize_data(self, predictions):
+    def split_data(self):
         """
-        Destandarize the predictions for all countries.
+        Returns four lists of numpy arrrays. Each list has the shape (fold, countries, days). The number of days changes over the
+        folds.
         """
-        return np.stack([country.destandarize(prediction) for country, prediction in zip(self.countries, predictions)])
+        self.train, self.val, self.test_x, self.test_y = [], [], [], []
+        train_size = self.horizon
+        # This assumes all countries have the same length.
+        # The minus two gives space for the validation and test sets as they will overshoot.
+        k_folds = len(self.countries[0].data)//self.horizon - 2
+        for _ in range(k_folds):
+            tr, v, te_x, te_y = self.cross_validate(train_size)
+            self.train.append(tr), self.val.append(v), self.test_x.append(te_x), self.test_y.append(te_y)
+            train_size += self.horizon
 
-    def calculate_error(self, predictions):
-        """
-        Calculate the MSE and the RMSE for the predictions for all the countries.
-        """
-        results = {}
-        for country, prediction in zip(self.countries, predictions):
-            results[country.name] = {"MSE": mean_squared_error(country.test_y, prediction, multioutput='raw_values'), "RMSE":
-                                     mean_squared_error(country.test_y, prediction, multioutput='raw_values', squared=False)}
-        return results
+    def standardize(self, data):
+        scaled_data = []
+        scalers = []
+        for fold in data:
+            scaled_fold = []
+            scalers_fold = []
+            for country in fold:
+                scaler = StandardScaler()
+                scaled_fold.append(scaler.fit_transform(country))
+                scalers_fold.append(scaler)
+            scaled_data.append(np.stack(scaled_fold))
+            scalers.append(scalers_fold)
+        return scaled_data, scalers
 
-    def retreive_data(self):
-        """
-        Compile the datasets used by a machine learning model from the data of all countries.
-        """
-        train_x, train_y, test_x, test_y = [], [], [], []
-        for country in self.countries:
-            train_x.append(country.scaled_train_x)
-            train_y.append(country.scaled_train_y)
-            test_x.append(country.scaled_test_x)
-            test_y.append(country.scaled_test_y)
-        return np.stack(train_x), np.stack(train_y), np.stack(test_x), np.stack(test_y)
+    def pad_data(self, data, offset=0):
+        padded_scaled_data = []
+        folds = len(data) - offset
+        for fold in data:
+            padded_fold = []
+            fold_padding = np.repeat(self.padding, folds).reshape(self.horizon*folds, self.features)
+            for row in fold:
+                padded_fold.append(np.append(row, fold_padding, axis=0))
+            folds -= 1
+            padded_scaled_data.append(np.stack(padded_fold))
+        return padded_scaled_data
 
     def make_multi_output_data(self, data):
         """
@@ -195,35 +138,8 @@ class Data:
         recovered = np.stack(recovered)
         return np.stack([confirmed, deceased, recovered])
 
-    def apply_sliding_window(self, time_steps, horizon):
-        """
-        Apply the sliding window to preprocess the data for all countries.
-        """
-        for country in self.countries:
-            country.apply_sliding_window(country.train, time_steps, horizon)
-            country.apply_sliding_window(country.test, time_steps, horizon, is_test_data=True)
-
-    def supervise_data(self, horizon):
-        """
-        Create input and output test sets for all countries.
-        """
-        for country in self.countries:
-            country.supervise_data(horizon)
-
-    def print_n_plot_country(self, name, bars=[]):
-        """
-        Display a country's data.
-
-        Parametes
-        country: str - a countries name.
-        bars: list - list of x coordinates
-        defining where to place vertical bars.
-        """
-        country = self.find_country(name)
-
-        country.print_country()
-
-        if len(bars) > 0:
-            country.plot_country(train_date=bars)
-        else:
-            country.plot_country()
+    def prepare_output_data(self, data):
+        multi_out_data = []
+        for fold in data:
+            multi_out_data.append(self.make_multi_output_data(fold))
+        return multi_out_data
