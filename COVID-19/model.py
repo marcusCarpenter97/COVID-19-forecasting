@@ -45,8 +45,8 @@ class MultiOutputRNN(keras.Model):
         return self.c_out(context), self.d_out(context), self.r_out(context)
 
 class Model():
-    def __init__(self, model):
-        self.model = model
+    def __init__(self, output_size, rnn_units, rnn_layer, rnn_activation, l1, l2, dropout, pad_val):
+        self.model = MultiOutputRNN(output_size, rnn_units, rnn_layer, rnn_activation, l1, l2, dropout, pad_val)
 
     def compile(self, optimizer, loss, metrics):
         self.model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
