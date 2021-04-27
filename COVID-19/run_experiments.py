@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     exp = experiment.Experiment(dat.val_scalers, dat.test_y_scalers)
     start = time()
-    exp.run_experiments(dat.horizon, dat.pad_val, dat.padded_scaled_train, dat.padded_scaled_test_x, dat.multi_out_scaled_val,
+    exp.run_experiments(dat.horizon, dat.pad_val, dat.padded_scaled_train, dat.multi_out_scaled_val, dat.padded_scaled_test_x,
                         dat.multi_out_scaled_test_y, dat.val, dat.test_y, dat.encoded_names)
     end = time()
     logging.info(f"Time taken to run all models: {end - start} seconds")
