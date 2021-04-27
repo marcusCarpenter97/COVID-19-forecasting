@@ -1,4 +1,5 @@
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Reduce tensorflow messages.
 import logging
 import tensorflow as tf
 import numpy as np
