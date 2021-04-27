@@ -123,7 +123,7 @@ class Experiment():
 
                     # rescale test predictions
                     lstm_pred_test = self.prepare_predictions(lstm_pred_test, self.test_scalers[fold_idx])
-                    ru_pred_test = self.prepare_predictions(gru_pred_test, self.test_scalers[fold_idx])
+                    gru_pred_test = self.prepare_predictions(gru_pred_test, self.test_scalers[fold_idx])
 
                     # calculate RMSE for validation
                     lstm_rmse_val = self.calculate_rmse(orig_val[fold_idx], lstm_pred_val)
