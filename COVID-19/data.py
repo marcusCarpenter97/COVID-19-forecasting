@@ -69,7 +69,7 @@ class Data:
         for country, hashed_name in zip(self.countries, hashed_names):
             country.encoded_name = hashed_name
 
-        return hashed_names
+        self.encoded_names = hashed_names
 
     def cross_validate(self, train_size):
         """
