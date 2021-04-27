@@ -56,3 +56,6 @@ class Model():
 
     def evaluate(self, x, y, verbose=1, return_dict=True):
         return self.model.evaluate(x=x, y=y, verbose=verbose, return_dict=return_dict)
+
+    def predict(self, inputs):
+        return self.model.predict(inputs)
