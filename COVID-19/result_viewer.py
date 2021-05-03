@@ -43,11 +43,15 @@ def make_box_plot(lstm, gru, fold):
     ax.set_title(f"Comparison of models for validation fold {fold}")
     ax.legend([bpA["boxes"][0], bpB["boxes"][0]], ["LSTM", "GRU"])
 
-if __name__ == "__main__":
+    fig_path = os.path.join("plots", f"boxplot_{fold}")
+    plt.savefig(fig_path)
+
+def make_box_plots():
     folds = 14
     for fold in range(folds):
         gru_errors = format_errors(fold, "gru", "rmse", "test")
         lstm_errors = format_errors(fold, "lstm", "rmse", "test")
         make_box_plot(lstm_errors, gru_errors, fold)
 
-    plt.show()
+if __name__ == "__main__":
+    make_box_plots()
