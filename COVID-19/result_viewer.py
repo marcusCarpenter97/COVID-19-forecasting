@@ -23,7 +23,7 @@ def format_errors(fold, model, error, partition):
         results.append(mean_error)
     return np.stack(results).T
 
-def make_box_plot(dataA, dataB, fold):
+def make_box_plot(lstm, gru, fold):
     def draw_plot(data, offset,edge_color, fill_color):
         pos = np.arange(data.shape[1])+offset
         bp = ax.boxplot(data, positions= pos, widths=0.3, showmeans=True, meanline=True, patch_artist=True, manage_ticks=False)
@@ -34,8 +34,8 @@ def make_box_plot(dataA, dataB, fold):
         return bp
 
     fig, ax = plt.subplots()
-    bpA = draw_plot(dataA, -0.2, "tomato", "white")
-    bpB = draw_plot(dataB, +0.2,"skyblue", "white")
+    bpA = draw_plot(lstm, -0.2, "tomato", "white")
+    bpB = draw_plot(gru, +0.2,"skyblue", "white")
     plt.xticks(range(6))
 
     ax.set_xticklabels(["No reg", "L1", "L2", "Dropout", "ElasticNet", "All regs"])
@@ -48,6 +48,6 @@ if __name__ == "__main__":
     for fold in range(folds):
         gru_errors = format_errors(fold, "gru", "rmse", "test")
         lstm_errors = format_errors(fold, "lstm", "rmse", "test")
-        make_box_plot(gru_errors, lstm_errors, fold)
+        make_box_plot(lstm_errors, gru_errors, fold)
 
     plt.show()
