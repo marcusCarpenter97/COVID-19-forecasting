@@ -11,14 +11,14 @@ def load_errors(fold, reg, ens, model, error, partition):
     with np.load(file_path) as data:
         return data["arr_0"]  # This assumes all files are contained in arr_0. Possible KeyError.
 
-def format_errors(model, error, partition):
+def format_errors(fold, model, error, partition):
     ensemble_size = 10
     regularizers = 6
     results = []
     for regularizer in range(regularizers):
         mean_error = []
         for trial in range(ensemble_size):
-            model_errors = load_errors(0, regularizer, trial, model, error, partition)
+            model_errors = load_errors(fold, regularizer, trial, model, error, partition)
             mean_error.append(np.mean(model_errors))
         results.append(mean_error)
     return np.stack(results).T
@@ -44,8 +44,10 @@ def make_box_plot(dataA, dataB, fold):
     ax.legend([bpA["boxes"][0], bpB["boxes"][0]], ["LSTM", "GRU"])
 
 if __name__ == "__main__":
-    gru_errors = format_errors("gru", "rmse", "test")
-    lstm_errors = format_errors("lstm", "rmse", "test")
-    make_box_plot(gru_errors, lstm_errors, 0)
+    folds = 14
+    for fold in range(folds):
+        gru_errors = format_errors(fold, "gru", "rmse", "test")
+        lstm_errors = format_errors(fold, "lstm", "rmse", "test")
+        make_box_plot(gru_errors, lstm_errors, fold)
 
     plt.show()
