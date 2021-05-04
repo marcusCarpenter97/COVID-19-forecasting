@@ -1,3 +1,4 @@
+import os
 import hashlib
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -109,10 +110,10 @@ class Data:
             np.savez(new_file, *data)
 
     def save_data(self):
-        save_to_npz_folds(self.train, "train")
-        save_to_npz_folds(self.val, "val")
-        save_to_npz_folds(self.test_x, "test_x")
-        save_to_npz_folds(self.test_y, "test_y")
+        self.save_to_npz_folds(self.train, "train")
+        self.save_to_npz_folds(self.val, "val")
+        self.save_to_npz_folds(self.test_x, "test_x")
+        self.save_to_npz_folds(self.test_y, "test_y")
 
     def standardize(self, data):
         scaled_data = []
