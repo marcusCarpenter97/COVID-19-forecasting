@@ -29,16 +29,6 @@ class Experiment():
                              [0.01, 0.01, 0.2]   # All regularizers.
                             ]
 
-    def save_to_npz_folds(self, data, file_name):
-        """
-        Parameters:
-            data - list containing numpy arrays with length = folds.
-            file_name - string.
-        """
-        file_path = os.path.join(self.save_dir, file_name)
-        with open(file_path, "w+b") as new_file:
-            np.savez(new_file, *data)
-
     def destandardize_data(self, data, scalers):
         """
         data - numpy array of shape (countries, horizon, features)

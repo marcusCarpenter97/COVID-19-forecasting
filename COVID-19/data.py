@@ -13,6 +13,7 @@ class Data:
         self.raw_confirmed, self.raw_deceased, self.raw_recovered = self.loader.load_covid_data()
         self.population = self.loader.load_population_data()
         self.countries = []
+        self.save_dir = "cross_val_results"
         self.pad_val = -10000
         self.horizon = 28
         self.features = 3
@@ -22,6 +23,7 @@ class Data:
         self.populate_countries()
         self.encode_names()
         self.split_data()
+        self.save_data()
 
         scaled_train, _ = self.standardize(self.train)
         scaled_val, self.val_scalers = self.standardize(self.val)
@@ -95,6 +97,22 @@ class Data:
             tr, v, te_x, te_y = self.cross_validate(train_size)
             self.train.append(tr), self.val.append(v), self.test_x.append(te_x), self.test_y.append(te_y)
             train_size += self.horizon
+
+    def save_to_npz_folds(self, data, file_name):
+        """
+        Parameters:
+            data - list containing numpy arrays with length = folds.
+            file_name - string.
+        """
+        file_path = os.path.join(self.save_dir, file_name)
+        with open(file_path, "w+b") as new_file:
+            np.savez(new_file, *data)
+
+    def save_data(self):
+        save_to_npz_folds(self.train, "train")
+        save_to_npz_folds(self.val, "val")
+        save_to_npz_folds(self.test_x, "test_x")
+        save_to_npz_folds(self.test_y, "test_y")
 
     def standardize(self, data):
         scaled_data = []
