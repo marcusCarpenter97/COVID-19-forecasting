@@ -50,12 +50,27 @@ def make_box_plot(lstm, gru, fold):
     fig_path = os.path.join("plots", f"boxplot_{fold}")
     plt.savefig(fig_path)
 
+def make_comparison_table(gru, lstm, fold):
+    header = ["Model", "Type", "No reg", "L1", "L2", "Dropout", "ElasticNet", "All regs"]
+    with open("model_comparison.csv", "a", newline="") as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow(header)
+        gru_mean_row = ["GRU", "Mean", *list(np.mean(gru, axis=0))]
+        gru_var_row = ["GRU", "Var", *list(np.var(gru, axis=0))]
+        lstm_mean_row = ["LSTM", "Mean", *list(np.mean(lstm, axis=0))]
+        lstm_var_row = ["LSTM", "Var", *list(np.var(lstm, axis=0))]
+        writer.writerow(gru_mean_row)
+        writer.writerow(gru_var_row)
+        writer.writerow(lstm_mean_row)
+        writer.writerow(lstm_var_row)
+
 def make_box_plots():
     folds = 14
     for fold in range(folds):
         gru_errors = format_errors(fold, "gru", "rmse", "test")
         lstm_errors = format_errors(fold, "lstm", "rmse", "test")
         make_box_plot(lstm_errors, gru_errors, fold)
+        make_comparison_table(lstm_errors, gru_errors, fold)
 
 def load_location_names():
     path = os.path.join("cross_val_results", "country_names.csv")
@@ -100,9 +115,9 @@ def make_ensemble_plots(fold, reg, model, partition):
         plt.cla()
 
 if __name__ == "__main__":
-    #make_box_plots()
-    fold = 13
-    reg = 0
-    model = "gru"
-    partition = "test"
-    make_ensemble_plots(fold, reg, model, partition)
+    make_box_plots()
+    #fold = 13
+    #reg = 0
+    #model = "gru"
+    #partition = "test"
+    #make_ensemble_plots(fold, reg, model, partition)
