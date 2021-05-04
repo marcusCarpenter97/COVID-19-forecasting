@@ -1,7 +1,6 @@
 import os
 import csv
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import numpy as np
 
 def build_file_name(fold, reg, ens, model, error, partition):
@@ -22,7 +21,7 @@ def format_errors(fold, model, error, partition):
     for regularizer in range(regularizers):
         mean_error = []
         for trial in range(ensemble_size):
-            file_name = build_file_name(fold, reg, ens, model, error, partition)
+            file_name = build_file_name(fold, regularizer, trial, model, error, partition)
             model_errors = load_npz(file_name)
             mean_error.append(np.mean(model_errors))
         results.append(mean_error)
@@ -76,6 +75,7 @@ def make_ensemble_plots(model, partition):
     sub_titles = ["Confirmed", "Deceased", "Recovered"]
     orig = load_npz("test_y")
 
+    fig, axes = plt.subplots(1,3)
     for fold in range(folds):
         for reg in range(regularizers):
             for e in range(ensemble_size):
@@ -86,22 +86,22 @@ def make_ensemble_plots(model, partition):
             avg_pred = np.mean(preds, axis=0)
             avg_errs = np.mean(errs, axis=0)
 
-            for curr_loc in len(loc_names):
-                fig, axes = plt.subplots(1,3)
+            for loc_idx, loc_name in enumerate(loc_names):
                 for idx, axis in enumerate(axes):
                     for p in preds:
-                        axis.plot(p[curr_loc].T[idx], color="moccasin", label="Ensemble")
-                    axis.plot(orig[fold][curr_loc].T[idx], color="blue", label="Original")
-                    axis.plot(avg_pred[curr_loc].T[idx], linestyle="--", color="red", label=f"Average {model.upper()}")
-                    axis.set_title(f"{sub_titles[idx]} : {round(avg_errs[curr_loc][idx], 3)} RMSE")
-                handles, labels = axis.get_legend_handles_labels()
+                        axis.plot(p[loc_idx].T[idx], color="moccasin", label="Ensemble")
+                    axis.plot(orig[fold][loc_idx].T[idx], color="blue", label="Original")
+                    axis.plot(avg_pred[loc_idx].T[idx], linestyle="--", color="red", label=f"Average {model.upper()}")
+                    axis.set_title(f"{sub_titles[idx]} : {round(avg_errs[loc_idx][idx], 3)} RMSE")
+                handles, labels = axes[2].get_legend_handles_labels()
                 axes[0].set_ylabel("People")
                 axes[1].set_xlabel("Days")
                 axes[2].legend([handle for i, handle in enumerate(handles) if i in display],
                                [label for i, label in enumerate(labels) if i in display], loc=0)
-                fig.suptitle(loc_names[curr_loc])
-                fig_path = os.path.join("plots", f"fold_{fold}_reg_{reg}_{model}_{partition}_{loc_name[curr_loc]}")
+                fig.suptitle(loc_name)
+                fig_path = os.path.join("plots", f"fold_{fold}_reg_{reg}_{model}_{partition}_{loc_name}")
                 plt.savefig(fig_path)
+                plt.cla()
 
 if __name__ == "__main__":
     #make_box_plots()
