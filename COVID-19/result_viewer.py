@@ -101,9 +101,9 @@ def make_ensemble_plots(fold, reg, model, partition):
         for idx, axis in enumerate(axes):
             axis.cla()
             for p in preds:
-                axis.plot(p[loc_idx].T[idx], color="moccasin", label="Ensemble")
-            axis.plot(orig[fold][loc_idx].T[idx], color="blue", label="Original")
-            axis.plot(avg_pred[loc_idx].T[idx], linestyle="--", color="red", label=f"Average {model.upper()}")
+                axis.plot(p[loc_idx].T[idx], color="lightgrey", label="Ensemble")
+            axis.plot(orig[fold][loc_idx].T[idx], color="black", label="Original")
+            axis.plot(avg_pred[loc_idx].T[idx], linestyle="--", color="black", label=f"Average {model.upper()}")
             axis.set_title(f"{sub_titles[idx]} : {round(avg_errs[loc_idx][idx], 3)} RMSE", pad=12)
         handles, labels = axes[2].get_legend_handles_labels()
         axes[0].set_ylabel("People")
