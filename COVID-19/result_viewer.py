@@ -96,28 +96,29 @@ def make_ensemble_plots(fold, reg, model, partition):
     avg_pred = np.mean(preds, axis=0)
     avg_errs = np.mean(errs, axis=0)
 
-    fig, axes = plt.subplots(1,3)
+    fig, axes = plt.subplots(1,3, figsize=(8,6))
     for loc_idx, loc_name in enumerate(loc_names):
         for idx, axis in enumerate(axes):
+            axis.cla()
             for p in preds:
                 axis.plot(p[loc_idx].T[idx], color="moccasin", label="Ensemble")
             axis.plot(orig[fold][loc_idx].T[idx], color="blue", label="Original")
             axis.plot(avg_pred[loc_idx].T[idx], linestyle="--", color="red", label=f"Average {model.upper()}")
-            axis.set_title(f"{sub_titles[idx]} : {round(avg_errs[loc_idx][idx], 3)} RMSE")
+            axis.set_title(f"{sub_titles[idx]} : {round(avg_errs[loc_idx][idx], 3)} RMSE", pad=12)
         handles, labels = axes[2].get_legend_handles_labels()
         axes[0].set_ylabel("People")
         axes[1].set_xlabel("Days")
         axes[2].legend([handle for i, handle in enumerate(handles) if i in display],
                        [label for i, label in enumerate(labels) if i in display], loc=0)
         fig.suptitle(loc_name)
+        plt.tight_layout()
         fig_path = os.path.join("plots", f"fold_{fold}_reg_{reg}_{model}_{partition}_{loc_name}")
-        plt.savefig(fig_path)
-        plt.cla()
+        plt.savefig(fig_path, bbox_inches="tight")
 
 if __name__ == "__main__":
-    make_box_plots()
-    #fold = 13
-    #reg = 0
-    #model = "gru"
-    #partition = "test"
-    #make_ensemble_plots(fold, reg, model, partition)
+    #make_box_plots()
+    fold = 13
+    reg = 3
+    model = "gru"
+    partition = "test"
+    make_ensemble_plots(fold, reg, model, partition)
