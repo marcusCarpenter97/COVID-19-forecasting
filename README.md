@@ -5,7 +5,7 @@ Covid-19 as an example*.
 The paper can be found [here](https://arxiv.org/abs/2105.05932).
 
 ## How to run the experiments?
-`python3 Run_experiments.py`
+`python3 run_experiments.py`
 All results and data files are saved in the folder `cross_val_results`. When run, the program will download the newest
 data from the Jonhs Hopkins GitHub repository automatically. The code was tested on the Ubuntu 18.04 WSL.
 
