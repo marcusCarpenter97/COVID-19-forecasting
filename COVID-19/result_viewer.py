@@ -38,8 +38,8 @@ def make_box_plot(lstm, gru, fold):
         return bp
 
     fig, ax = plt.subplots()
-    bpA = draw_plot(lstm, -0.2, "tomato", "white")
-    bpB = draw_plot(gru, +0.2,"skyblue", "white")
+    bpA = draw_plot(lstm, -0.2, "black", "white")
+    bpB = draw_plot(gru, +0.2,"grey", "white")
     plt.xticks(range(6))
 
     ax.set_xticklabels(["No reg", "L1", "L2", "Dropout", "ElasticNet", "All regs"])
@@ -116,9 +116,9 @@ def make_ensemble_plots(fold, reg, model, partition):
         plt.savefig(fig_path, bbox_inches="tight")
 
 if __name__ == "__main__":
-    #make_box_plots()
-    fold = 13
-    reg = 3
-    model = "gru"
-    partition = "test"
-    make_ensemble_plots(fold, reg, model, partition)
+    make_box_plots()
+    #fold = 13
+    #reg = 3
+    #model = "gru"
+    #partition = "test"
+    #make_ensemble_plots(fold, reg, model, partition)
