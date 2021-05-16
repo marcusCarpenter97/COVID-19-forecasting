@@ -1,9 +1,8 @@
 __pycache__/
+venv/
 *.swp
+*.png
 COVID-19/COVID-19/
 COVID-19/plots/
-COVID-19/latex_tables/
-*.png
-COVID-19/cross_val_results_backup/
+COVID-19/model_comparison.csv
 COVID-19/logger.log
-venv/
