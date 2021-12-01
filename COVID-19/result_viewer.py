@@ -1,5 +1,6 @@
 import os
 import csv
+from tabulate import tabulate
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -115,8 +116,37 @@ def make_ensemble_plots(fold, reg, model, partition):
         fig_path = os.path.join("plots", f"fold_{fold}_reg_{reg}_{model}_{partition}_{loc_name}")
         plt.savefig(fig_path, bbox_inches="tight")
 
+def make_comparison_table():
+    folds = 14
+    regs = 6
+    ens = 10
+    err_table = []
+    for fold in range(folds):
+        gru_err_row = []
+        lstm_err_row = []
+        for reg in range(regs):
+            gru_errs = []
+            lstm_errs = []
+            for ens_idx in range(ens):
+                gru_f_name = build_file_name(fold, reg, ens_idx, "gru", "rmse", "test")
+                lstm_f_name = build_file_name(fold, reg, ens_idx, "lstm", "rmse", "test")
+                gru_errs_ens = load_npz(gru_f_name)
+                lstm_errs_ens = load_npz(lstm_f_name)
+                gru_errs.append(gru_errs_ens)
+                lstm_errs.append(lstm_errs_ens)
+            avg_gru_errs = np.mean(gru_errs)
+            avg_lstm_errs = np.mean(lstm_errs)
+            gru_err_row.append(avg_gru_errs)
+            lstm_err_row.append(avg_lstm_errs)
+        gru_err_row.append("GRU")
+        lstm_err_row.append("LSTM")
+        err_table.append(gru_err_row)
+        err_table.append(lstm_err_row)
+    print(tabulate(err_table, tablefmt='latex'))
+
 if __name__ == "__main__":
-    make_box_plots()
+    make_comparison_table()
+    #make_box_plots()
     #fold = 13
     #reg = 3
     #model = "gru"
