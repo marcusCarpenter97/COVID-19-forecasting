@@ -103,7 +103,7 @@ def make_ensemble_plots(fold, reg, model, partition):
             axis.cla()
             for p in preds:
                 axis.plot(p[loc_idx].T[idx], color="lightgrey", label="Ensemble")
-            axis.plot(orig[fold][loc_idx].T[idx], color="black", label="Original")
+            axis.plot(orig[fold][loc_idx].T[idx], color="black", label="Original data")
             axis.plot(avg_pred[loc_idx].T[idx], linestyle="--", color="black", label=f"Average {model.upper()}")
             axis.set_title(f"{sub_titles[idx]} : {round(avg_errs[loc_idx][idx], 3)} RMSE", pad=12)
         handles, labels = axes[2].get_legend_handles_labels()
@@ -145,10 +145,10 @@ def make_comparison_table():
     print(tabulate(err_table, tablefmt='latex'))
 
 if __name__ == "__main__":
-    make_comparison_table()
+    #make_comparison_table()
     #make_box_plots()
-    #fold = 13
-    #reg = 3
-    #model = "gru"
-    #partition = "test"
-    #make_ensemble_plots(fold, reg, model, partition)
+    fold = 9
+    reg = 3
+    model = "lstm"
+    partition = "test"
+    make_ensemble_plots(fold, reg, model, partition)
