@@ -1,8 +1,8 @@
 # The effects of regularization on RNN models for time series forecasting:  Covid-19 as an example 
-This repository contains the code for the paper *The effects of regularization on RNN models for time series forecasting:
-Covid-19 as an example*.
+This repository contains the code for the paper *The effects of regularisation on RNN models for Covid-19 time series
+forecasting*.
 
-The paper can be found [here](https://arxiv.org/abs/2105.05932).
+The paper can be found [here](https://ieeexplore.ieee.org/document/9719662).
 
 ## How to run the experiments?
 `python3 run_experiments.py`
