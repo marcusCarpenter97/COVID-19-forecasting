@@ -51,7 +51,7 @@ def make_box_plot(lstm, gru, fold):
     fig_path = os.path.join("plots", f"boxplot_{fold}")
     plt.savefig(fig_path)
 
-def make_comparison_table(gru, lstm, fold):
+def make_comparison_table_old(gru, lstm, fold):
     header = ["Model", "Type", "No reg", "L1", "L2", "Dropout", "ElasticNet", "All regs"]
     with open("model_comparison.csv", "a", newline="") as csv_file:
         writer = csv.writer(csv_file)
@@ -71,7 +71,7 @@ def make_box_plots():
         gru_errors = format_errors(fold, "gru", "rmse", "test")
         lstm_errors = format_errors(fold, "lstm", "rmse", "test")
         make_box_plot(lstm_errors, gru_errors, fold)
-        make_comparison_table(lstm_errors, gru_errors, fold)
+        make_comparison_table_old(lstm_errors, gru_errors, fold)
 
 def load_location_names():
     path = os.path.join("cross_val_results", "country_names.csv")
@@ -116,7 +116,7 @@ def make_ensemble_plots(fold, reg, model, partition):
         fig_path = os.path.join("plots", f"fold_{fold}_reg_{reg}_{model}_{partition}_{loc_name}")
         plt.savefig(fig_path, bbox_inches="tight")
 
-def make_comparison_table():
+def make_comparison_table(error_metric):
     folds = 14
     regs = 6
     ens = 10
@@ -128,8 +128,8 @@ def make_comparison_table():
             gru_errs = []
             lstm_errs = []
             for ens_idx in range(ens):
-                gru_f_name = build_file_name(fold, reg, ens_idx, "gru", "rmse", "test")
-                lstm_f_name = build_file_name(fold, reg, ens_idx, "lstm", "rmse", "test")
+                gru_f_name = build_file_name(fold, reg, ens_idx, "gru", error_metric, "test")
+                lstm_f_name = build_file_name(fold, reg, ens_idx, "lstm", error_metric, "test")
                 gru_errs_ens = load_npz(gru_f_name)
                 lstm_errs_ens = load_npz(lstm_f_name)
                 gru_errs.append(gru_errs_ens)
@@ -145,10 +145,10 @@ def make_comparison_table():
     print(tabulate(err_table, tablefmt='latex'))
 
 if __name__ == "__main__":
-    #make_comparison_table()
+    make_comparison_table("mae")
     #make_box_plots()
-    fold = 9
-    reg = 3
-    model = "lstm"
-    partition = "test"
-    make_ensemble_plots(fold, reg, model, partition)
+    #fold = 9
+    #reg = 3
+    #model = "lstm"
+    #partition = "test"
+    #make_ensemble_plots(fold, reg, model, partition)
